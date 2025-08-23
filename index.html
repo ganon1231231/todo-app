@@ -215,7 +215,7 @@
         /* Appbar */
         .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.1rem; }
         .brand svg { width: 28px; height: 28px; color: var(--primary); }
-        .search { flex: 1; position: relative; }
+        .search { flex: 1; position: relative; min-width: 150px; }
         .search .form-control { padding-left: 40px; }
         .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; opacity: 0.5; }
         .appbar-actions { display: flex; align-items: center; gap: var(--spacing-unit); }
@@ -292,11 +292,11 @@
 
         .stats .stat-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.9rem; margin-bottom: var(--spacing-unit); }
         .stats .stat-row strong { font-size: 1rem; font-weight: 600; }
-        .progress { height: 12px; border-radius: 999px; background: var(--input); border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
+        .progress { height: 12px; border-radius: 999px; background-color: var(--input); border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
         .progress > div { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.5s ease; }
         .catbars { display: grid; gap: 8px; }
         .catbar { display: grid; grid-template-columns: 100px 1fr auto; gap: 8px; align-items: center; font-size: 0.8rem; }
-        .catbar .bar { height: 8px; border-radius: 999px; background: var(--input); border: 1px solid var(--border); overflow: hidden; }
+        .catbar .bar { height: 8px; border-radius: 999px; background-color: var(--input); border: 1px solid var(--border); overflow: hidden; }
         .catbar .bar > div { height: 100%; transition: width 0.5s ease; }
         .achievements { display: flex; gap: 8px; flex-wrap: wrap; }
         .badge-ach {
@@ -354,7 +354,7 @@
         .dp-day:hover { background-color: var(--border); }
         .dp-day.today { border-color: var(--primary); }
         .dp-day.selected { background-color: var(--primary); color: white; border-color: var(--primary); }
-        .dp-day.outside { opacity: 0.35; }
+        .dp-day.outside { opacity: 0.35; pointer-events: none; }
         .dp-time { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr) auto auto; 
@@ -403,7 +403,7 @@
             <div class="search" role="search">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 5 1.5-1.5-5-5ZM9.5 14A4.5 4.5 0 1 1 14 9.5 4.505 4.505 0 0 1 9.5 14Z"/></svg>
                 <label class="sr-only" for="searchInput">Buscar tareas</label>
-                <input id="searchInput" class="form-control" type="text" placeholder="Buscar por título, descripción..." />
+                <input id="searchInput" class="form-control" type="text" placeholder="Buscar tareas..." />
             </div>
             <div class="appbar-actions">
                 <button class="iconbtn" id="notifBtn" aria-label="Notificaciones de vencimiento" title="Notificaciones">
@@ -548,7 +548,7 @@
             state: {},
             elements: {},
             config: {
-                STORAGE_KEY: 'ttd_jordan_v2',
+                STORAGE_KEY: 'ttd_jordan_v3', // Versión actualizada para evitar conflictos
                 DEFAULT_DATA: {
                     tasks: [],
                     categories: [
@@ -725,7 +725,7 @@
                 container.innerHTML = '';
                 const { stats } = this.state;
                 const achievements = [
-                    { icon: '🌱', text: '¡A por ello!', earned: stats.completedTotal > 0 },
+                    { icon: '🚀', text: '¡A por ello!', earned: stats.completedTotal > 0 },
                     { icon: '✅', text: '5 Tareas', earned: stats.completedTotal >= 5 },
                     { icon: '🏆', text: '25 Tareas', earned: stats.completedTotal >= 25 },
                     { icon: '🔥', text: `Racha ${stats.streak} días`, earned: stats.streak >= 3 },
