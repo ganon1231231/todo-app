@@ -306,9 +306,19 @@
         }
 
         /* Toolbar (Main) */
-        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-unit); }
-        .toolbar-actions { display: flex; gap: var(--spacing-unit); }
-        .toolbar .btn { height: 40px; }
+        .toolbar { 
+            display: flex; 
+            flex-wrap: wrap;
+            align-items: flex-end; 
+            justify-content: space-between; 
+            gap: var(--spacing-unit); 
+        }
+        .toolbar-group {
+            display: flex;
+            gap: var(--spacing-unit);
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
 
         /* Vista por Fecha */
         .group { display: grid; gap: var(--spacing-unit); }
@@ -332,7 +342,7 @@
         @keyframes popIn { from { opacity: 0; transform: translateY(-10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .dp { display: grid; gap: 10px; }
         .dp-header { display: flex; align-items: center; justify-content: space-between; }
-        .dp-title { font-weight: 600; text-transform: capitalize; }
+        .dp-title { font-weight: 600; }
         .dp-nav { width: 32px; height: 32px; }
         .dp-week { font-size: 0.75rem; color: var(--muted); display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
         .dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -343,9 +353,14 @@
         }
         .dp-day:hover { background-color: var(--border); }
         .dp-day.today { border-color: var(--primary); }
-        .dp-day.selected { background-color: var(--primary); color: white; }
-        .dp-day.outside { opacity: 0.4; }
-        .dp-time { display: grid; grid-template-columns: repeat(2, 1fr) auto; gap: var(--spacing-unit); align-items: center; }
+        .dp-day.selected { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .dp-day.outside { opacity: 0.35; }
+        .dp-time { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr) auto auto; 
+            gap: var(--spacing-unit); 
+            align-items: flex-end; 
+        }
 
         /* Toasts */
         .toasts { position: fixed; right: 16px; bottom: 16px; display: grid; gap: 8px; z-index: 999; }
@@ -452,7 +467,7 @@
             </form>
 
             <div class="card">
-                <h2 class="card-header">Vista y Filtros</h2>
+                <h2 class="card-header">Filtros</h2>
                 <div class="form-group">
                     <fieldset>
                         <legend>Estado</legend>
@@ -490,15 +505,15 @@
 
         <main>
             <div class="card toolbar">
-                <div class="form-row">
-                     <div class="form-group">
+                <div class="toolbar-group">
+                    <div class="form-group" style="margin:0;">
                         <label for="orderMode">Ordenar por</label>
                         <select id="orderMode" class="form-control">
                             <option value="auto" selected>Automático</option>
                             <option value="manual">Manual</option>
                         </select>
                     </div>
-                     <div class="form-group">
+                    <div class="form-group" style="margin:0;">
                         <label for="viewMode">Vista</label>
                         <select id="viewMode" class="form-control">
                             <option value="list" selected>Lista</option>
@@ -506,7 +521,7 @@
                         </select>
                     </div>
                 </div>
-                 <div class="toolbar-actions">
+                 <div class="toolbar-group">
                     <button class="btn ghost" id="exportBtn">Exportar</button>
                     <label class="btn ghost" for="importFile">Importar</label>
                     <input id="importFile" type="file" accept=".json" class="sr-only" />
@@ -529,21 +544,9 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        /**
-         * =================================================================
-         * App: To-Do List Application
-         * =================================================================
-         * Un gestor de tareas completo, con almacenamiento local, temas,
-         * y funcionalidades avanzadas, todo en Vanilla JS.
-         */
         const App = {
-            // --- 1. ESTADO Y CONFIGURACIÓN ---
             state: {},
-            
-            elements: {
-                // ... Se cachean en init()
-            },
-            
+            elements: {},
             config: {
                 STORAGE_KEY: 'ttd_jordan_v2',
                 DEFAULT_DATA: {
@@ -557,7 +560,6 @@
                 }
             },
 
-            // --- 2. INICIALIZACIÓN ---
             init() {
                 this.cacheElements();
                 this.loadState();
@@ -566,7 +568,6 @@
                 this.bindEvents();
                 this.render();
                 
-                // Inicializar DatePicker
                 try {
                     this.datePicker = new DatePicker(this.elements.dueDate, this.elements.dpPopover, {
                         onSelect: () => this.utils.toast('Fecha establecida 📅'),
@@ -578,27 +579,26 @@
             },
             
             cacheElements() {
-                const el = this.elements;
-                el.app = this.utils.$('#app');
-                el.themeToggle = this.utils.$('#themeToggle');
-                el.themeIcon = this.utils.$('#themeIcon');
-                el.addForm = this.utils.$('#addForm');
-                el.listContainer = this.utils.$('#listContainer');
-                el.summaryPill = this.utils.$('#summaryPill');
-                el.notifBtn = this.utils.$('#notifBtn');
-                el.notifCount = this.utils.$('#notifCount');
-                el.searchInput = this.utils.$('#searchInput');
-                el.filterState = this.utils.$$('input[name="state"]');
-                el.filterCategory = this.utils.$('#filterCategory');
-                el.filterPriority = this.utils.$('#filterPriority');
-                el.orderMode = this.utils.$('#orderMode');
-                el.viewMode = this.utils.$('#viewMode');
-                el.dueDate = this.utils.$('#dueDate');
-                el.dpPopover = this.utils.$('#dpPopover');
-                // ... y otros elementos necesarios
+                this.elements = {
+                    app: this.utils.$('#app'),
+                    themeToggle: this.utils.$('#themeToggle'),
+                    themeIcon: this.utils.$('#themeIcon'),
+                    addForm: this.utils.$('#addForm'),
+                    listContainer: this.utils.$('#listContainer'),
+                    summaryPill: this.utils.$('#summaryPill'),
+                    notifBtn: this.utils.$('#notifBtn'),
+                    notifCount: this.utils.$('#notifCount'),
+                    searchInput: this.utils.$('#searchInput'),
+                    filterState: this.utils.$$('input[name="state"]'),
+                    filterCategory: this.utils.$('#filterCategory'),
+                    filterPriority: this.utils.$('#filterPriority'),
+                    orderMode: this.utils.$('#orderMode'),
+                    viewMode: this.utils.$('#viewMode'),
+                    dueDate: this.utils.$('#dueDate'),
+                    dpPopover: this.utils.$('#dpPopover')
+                };
             },
 
-            // --- 3. GESTIÓN DEL ESTADO Y DATOS ---
             loadState() {
                 try {
                     const data = localStorage.getItem(this.config.STORAGE_KEY);
@@ -612,7 +612,6 @@
                 localStorage.setItem(this.config.STORAGE_KEY, JSON.stringify(this.state));
             },
 
-            // --- 4. LÓGICA DE RENDERIZADO ---
             render() {
                 this.renderTasks();
                 this.renderStats();
@@ -656,7 +655,7 @@
                     list.className = 'tasks-list';
                     tasks.forEach(t => list.innerHTML += buildTaskHTML(t));
                     this.elements.listContainer.appendChild(list);
-                } else { // Vista por fecha
+                } else {
                     this.renderTasksByDate(tasks, buildTaskHTML);
                 }
             },
@@ -688,7 +687,7 @@
             },
 
             renderStats() {
-                const { tasks, stats } = this.state;
+                const { tasks } = this.state;
                 const total = tasks.length;
                 const completed = tasks.filter(t => t.completed).length;
                 const pending = total - completed;
@@ -698,7 +697,6 @@
                 this.utils.$('#progressBar').style.width = `${pct}%`;
                 this.elements.summaryPill.textContent = `${pending} pendiente${pending !== 1 ? 's' : ''}`;
                 
-                // Stats por categoría
                 const catCounts = tasks.reduce((acc, t) => {
                     const cat = t.category || 'General';
                     acc[cat] = (acc[cat] || 0) + 1;
@@ -719,7 +717,6 @@
                         </div>`;
                 }
                 
-                // Logros
                 this.renderAchievements();
             },
 
@@ -778,7 +775,6 @@
                 }
             },
 
-            // --- 5. MANEJADORES DE EVENTOS Y LÓGICA DE ACCIONES ---
             bindEvents() {
                 this.elements.themeToggle.addEventListener('click', () => this.handleThemeToggle());
                 this.elements.addForm.addEventListener('submit', (e) => this.handleAddTask(e));
@@ -795,14 +791,12 @@
                 this.elements.listContainer.addEventListener('dragleave', (e) => this.handleDragLeave(e));
                 this.elements.listContainer.addEventListener('drop', (e) => this.handleDrop(e));
                 
-                // Filtros y orden
                 this.elements.searchInput.addEventListener('input', this.utils.debounce(() => this.render(), 200));
                 this.elements.filterState.forEach(r => r.addEventListener('change', () => this.render()));
                 this.elements.filterCategory.addEventListener('change', () => this.render());
                 this.elements.filterPriority.addEventListener('change', () => this.render());
                 this.elements.orderMode.addEventListener('change', (e) => this.handleSettingChange('orderMode', e.target.value));
                 this.elements.viewMode.addEventListener('change', (e) => this.handleSettingChange('viewMode', e.target.value));
-
                 this.utils.$('#openCalendar').addEventListener('click', () => this.datePicker.open());
             },
 
@@ -818,25 +812,21 @@
                 const title = form.title.value.trim();
                 if (!title) {
                     this.utils.toast('El título es obligatorio', 'warning');
-                    form.title.focus();
-                    return;
+                    form.title.focus(); return;
                 }
                 const now = new Date().toISOString();
                 const task = {
                     id: this.utils.uid(), title, completed: false,
-                    description: form.description.value.trim(),
-                    category: form.category.value,
+                    description: form.description.value.trim(), category: form.category.value,
                     priority: form.priority.value,
                     dueDate: form.dueDate.value ? new Date(form.dueDate.value).toISOString() : null,
                     tags: form.tags.value.split(',').map(t => t.trim()).filter(Boolean),
                     createdAt: now, updatedAt: now, orderIndex: Date.now()
                 };
                 this.state.tasks.push(task);
-                this.saveState();
-                this.render();
+                this.saveState(); this.render();
                 this.utils.toast('Tarea agregada ✅');
-                form.reset();
-                form.title.focus();
+                form.reset(); form.title.focus();
             },
             
             handleAddCategory() {
@@ -844,42 +834,31 @@
                 if (!name) return;
                 const exists = this.state.categories.some(c => c.name.toLowerCase() === name.toLowerCase());
                 if (exists) return this.utils.toast('Esa categoría ya existe', 'warning');
-                const color = this.utils.randomColor();
-                this.state.categories.push({ name, color });
-                this.saveState();
-                this.ensureCategoryOptions();
-                this.utils.$('#category').value = name;
-                this.utils.toast('Categoría creada');
+                this.state.categories.push({ name, color: this.utils.randomColor() });
+                this.saveState(); this.ensureCategoryOptions();
+                this.utils.$('#category').value = name; this.utils.toast('Categoría creada');
             },
 
             handleListClick(e) {
-                const taskEl = e.target.closest('.task');
-                if (!taskEl) return;
+                const taskEl = e.target.closest('.task'); if (!taskEl) return;
                 const id = taskEl.dataset.id;
-                
                 if (e.target.closest('.checkbox')) this.handleToggleComplete(id);
                 if (e.target.closest('.deleteBtn')) this.handleDeleteTask(id);
             },
 
             handleToggleComplete(id) {
-                const task = this.state.tasks.find(t => t.id === id);
-                if (!task) return;
+                const task = this.state.tasks.find(t => t.id === id); if (!task) return;
                 task.completed = !task.completed;
                 task.updatedAt = new Date().toISOString();
-                
                 if (task.completed) this.updateCompletionStats(task);
-                
-                this.saveState();
-                this.render();
+                this.saveState(); this.render();
             },
             
             handleDeleteTask(id) {
                 const task = this.state.tasks.find(t => t.id === id);
                 if (confirm(`¿Seguro que quieres eliminar "${task.title}"?`)) {
                     this.state.tasks = this.state.tasks.filter(t => t.id !== id);
-                    this.saveState();
-                    this.render();
-                    this.utils.toast('Tarea eliminada 🗑️');
+                    this.saveState(); this.render(); this.utils.toast('Tarea eliminada 🗑️');
                 }
             },
             
@@ -887,113 +866,80 @@
                 const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = 'things-to-do.json';
-                a.click();
-                URL.revokeObjectURL(url);
+                a.href = url; a.download = 'things-to-do.json'; a.click(); URL.revokeObjectURL(url);
             },
 
             handleImport(e) {
-                const file = e.target.files[0];
-                if (!file) return;
+                const file = e.target.files[0]; if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     try {
                         const data = JSON.parse(event.target.result);
                         if (!data || !Array.isArray(data.tasks)) throw new Error('Archivo inválido');
                         this.state = data;
-                        this.saveState();
-                        this.applyTheme();
-                        this.ensureCategoryOptions();
-                        this.render();
+                        this.saveState(); this.applyTheme(); this.ensureCategoryOptions(); this.render();
                         this.utils.toast('Datos importados con éxito ✅');
-                    } catch (err) {
-                        this.utils.toast('Error al importar el archivo', 'danger');
-                    }
+                    } catch (err) { this.utils.toast('Error al importar el archivo', 'danger'); }
                 };
-                reader.readAsText(file);
-                e.target.value = ''; // Reset input
+                reader.readAsText(file); e.target.value = '';
             },
 
             handleClearAll() {
                 if (confirm('¿ELIMINAR TODAS LAS TAREAS? Esta acción es irreversible.')) {
                     this.state.tasks = [];
                     this.state.stats = JSON.parse(JSON.stringify(this.config.DEFAULT_DATA.stats));
-                    this.saveState();
-                    this.render();
-                    this.utils.toast('Todas las tareas han sido eliminadas.');
+                    this.saveState(); this.render(); this.utils.toast('Todas las tareas han sido eliminadas.');
                 }
             },
             
             handleSettingChange(key, value) {
                 this.state.settings[key] = value;
-                this.saveState();
-                this.render();
+                this.saveState(); this.render();
             },
 
-            // --- 6. DRAG & DROP (Arrastrar y Soltar) ---
             draggedEl: null,
-            
             handleDragStart(e) {
                 if (this.state.settings.orderMode !== 'manual') return;
                 this.draggedEl = e.target.closest('.task');
                 this.draggedEl.classList.add('dragging');
             },
-            
             handleDragOver(e) {
-                e.preventDefault();
-                if (this.state.settings.orderMode !== 'manual') return;
+                e.preventDefault(); if (this.state.settings.orderMode !== 'manual') return;
                 const overEl = e.target.closest('.task');
                 if (overEl && overEl !== this.draggedEl) {
                     this.utils.$$('.task.over').forEach(el => el.classList.remove('over'));
                     overEl.classList.add('over');
                 }
             },
-
-            handleDragLeave(e) {
-                const el = e.target.closest('.task');
-                if (el) el.classList.remove('over');
-            },
-
+            handleDragLeave(e) { const el = e.target.closest('.task'); if (el) el.classList.remove('over'); },
             handleDrop(e) {
-                e.preventDefault();
-                if (!this.draggedEl) return;
+                e.preventDefault(); if (!this.draggedEl) return;
                 const dropTarget = e.target.closest('.task');
                 this.draggedEl.classList.remove('dragging');
                 this.utils.$$('.task.over').forEach(el => el.classList.remove('over'));
-
                 if (dropTarget && dropTarget !== this.draggedEl) {
-                    const srcId = this.draggedEl.dataset.id;
-                    const dstId = dropTarget.dataset.id;
+                    const srcId = this.draggedEl.dataset.id, dstId = dropTarget.dataset.id;
                     const tasks = this.state.tasks;
-                    const srcIdx = tasks.findIndex(t => t.id === srcId);
-                    const dstIdx = tasks.findIndex(t => t.id === dstId);
-                    
-                    const [item] = tasks.splice(srcIdx, 1);
-                    tasks.splice(dstIdx, 0, item);
-                    
+                    const srcIdx = tasks.findIndex(t => t.id === srcId), dstIdx = tasks.findIndex(t => t.id === dstId);
+                    const [item] = tasks.splice(srcIdx, 1); tasks.splice(dstIdx, 0, item);
                     tasks.forEach((t, i) => t.orderIndex = i);
-                    this.saveState();
-                    this.render();
+                    this.saveState(); this.render();
                 }
                 this.draggedEl = null;
             },
             
-            // --- 7. LÓGICA AUXILIAR Y FILTROS ---
             getFilteredTasks() {
                 let tasks = [...this.state.tasks];
                 const q = this.elements.searchInput.value.toLowerCase();
                 const stateFilter = this.utils.$('input[name="state"]:checked').value;
                 const cat = this.elements.filterCategory.value;
                 const pr = this.elements.filterPriority.value;
-
                 if (q) tasks = tasks.filter(t => [t.title, t.description, ...(t.tags || [])].join(' ').toLowerCase().includes(q));
                 if (stateFilter === 'pending') tasks = tasks.filter(t => !t.completed);
                 if (stateFilter === 'completed') tasks = tasks.filter(t => t.completed);
                 if (cat !== 'all') tasks = tasks.filter(t => t.category === cat);
                 if (pr !== 'all') tasks = tasks.filter(t => t.priority === pr);
 
-                // Orden
                 if (this.state.settings.orderMode === 'manual') {
                     tasks.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
                 } else {
@@ -1001,8 +947,7 @@
                         if (a.completed !== b.completed) return a.completed ? 1 : -1;
                         const prio = { high: 3, medium: 2, low: 1 };
                         if (prio[b.priority] !== prio[a.priority]) return prio[b.priority] - prio[a.priority];
-                        const da = a.dueDate ? new Date(a.dueDate) : Infinity;
-                        const db = b.dueDate ? new Date(b.dueDate) : Infinity;
+                        const da = a.dueDate ? new Date(a.dueDate) : Infinity, db = b.dueDate ? new Date(b.dueDate) : Infinity;
                         if (da !== db) return da - db;
                         return new Date(a.createdAt) - new Date(b.createdAt);
                     });
@@ -1014,86 +959,47 @@
                 const { stats } = this.state;
                 const today = new Date();
                 const ymd = today.toISOString().slice(0, 10);
-                
                 if (stats.lastCompleteDate) {
                     const prev = new Date(stats.lastCompleteDate);
-                    const diffDays = Math.floor((today - prev) / (1000 * 60 * 60 * 24));
-                    if (diffDays === 1) stats.streak++;
-                    else if (diffDays > 1) stats.streak = 1;
-                } else {
-                    stats.streak = 1;
-                }
-                
+                    const diffDays = Math.floor((today - prev) / 864e5);
+                    if (diffDays === 1) stats.streak++; else if (diffDays > 1) stats.streak = 1;
+                } else { stats.streak = 1; }
                 stats.lastCompleteDate = ymd;
                 stats.completedTotal++;
-                if (task.dueDate && new Date(task.dueDate) > new Date()) {
-                    stats.earlyCompletions++;
-                }
+                if (task.dueDate && new Date(task.dueDate) > new Date()) { stats.earlyCompletions++; }
             },
             
-            // --- 8. UTILIDADES ---
             utils: {
                 $: (sel, el = document) => el.querySelector(sel),
                 $$: (sel, el = document) => Array.from(el.querySelectorAll(sel)),
                 uid: () => Math.random().toString(36).slice(2) + Date.now().toString(36),
                 escapeHTML: (str = '') => str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[m])),
-                niceDate: (iso) => {
-                    if (!iso) return '—';
-                    const d = new Date(iso), now = new Date();
-                    const diffMs = d - now, abs = Math.abs(diffMs);
-                    const days = Math.round(abs / 864e5);
-                    return new Intl.RelativeTimeFormat('es', { numeric: 'auto' }).format(Math.round((d-now)/(1000*60*60*24)), 'day');
-                },
+                niceDate: (iso) => !iso ? '—' : new Intl.RelativeTimeFormat('es', { numeric: 'auto' }).format(Math.round((new Date(iso)-new Date())/864e5), 'day'),
                 isOverdue: iso => iso && new Date(iso) < new Date(),
-                isSoon: iso => iso && (new Date(iso) - new Date() <= 24 * 3600 * 1000 && new Date(iso) > new Date()),
+                isSoon: iso => iso && (new Date(iso) - new Date() <= 864e5 && new Date(iso) > new Date()),
                 isToday: iso => iso && new Date(iso).toDateString() === new Date().toDateString(),
-                isTomorrow: iso => {
-                    if (!iso) return false;
-                    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-                    return new Date(iso).toDateString() === tomorrow.toDateString();
-                },
-                isNext7Days: iso => iso && new Date(iso) > new Date() && new Date(iso) - new Date() <= 7 * 24 * 3600 * 1000,
-                isFuture: iso => iso && new Date(iso) - new Date() > 7 * 24 * 3600 * 1000,
+                isTomorrow: iso => { if (!iso) return false; const t = new Date(); t.setDate(t.getDate() + 1); return new Date(iso).toDateString() === t.toDateString(); },
+                isNext7Days: iso => iso && new Date(iso) > new Date() && new Date(iso) - new Date() <= 7 * 864e5,
+                isFuture: iso => iso && new Date(iso) - new Date() > 7 * 864e5,
                 toast(msg, type = 'success') {
                     const t = document.createElement('div');
-                    t.className = `toast ${type}`;
-                    t.textContent = msg;
+                    t.className = `toast ${type}`; t.textContent = msg;
                     document.getElementById('toasts').appendChild(t);
                     document.getElementById('a11yLive').textContent = msg;
                     setTimeout(() => t.remove(), 2500);
                 },
-                debounce(fn, wait) {
-                    let t;
-                    return (...args) => {
-                        clearTimeout(t);
-                        t = setTimeout(() => fn(...args), wait);
-                    };
-                },
-                randomColor() {
-                    return `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
-                }
+                debounce(fn, wait) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; },
+                randomColor: () => `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`
             }
         };
         
-        /**
-         * =================================================================
-         * DatePicker Class
-         * =================================================================
-         * Componente de calendario visual, limpio y reutilizable.
-         */
         class DatePicker {
             constructor(inputEl, popoverEl, options = {}) {
-                this.input = inputEl;
-                this.popover = popoverEl;
-                this.options = options;
-                this.visible = false;
-                this.build();
-                this.bind();
+                this.input = inputEl; this.popover = popoverEl; this.options = options;
+                this.visible = false; this.build(); this.bind();
             }
-
             format(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
             parse(s) { const d = new Date(s); return isNaN(d) ? null : d; }
-
             build() {
                 this.popover.innerHTML = `
                     <div class="dp">
@@ -1102,12 +1008,13 @@
                             <div class="dp-title"></div>
                             <button class="iconbtn dp-nav next" aria-label="Mes siguiente">▶</button>
                         </div>
-                        <div class="dp-week">Lu Ma Mi Ju Vi Sá Do</div>
+                        <div class="dp-week">Lu Ma Mi Ju Vi Sa Do</div>
                         <div class="dp-grid"></div>
                         <div class="dp-time">
-                            <div class="form-group"><label>Hora</label><input class="form-control" type="number" min="0" max="23" id="dpHour"></div>
-                            <div class="form-group"><label>Min</label><input class="form-control" type="number" min="0" max="59" step="5" id="dpMin"></div>
-                            <button class="btn ghost clearBtn" type="button">Quitar</button>
+                            <div class="form-group" style="margin:0;"><label>Hora</label><input class="form-control" type="number" min="0" max="23" id="dpHour"></div>
+                            <div class="form-group" style="margin:0;"><label>Min</label><input class="form-control" type="number" min="0" max="59" step="5" id="dpMin"></div>
+                            <button class="btn ghost clearBtn" type="button">Limpiar</button>
+                            <button class="btn primary setBtn" type="button">OK</button>
                         </div>
                     </div>`;
                 this.grid = this.popover.querySelector('.dp-grid');
@@ -1115,19 +1022,18 @@
                 this.hourEl = this.popover.querySelector('#dpHour');
                 this.minEl = this.popover.querySelector('#dpMin');
             }
-
             renderGrid() {
                 const y = this.viewDate.getFullYear(), m = this.viewDate.getMonth();
                 const first = new Date(y, m, 1);
-                const startDay = (first.getDay() + 6) % 7; // Lunes = 0
-                const startDate = new Date(first);
-                startDate.setDate(1 - startDay);
+                const startDay = (first.getDay() + 6) % 7;
+                const startDate = new Date(first); startDate.setDate(1 - startDay);
                 
-                this.titleEl.textContent = first.toLocaleString('es', { month: 'long', year: 'numeric' });
+                const title = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(first);
+                this.titleEl.textContent = title.charAt(0).toUpperCase() + title.slice(1);
+
                 let html = '';
                 for (let i = 0; i < 42; i++) {
-                    const d = new Date(startDate);
-                    d.setDate(startDate.getDate() + i);
+                    const d = new Date(startDate); d.setDate(startDate.getDate() + i);
                     const classes = ['dp-day'];
                     if (d.getMonth() !== m) classes.push('outside');
                     if (d.toDateString() === new Date().toDateString()) classes.push('today');
@@ -1136,75 +1042,54 @@
                 }
                 this.grid.innerHTML = html;
             }
-
             bind() {
                 this.popover.addEventListener('click', e => {
                     const dayBtn = e.target.closest('.dp-day');
-                    if (dayBtn) this.handleDayClick(dayBtn);
+                    if (dayBtn) { this.selDate = new Date(dayBtn.dataset.date); this.updateTime(); this.renderGrid(); }
+                    if (e.target.closest('.setBtn')) this.setDate();
                     if (e.target.closest('.prev')) this.navigateMonth(-1);
                     if (e.target.closest('.next')) this.navigateMonth(1);
                     if (e.target.closest('.clearBtn')) this.clear();
                 });
                 
                 [this.hourEl, this.minEl].forEach(el => el.addEventListener('change', () => this.updateTime()));
-
                 document.addEventListener('keydown', this._escHandler = e => { if (this.visible && e.key === 'Escape') this.close(); });
                 document.addEventListener('click', this._outsideHandler = e => {
-                    if (this.visible && !this.popover.contains(e.target) && !this.input.contains(e.target) && e.target.id !== 'openCalendar') {
+                    if (this.visible && !this.popover.contains(e.target) && !this.input.contains(e.target) && e.target.closest('#openCalendar') === null) {
                         this.close();
                     }
                 });
             }
-            
-            handleDayClick(btn) {
-                const date = new Date(btn.dataset.date);
-                const h = parseInt(this.hourEl.value) || 0;
-                const m = parseInt(this.minEl.value) || 0;
-                this.selDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m);
+            setDate() {
+                if (!this.selDate) this.selDate = new Date();
+                this.updateTime();
                 this.input.value = this.format(this.selDate);
                 if (this.options.onSelect) this.options.onSelect();
                 this.close();
             }
-
             updateTime() {
                 if (!this.selDate) return;
                 const h = parseInt(this.hourEl.value) || 0;
                 const m = parseInt(this.minEl.value) || 0;
                 this.selDate.setHours(h, m);
-                this.input.value = this.format(this.selDate);
             }
-
-            navigateMonth(dir) {
-                this.viewDate.setMonth(this.viewDate.getMonth() + dir);
-                this.renderGrid();
-            }
-            
+            navigateMonth(dir) { this.viewDate.setMonth(this.viewDate.getMonth() + dir); this.renderGrid(); }
             clear() {
-                this.input.value = '';
-                this.selDate = null;
+                this.input.value = ''; this.selDate = null;
                 if (this.options.onClear) this.options.onClear();
                 this.close();
             }
-
             open() {
                 const seed = this.parse(this.input.value) || new Date();
                 this.selDate = this.parse(this.input.value);
                 this.viewDate = new Date(seed.getFullYear(), seed.getMonth(), 1);
                 this.hourEl.value = String(seed.getHours()).padStart(2,'0');
                 this.minEl.value = String(seed.getMinutes() - (seed.getMinutes()%5)).padStart(2,'0');
-                
-                this.renderGrid();
-                this.popover.hidden = false;
-                this.visible = true;
+                this.renderGrid(); this.popover.hidden = false; this.visible = true;
             }
-
-            close() {
-                this.popover.hidden = true;
-                this.visible = false;
-            }
+            close() { this.popover.hidden = true; this.visible = false; }
         }
 
-        // Iniciar la aplicación
         App.init();
     });
     </script>
