@@ -154,6 +154,41 @@
     .dp-day.outside{ opacity:.45 }
     .dp-time{ display:grid; grid-template-columns: repeat(2, auto) 1fr auto auto; gap:8px; align-items:center }
     .dp-time input{ width:64px }
+  
+    /* --- Ajustes de simetría y proporciones (8pt grid) --- */
+    :root{ --radius:12px; --spacing:8px; --ctrl:40px }
+    .sr{ position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important }
+    .app{ gap: var(--spacing); padding: var(--spacing) }
+    .card, header.appbar, aside{ border-radius: calc(var(--radius) + 2px) }
+
+    /* Controles a altura unificada */
+    .control, select, input[type="text"], input[type="datetime-local"], input[type="color"]{ height: var(--ctrl); padding: 0 12px; line-height: 1.2 }
+    .search input{ height: var(--ctrl); padding-left: 36px }
+    .btn, .iconbtn, select{ min-height: var(--ctrl); height: var(--ctrl); border-radius: var(--radius) }
+    .pill{ height: 28px; display:inline-grid; place-items:center }
+    .row{ gap: calc(var(--spacing) - 2px) }
+
+    /* Iconografía centrada */
+    .iconbtn svg{ width:18px; height:18px }
+    .handle svg, .task-actions button svg{ width:18px; height:18px }
+
+    /* Lista y tareas: espacios consistentes */
+    ul.tasks{ gap: 10px }
+    .task{ padding: 10px; border-radius: calc(var(--radius) - 2px) }
+    .task-main{ gap: 4px }
+
+    /* Datepicker visual: celdas cuadradas y cabecera simétrica */
+    .dp-popover{ width: 320px; border-radius: var(--radius) }
+    .dp-header{ gap: var(--spacing) }
+    .dp-title{ font-weight:700; text-align:center; flex:1 }
+    .dp-nav{ width:32px; height:32px; display:grid; place-items:center; border-radius:10px }
+    .dp-week{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; gap:6px; padding:0 }
+    .dp-grid{ grid-template-columns:repeat(7,1fr); gap:6px }
+    .dp-day{ aspect-ratio:1/1; display:grid; place-items:center; padding:0 }
+
+    /* Campos de hora/min: mismo alto que controles */
+    .dp-time input{ height: var(--ctrl); padding: 0 10px }
+    .dp-time .btn, .dp-time .btn.ghost, .dp-time .btn.secondary{ height: var(--ctrl) }
   </style>
 </head>
 <body>
@@ -781,6 +816,36 @@
     class DatePicker{constructor(i,p){this.input=i;this.pop=p;this.visible=false;this.build();this.bind()}pad(n){return String(n).padStart(2,'0')}format(d){return `${d.getFullYear()}-${this.pad(d.getMonth()+1)}-${this.pad(d.getDate())}T${this.pad(d.getHours())}:${this.pad(d.getMinutes())}`}parse(s){if(!s)return null;const d=new Date(s);return isNaN(d)?null:d}build(){this.pop.innerHTML=`<div class="dp" aria-labelledby="dpLabel"><div class="dp-header"><button class="dp-nav prev" aria-label="Mes anterior">◀</button><div class="dp-title" id="dpLabel"></div><button class="dp-nav next" aria-label="Mes siguiente">▶</button></div><div class="dp-week" role="row" aria-hidden="true">Lu Ma Mi Ju Vi Sá Do</div><div class="dp-grid" role="grid" aria-label="Calendario"></div><div class="dp-time"><label>Hora <input id="dpHour" type="number" min="0" max="23" aria-label="Hora"></label><label>Min <input id="dpMin" type="number" min="0" max="59" step="5" aria-label="Minutos"></label><div class="spacer"></div><button class="btn secondary setBtn" type="button">Establecer</button><button class="btn ghost clearBtn" type="button">Quitar fecha</button></div></div>`;this.grid=this.pop.querySelector('.dp-grid');this.titleEl=this.pop.querySelector('.dp-title');this.hourEl=this.pop.querySelector('#dpHour');this.minEl=this.pop.querySelector('#dpMin');const seed=this.parse(this.input.value)||new Date();this.viewDate=new Date(seed.getFullYear(),seed.getMonth(),1);this.selDate=seed;this.hourEl.value=seed.getHours();this.minEl.value=seed.getMinutes()-(seed.getMinutes()%5);this.renderGrid()}renderGrid(){const y=this.viewDate.getFullYear(),m=this.viewDate.getMonth();const first=new Date(y,m,1);const start=new Date(first);const day=(first.getDay()+6)%7;start.setDate(1-day);this.titleEl.textContent=first.toLocaleString(undefined,{month:'long',year:'numeric'});let html='';for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const outside=d.getMonth()!==m;const isToday=(new Date()).toDateString()===d.toDateString();const isSelected=this.selDate&&this.selDate.toDateString()===d.toDateString();html+=`<button class="dp-day ${outside?'outside':''} ${isToday?'today':''} ${isSelected?'selected':''}" role="gridcell" data-date="${d.toISOString()}"><span>${d.getDate()}</span></button>`}this.grid.innerHTML=html}bind(){this.pop.addEventListener('click',e=>{const b=e.target.closest('.dp-day');if(b){const d=new Date(b.dataset.date);const h=clamp(Number(this.hourEl.value)||0,0,23);const mi=clamp(Number(this.minEl.value)||0,0,59);this.selDate=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,mi);this.input.value=this.format(this.selDate);this.renderGrid()}if(e.target.closest('.setBtn')){this.close();this.input.dispatchEvent(new Event('change'));toast('Fecha establecida 📅')}if(e.target.closest('.clearBtn')){this.input.value='';this.close();toast('Fecha borrada')}if(e.target.closest('.prev')){this.viewDate.setMonth(this.viewDate.getMonth()-1);this.renderGrid()}if(e.target.closest('.next')){this.viewDate.setMonth(this.viewDate.getMonth()+1);this.renderGrid()}});document.addEventListener('keydown',this._escHandler=e=>{if(this.visible&&e.key==='Escape'){this.close()}});document.addEventListener('click',this._outsideHandler=e=>{if(this.visible&&!this.pop.contains(e.target)&&e.target!==document.getElementById('openCalendar')&&e.target!==this.input){this.close()}})}open(){const seed=this.parse(this.input.value)||new Date();this.viewDate=new Date(seed.getFullYear(),seed.getMonth(),1);this.selDate=seed;this.hourEl.value=seed.getHours();this.minEl.value=seed.getMinutes()-(seed.getMinutes()%5);this.renderGrid();this.pop.hidden=false;this.visible=true;const wrap=this.input.closest('.dp-wrapper')||this.pop.parentElement;wrap.style.position='relative';this.pop.style.left='0px';this.pop.style.top=(this.input.offsetTop+this.input.offsetHeight+6)+'px';this.pop.querySelector('.dp-day.selected')?.focus({preventScroll:true})}close(){this.pop.hidden=true;this.visible=false}}
 
     window.addEventListener('load', ()=>{ try{ window._dp = new DatePicker(document.getElementById('dueDate'), document.getElementById('dpPopover')); document.getElementById('openCalendar').addEventListener('click', ()=> window._dp.open()); }catch(e){} });
+  
+    // --- Overrides de comportamiento para posicionamiento preciso del calendario ---
+    (function(){
+      function clampNum(n,min,max){ return Math.max(min, Math.min(max, n)); }
+      if (window.DatePicker){
+        DatePicker.prototype.open = function(){
+          const seed = this.parse(this.input.value)||new Date();
+          this.viewDate = new Date(seed.getFullYear(), seed.getMonth(), 1);
+          this.selDate = seed;
+          this.hourEl.value = seed.getHours();
+          this.minEl.value = seed.getMinutes() - (seed.getMinutes()%5);
+          this.renderGrid();
+          this.pop.hidden = false; this.visible = true;
+          const wrap = this.input.closest('.dp-wrapper') || this.pop.parentElement;
+          const wrapRect = wrap.getBoundingClientRect();
+          // Medimos después de mostrar para obtener ancho real
+          const popRect = this.pop.getBoundingClientRect();
+          const vw = document.documentElement.clientWidth;
+          const margin = 8;
+          let leftViewport = wrapRect.left; // alineado al borde del input
+          // Evitar desbordes laterales
+          if (leftViewport + popRect.width + margin > vw) leftViewport = vw - popRect.width - margin;
+          if (leftViewport < margin) leftViewport = margin;
+          const leftLocal = leftViewport - wrapRect.left; // traducir a coords del contenedor
+          this.pop.style.left = leftLocal + 'px';
+          this.pop.style.top = (this.input.offsetTop + this.input.offsetHeight + 6) + 'px';
+          this.pop.querySelector('.dp-day.selected')?.focus({preventScroll:true});
+        };
+      }
+    })();
   </script>
 </body>
 </html>
