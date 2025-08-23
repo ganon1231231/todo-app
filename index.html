@@ -271,6 +271,15 @@
         .task-actions { display: flex; gap: 6px; align-items: center; }
         .task-actions .iconbtn { width: 32px; height: 32px; }
         .task-actions .handle { cursor: grab; opacity: 0.4; }
+        
+        .iconbtn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
 
         /* Filtros y Estadísticas (Aside) */
         fieldset {
@@ -909,6 +918,9 @@
                                 </div>
                             </div>
                             <div class="task-actions">
+                                <button class="iconbtn breakdownBtn" title="✨ Desglosar Tarea con IA">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.8 0 1.5.7 1.5 1.5S12.8 6 12 6s-1.5-.7-1.5-1.5S11.2 3 12 3zM5 11c.8 0 1.5.7 1.5 1.5S5.8 14 5 14s-1.5-.7-1.5-1.5S4.2 11 5 11zM19 11c.8 0 1.5.7 1.5 1.5S19.8 14 19 14s-1.5-.7-1.5-1.5S18.2 11 19 11zM12 18c.8 0 1.5.7 1.5 1.5S12.8 21 12 21s-1.5-.7-1.5-1.5S11.2 18 12 18z"/></svg>
+                                </button>
                                 <button class="iconbtn deleteBtn" title="Eliminar"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 3H8l1-3Z"/></svg></button>
                                 ${this.state.settings.orderMode === 'manual' ? `<span class="handle" title="Arrastrar"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 4h4v2h-4V4Zm0 14h4v2h-4v-2ZM10 9h4v2h-4V9Zm0 5h4v2h-4v-2Z"/></svg></span>` : ''}
                             </div>
@@ -1126,6 +1138,65 @@
                 const id = taskEl.dataset.id;
                 if (e.target.closest('.checkbox')) this.handleToggleComplete(id);
                 if (e.target.closest('.deleteBtn')) this.handleDeleteTask(id);
+                if (e.target.closest('.breakdownBtn')) this.handleBreakdownTask(id, e.target.closest('.breakdownBtn'));
+            },
+
+            async handleBreakdownTask(id, btnEl) {
+                const task = this.state.tasks.find(t => t.id === id);
+                if (!task) return;
+
+                btnEl.classList.add('loading');
+                btnEl.disabled = true;
+
+                const prompt = `You are a helpful productivity assistant. A user has a large task and needs it broken down into smaller, actionable sub-tasks.
+                Main Task Title: "${task.title}"
+                Main Task Description: "${task.description || 'No description provided.'}"
+                Please generate a list of 2 to 5 sub-tasks. Each sub-task should be a clear, concise action item.`;
+
+                const schema = {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            "title": { "type": "STRING" }
+                        },
+                        required: ["title"]
+                    }
+                };
+
+                try {
+                    const subTasks = await this.utils.callGemini(prompt, schema);
+                    if (!subTasks || !Array.isArray(subTasks) || subTasks.length === 0) {
+                        throw new Error("Invalid response from AI.");
+                    }
+
+                    const now = new Date().toISOString();
+                    const newTasks = subTasks.map((sub, index) => ({
+                        id: this.utils.uid(),
+                        title: `${sub.title}`,
+                        description: `Sub-tarea de "${task.title}"`,
+                        completed: false,
+                        category: task.category,
+                        priority: task.priority,
+                        dueDate: task.dueDate,
+                        tags: task.tags,
+                        createdAt: now,
+                        updatedAt: now,
+                        orderIndex: (task.orderIndex || Date.now()) + 0.1 + (index * 0.01)
+                    }));
+
+                    this.state.tasks.push(...newTasks);
+                    this.saveState();
+                    this.render();
+                    this.utils.toast(`✨ Tarea desglosada en ${newTasks.length} sub-tareas.`);
+
+                } catch (error) {
+                    console.error("Error breaking down task:", error);
+                    this.utils.toast("No se pudo desglosar la tarea.", "danger");
+                } finally {
+                    btnEl.classList.remove('loading');
+                    btnEl.disabled = false;
+                }
             },
 
             handleToggleComplete(id) {
@@ -1287,6 +1358,53 @@
                 debounce(fn, wait) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; },
                 randomColor: () => `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`,
                 
+                async callGemini(prompt, schema) {
+                    const apiKey = ""; // Provided by the environment
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const payload = {
+                        contents: [{ role: "user", parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: schema
+                        }
+                    };
+
+                    let response;
+                    let attempts = 0;
+                    const maxAttempts = 5;
+                    let delay = 1000;
+
+                    while (attempts < maxAttempts) {
+                        try {
+                            response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+
+                            if (response.ok) {
+                                const result = await response.json();
+                                if (result.candidates && result.candidates.length > 0 &&
+                                    result.candidates[0].content && result.candidates[0].content.parts &&
+                                    result.candidates[0].content.parts.length > 0) {
+                                    return JSON.parse(result.candidates[0].content.parts[0].text);
+                                }
+                            }
+                        } catch (error) {
+                            console.error("Gemini API call failed on attempt", attempts + 1, error);
+                        }
+
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Exponential backoff
+                        }
+                    }
+
+                    throw new Error("Failed to get a valid response from Gemini API after multiple attempts.");
+                },
+
                 // --- MODAL UTILITIES ---
                 confirm(title, body) {
                     return this._createModal({ title, body, type: 'confirm' });
