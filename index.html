@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale-1" />
     <title>Things to Do — Jordan</title>
     <style>
         /* --- 1. Variables y Diseño Global (Tokens) --- */
@@ -331,224 +331,60 @@
             font-weight: 600;
         }
 
-        /* DatePicker - TOTALMENTE REESCRITO Y MEJORADO */
-        .dp-wrapper { position: relative; }
-        .dp-wrapper .dp-input-row {
-            display: flex;
-            align-items: center;
-            gap: 0;
-        }
-        .dp-wrapper input {
-            border-radius: var(--radius-md) 0 0 var(--radius-md);
-            border-right: none;
-        }
-        .dp-wrapper #openCalendar {
-            border-radius: 0 var(--radius-md) var(--radius-md) 0;
-            border-left: 1px solid var(--border);
-        }
-
+        /* --- ESTILOS DEL DATEPICKER CORREGIDOS --- */
         .dp-popover {
-            position: fixed;
-            z-index: 999;
-            background: var(--panel);
+            position: absolute; /* JS lo posicionará de forma inteligente */
+            z-index: 1000;
+            background-color: var(--panel); 
             border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
-            width: 360px;
-            max-width: calc(100vw - 24px);
-            animation: dpSlideIn 0.2s ease-out;
-            backdrop-filter: blur(8px);
-            overflow: hidden;
+            border-radius: var(--radius-lg); 
+            padding: 12px; 
+            box-shadow: var(--shadow-lg);
+            width: 320px;
+            /* Inicia invisible, JS lo mostrará */
+            display: none; 
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
-
-        @keyframes dpSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-8px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+        .dp-popover.visible {
+            display: block;
+            opacity: 1;
         }
-
-        .dp {
-            padding: 20px;
-        }
-
-        .dp-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .dp-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--text);
-            text-align: center;
-            flex: 1;
-            margin: 0 12px;
-        }
-
-        .dp-nav {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            background: var(--input);
-            border: 1px solid var(--border);
-            color: var(--muted);
-            font-size: 16px;
-            font-weight: bold;
-            transition: all var(--transition-base);
-        }
-        .dp-nav:hover {
-            background: var(--border);
-            color: var(--text);
-            border-color: var(--primary);
-        }
-
-        .dp-weekdays {
+        .dp { display: grid; gap: 10px; }
+        .dp-header { display: flex; align-items: center; justify-content: space-between; }
+        .dp-title { font-weight: 600; }
+        .dp-nav { width: 32px; height: 32px; }
+        
+        .dp-week, .dp-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 8px;
-            padding: 0 4px;
         }
-        .dp-weekday {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--muted);
+        .dp-week {
+            font-size: 0.75rem; 
+            color: var(--muted); 
             text-align: center;
-            padding: 8px 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
         }
-
-        .dp-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 16px;
-            padding: 0 4px;
+        .dp-grid { 
+            gap: 4px; 
         }
 
         .dp-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radius-md);
-            background: transparent;
-            border: 1px solid transparent;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all var(--transition-base);
-            color: var(--text);
-            position: relative;
+            aspect-ratio: 1/1; display: grid; place-items: center; padding: 0;
+            border: 1px solid transparent; background-color: var(--input);
+            border-radius: var(--radius-md); cursor: pointer;
+        }
+        .dp-day:hover { background-color: var(--border); }
+        .dp-day.today { border-color: var(--primary); }
+        .dp-day.selected { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .dp-day.outside { opacity: 0.35; pointer-events: none; }
+        
+        .dp-time { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr) auto auto; 
+            gap: var(--spacing-unit); 
+            align-items: flex-end; 
         }
 
-        .dp-day:hover:not(.dp-day-outside) {
-            background: var(--border);
-            border-color: var(--primary);
-        }
-
-        .dp-day.dp-day-today {
-            background: color-mix(in srgb, var(--primary), transparent 85%);
-            color: var(--primary);
-            font-weight: 700;
-            border-color: var(--primary);
-        }
-
-        .dp-day.dp-day-selected {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            font-weight: 700;
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary), transparent 70%);
-        }
-
-        .dp-day.dp-day-outside {
-            color: var(--muted);
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .dp-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0 -20px 16px;
-        }
-
-        .dp-time {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .dp-time-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .dp-time-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-
-        .dp-time-input {
-            height: 36px;
-            font-size: 1rem;
-            font-weight: 600;
-            text-align: center;
-            background: var(--input);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            color: var(--text);
-        }
-
-        .dp-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-        .dp-btn {
-            height: 36px;
-            padding: 0 16px;
-            border-radius: var(--radius-md);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-base);
-            border: 1px solid var(--border);
-        }
-
-        .dp-btn.dp-btn-clear {
-            background: transparent;
-            color: var(--muted);
-        }
-        .dp-btn.dp-btn-clear:hover {
-            background: var(--border);
-            color: var(--text);
-        }
-
-        .dp-btn.dp-btn-set {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        .dp-btn.dp-btn-set:hover {
-            background: var(--primary-focus);
-            border-color: var(--primary-focus);
-        }
 
         /* Toasts */
         .toasts { position: fixed; right: 16px; bottom: 16px; display: grid; gap: 8px; z-index: 999; }
@@ -572,26 +408,10 @@
             .app { grid-template-columns: 1fr; }
             aside { position: static; top: auto; }
             header.appbar { position: static; }
-            
-            .dp-popover {
-                width: calc(100vw - 32px);
-                max-height: calc(100vh - 64px);
-                overflow-y: auto;
-            }
         }
-        
         @media (max-width: 640px) {
             .app { padding: var(--spacing-unit); }
             header.appbar { flex-direction: column; align-items: stretch; }
-            
-            .dp {
-                padding: 16px;
-            }
-            
-            .dp-time {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
         }
     </style>
 </head>
@@ -652,13 +472,11 @@
                 </div>
                 <div class="form-group">
                     <label for="dueDate">Fecha Límite</label>
-                    <div class="dp-wrapper">
-                        <div class="dp-input-row">
-                            <input id="dueDate" type="text" class="form-control" placeholder="Seleccionar fecha..." autocomplete="off" readonly />
-                            <button type="button" id="openCalendar" class="iconbtn" aria-label="Abrir calendario">
-                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1h3V2Zm14 7H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9ZM7 13h4v4H7v-4Z"/></svg>
-                            </button>
-                        </div>
+                    <div class="form-row">
+                        <input id="dueDate" type="text" class="form-control" placeholder="Opcional..." autocomplete="off" />
+                        <button type="button" id="openCalendar" class="iconbtn" aria-label="Abrir calendario">
+                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1h3V2Zm14 7H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9ZM7 13h4v4H7v-4Z"/></svg>
+                        </button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -675,7 +493,7 @@
                 <h2 class="card-header">Filtros</h2>
                 <div class="form-group">
                     <fieldset>
-                        <legend>Estado</legend>
+                        <legend>ESTADO</legend>
                         <div class="filter-radios" role="radiogroup">
                             <label><input type="radio" name="state" value="all" checked> Todas</label>
                             <label><input type="radio" name="state" value="pending"> Pendientes</label>
@@ -685,11 +503,11 @@
                 </div>
                 <div class="form-row">
                      <div class="form-group">
-                        <label for="filterCategory">Categoría</label>
+                        <label for="filterCategory">CATEGORÍA</label>
                         <select id="filterCategory" class="form-control"></select>
                     </div>
                      <div class="form-group">
-                        <label for="filterPriority">Prioridad</label>
+                        <label for="filterPriority">PRIORIDAD</label>
                         <select id="filterPriority" class="form-control">
                             <option value="all">Todas</option> <option value="high">Alta</option>
                             <option value="medium">Media</option> <option value="low">Baja</option>
@@ -737,51 +555,12 @@
             <div id="listContainer" aria-label="Lista de tareas">
                 </div>
         </main>
+        
+        <div id="dpPopover" class="dp-popover" role="dialog"></div>
 
         <footer>
             <small>Hecho con ❤️ para Jordan • 100% LocalStorage • Sin dependencias</small>
         </footer>
-    </div>
-
-    <!-- DatePicker Popover -->
-    <div id="dpPopover" class="dp-popover" hidden>
-        <div class="dp">
-            <div class="dp-header">
-                <button class="dp-nav" id="dpPrev" aria-label="Mes anterior">‹</button>
-                <div class="dp-title" id="dpTitle">Octubre 2024</div>
-                <button class="dp-nav" id="dpNext" aria-label="Mes siguiente">›</button>
-            </div>
-            
-            <div class="dp-weekdays">
-                <div class="dp-weekday">Lu</div>
-                <div class="dp-weekday">Ma</div>
-                <div class="dp-weekday">Mi</div>
-                <div class="dp-weekday">Ju</div>
-                <div class="dp-weekday">Vi</div>
-                <div class="dp-weekday">Sa</div>
-                <div class="dp-weekday">Do</div>
-            </div>
-            
-            <div class="dp-grid" id="dpGrid"></div>
-            
-            <div class="dp-divider"></div>
-            
-            <div class="dp-time">
-                <div class="dp-time-group">
-                    <label class="dp-time-label">Hora</label>
-                    <input class="dp-time-input" type="number" id="dpHour" min="0" max="23" value="09">
-                </div>
-                <div class="dp-time-group">
-                    <label class="dp-time-label">Minutos</label>
-                    <input class="dp-time-input" type="number" id="dpMin" min="0" max="59" step="5" value="00">
-                </div>
-            </div>
-            
-            <div class="dp-actions">
-                <button class="dp-btn dp-btn-clear" id="dpClear">Limpiar</button>
-                <button class="dp-btn dp-btn-set" id="dpSet">Establecer</button>
-            </div>
-        </div>
     </div>
 
     <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
@@ -794,7 +573,7 @@
             state: {},
             elements: {},
             config: {
-                STORAGE_KEY: 'ttd_jordan_v3',
+                STORAGE_KEY: 'ttd_jordan_v4',
                 DEFAULT_DATA: {
                     tasks: [],
                     categories: [
@@ -814,8 +593,12 @@
                 this.bindEvents();
                 this.render();
                 
-                // Inicializar DatePicker mejorado
-                this.datePicker = new DatePicker();
+                try {
+                    this.datePicker = new DatePicker(this.elements.dueDate, this.elements.dpPopover, {
+                        onSelect: () => this.utils.toast('Fecha establecida 📅'),
+                        onClear: () => this.utils.toast('Fecha borrada')
+                    });
+                } catch(e) { console.error("Error inicializando DatePicker:", e); }
                 
                 setTimeout(() => this.showDueNotifications(), 600);
             },
@@ -831,12 +614,13 @@
                     notifBtn: this.utils.$('#notifBtn'),
                     notifCount: this.utils.$('#notifCount'),
                     searchInput: this.utils.$('#searchInput'),
-                    filterState: this.utils.$('input[name="state"]'),
+                    filterState: this.utils.$$('input[name="state"]'),
                     filterCategory: this.utils.$('#filterCategory'),
                     filterPriority: this.utils.$('#filterPriority'),
                     orderMode: this.utils.$('#orderMode'),
                     viewMode: this.utils.$('#viewMode'),
-                    dueDate: this.utils.$('#dueDate')
+                    dueDate: this.utils.$('#dueDate'),
+                    dpPopover: this.utils.$('#dpPopover')
                 };
             },
 
@@ -1025,7 +809,8 @@
                 this.utils.$('#importFile').addEventListener('change', (e) => this.handleImport(e));
                 this.utils.$('#clearAllBtn').addEventListener('click', () => this.handleClearAll());
                 this.elements.notifBtn.addEventListener('click', () => this.showDueNotifications());
-                
+                this.utils.$('#openCalendar').addEventListener('click', () => this.datePicker.open());
+
                 this.elements.listContainer.addEventListener('click', (e) => this.handleListClick(e));
                 this.elements.listContainer.addEventListener('dragstart', (e) => this.handleDragStart(e));
                 this.elements.listContainer.addEventListener('dragover', (e) => this.handleDragOver(e));
@@ -1038,68 +823,35 @@
                 this.elements.filterPriority.addEventListener('change', () => this.render());
                 this.elements.orderMode.addEventListener('change', (e) => this.handleSettingChange('orderMode', e.target.value));
                 this.elements.viewMode.addEventListener('change', (e) => this.handleSettingChange('viewMode', e.target.value));
-                
-                // DatePicker events
-                this.utils.$('#openCalendar').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this.datePicker.open();
-                });
             },
 
-            handleThemeToggle() {
-                this.state.settings.theme = this.state.settings.theme === 'light' ? 'dark' : 'light';
-                this.applyTheme();
-                this.saveState();
-            },
-            
+            handleThemeToggle() { this.state.settings.theme = this.state.settings.theme === 'light' ? 'dark' : 'light'; this.applyTheme(); this.saveState(); },
             handleAddTask(e) {
-                e.preventDefault();
-                const form = e.target;
-                const title = form.title.value.trim();
-                if (!title) {
-                    this.utils.toast('El título es obligatorio', 'warning');
-                    form.title.focus(); return;
-                }
+                e.preventDefault(); const form = e.target; const title = form.title.value.trim();
+                if (!title) { this.utils.toast('El título es obligatorio', 'warning'); form.title.focus(); return; }
                 const now = new Date().toISOString();
                 const task = {
-                    id: this.utils.uid(), title, completed: false,
-                    description: form.description.value.trim(), category: form.category.value,
-                    priority: form.priority.value,
-                    dueDate: form.dueDate.value ? new Date(form.dueDate.value).toISOString() : null,
-                    tags: form.tags.value.split(',').map(t => t.trim()).filter(Boolean),
-                    createdAt: now, updatedAt: now, orderIndex: Date.now()
+                    id: this.utils.uid(), title, completed: false, description: form.description.value.trim(), category: form.category.value,
+                    priority: form.priority.value, dueDate: form.dueDate.value ? new Date(form.dueDate.value).toISOString() : null,
+                    tags: form.tags.value.split(',').map(t => t.trim()).filter(Boolean), createdAt: now, updatedAt: now, orderIndex: Date.now()
                 };
-                this.state.tasks.push(task);
-                this.saveState(); this.render();
-                this.utils.toast('Tarea agregada ✅');
-                form.reset(); form.title.focus();
+                this.state.tasks.push(task); this.saveState(); this.render(); this.utils.toast('Tarea agregada ✅'); form.reset(); form.title.focus();
             },
-            
             handleAddCategory() {
-                const name = prompt('Nombre de la nueva categoría:');
-                if (!name) return;
-                const exists = this.state.categories.some(c => c.name.toLowerCase() === name.toLowerCase());
-                if (exists) return this.utils.toast('Esa categoría ya existe', 'warning');
-                this.state.categories.push({ name, color: this.utils.randomColor() });
-                this.saveState(); this.ensureCategoryOptions();
+                const name = prompt('Nombre de la nueva categoría:'); if (!name) return;
+                if (this.state.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) return this.utils.toast('Esa categoría ya existe', 'warning');
+                this.state.categories.push({ name, color: this.utils.randomColor() }); this.saveState(); this.ensureCategoryOptions();
                 this.utils.$('#category').value = name; this.utils.toast('Categoría creada');
             },
-
             handleListClick(e) {
-                const taskEl = e.target.closest('.task'); if (!taskEl) return;
-                const id = taskEl.dataset.id;
+                const taskEl = e.target.closest('.task'); if (!taskEl) return; const id = taskEl.dataset.id;
                 if (e.target.closest('.checkbox')) this.handleToggleComplete(id);
                 if (e.target.closest('.deleteBtn')) this.handleDeleteTask(id);
             },
-
             handleToggleComplete(id) {
-                const task = this.state.tasks.find(t => t.id === id); if (!task) return;
-                task.completed = !task.completed;
-                task.updatedAt = new Date().toISOString();
-                if (task.completed) this.updateCompletionStats(task);
-                this.saveState(); this.render();
+                const task = this.state.tasks.find(t => t.id === id); if (!task) return; task.completed = !task.completed;
+                task.updatedAt = new Date().toISOString(); if (task.completed) this.updateCompletionStats(task); this.saveState(); this.render();
             },
-            
             handleDeleteTask(id) {
                 const task = this.state.tasks.find(t => t.id === id);
                 if (confirm(`¿Seguro que quieres eliminar "${task.title}"?`)) {
@@ -1107,336 +859,172 @@
                     this.saveState(); this.render(); this.utils.toast('Tarea eliminada 🗑️');
                 }
             },
-            
             handleExport() {
-                const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'things-to-do.json'; a.click(); URL.revokeObjectURL(url);
+                const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'things-to-do.json'; a.click(); URL.revokeObjectURL(url);
             },
-
             handleImport(e) {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
+                const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
                 reader.onload = (event) => {
                     try {
-                        const data = JSON.parse(event.target.result);
-                        if (!data || !Array.isArray(data.tasks)) throw new Error('Archivo inválido');
-                        this.state = data;
-                        this.saveState(); this.applyTheme(); this.ensureCategoryOptions(); this.render();
+                        const data = JSON.parse(event.target.result); if (!data || !Array.isArray(data.tasks)) throw new Error('Archivo inválido');
+                        this.state = data; this.saveState(); this.applyTheme(); this.ensureCategoryOptions(); this.render();
                         this.utils.toast('Datos importados con éxito ✅');
                     } catch (err) { this.utils.toast('Error al importar el archivo', 'danger'); }
                 };
                 reader.readAsText(file); e.target.value = '';
             },
-
             handleClearAll() {
                 if (confirm('¿ELIMINAR TODAS LAS TAREAS? Esta acción es irreversible.')) {
-                    this.state.tasks = [];
-                    this.state.stats = JSON.parse(JSON.stringify(this.config.DEFAULT_DATA.stats));
+                    this.state.tasks = []; this.state.stats = JSON.parse(JSON.stringify(this.config.DEFAULT_DATA.stats));
                     this.saveState(); this.render(); this.utils.toast('Todas las tareas han sido eliminadas.');
                 }
             },
-            
-            handleSettingChange(key, value) {
-                this.state.settings[key] = value;
-                this.saveState(); this.render();
-            },
-
+            handleSettingChange(key, value) { this.state.settings[key] = value; this.saveState(); this.render(); },
             draggedEl: null,
-            handleDragStart(e) {
-                if (this.state.settings.orderMode !== 'manual') return;
-                this.draggedEl = e.target.closest('.task');
-                this.draggedEl.classList.add('dragging');
-            },
+            handleDragStart(e) { if (this.state.settings.orderMode !== 'manual') return; this.draggedEl = e.target.closest('.task'); this.draggedEl.classList.add('dragging'); },
             handleDragOver(e) {
                 e.preventDefault(); if (this.state.settings.orderMode !== 'manual') return;
                 const overEl = e.target.closest('.task');
-                if (overEl && overEl !== this.draggedEl) {
-                    this.utils.$('.task.over').forEach(el => el.classList.remove('over'));
-                    overEl.classList.add('over');
-                }
+                if (overEl && overEl !== this.draggedEl) { this.utils.$$('.task.over').forEach(el => el.classList.remove('over')); overEl.classList.add('over'); }
             },
             handleDragLeave(e) { const el = e.target.closest('.task'); if (el) el.classList.remove('over'); },
             handleDrop(e) {
-                e.preventDefault(); if (!this.draggedEl) return;
-                const dropTarget = e.target.closest('.task');
-                this.draggedEl.classList.remove('dragging');
-                this.utils.$('.task.over').forEach(el => el.classList.remove('over'));
+                e.preventDefault(); if (!this.draggedEl) return; const dropTarget = e.target.closest('.task'); this.draggedEl.classList.remove('dragging');
+                this.utils.$$('.task.over').forEach(el => el.classList.remove('over'));
                 if (dropTarget && dropTarget !== this.draggedEl) {
-                    const srcId = this.draggedEl.dataset.id, dstId = dropTarget.dataset.id;
-                    const tasks = this.state.tasks;
+                    const srcId = this.draggedEl.dataset.id, dstId = dropTarget.dataset.id; const tasks = this.state.tasks;
                     const srcIdx = tasks.findIndex(t => t.id === srcId), dstIdx = tasks.findIndex(t => t.id === dstId);
                     const [item] = tasks.splice(srcIdx, 1); tasks.splice(dstIdx, 0, item);
-                    tasks.forEach((t, i) => t.orderIndex = i);
-                    this.saveState(); this.render();
+                    tasks.forEach((t, i) => t.orderIndex = i); this.saveState(); this.render();
                 }
                 this.draggedEl = null;
             },
-            
             getFilteredTasks() {
                 let tasks = [...this.state.tasks];
-                const q = this.elements.searchInput.value.toLowerCase();
-                const stateFilter = this.utils.$('input[name="state"]:checked').value;
-                const cat = this.elements.filterCategory.value;
-                const pr = this.elements.filterPriority.value;
+                const q = this.elements.searchInput.value.toLowerCase(); const stateFilter = this.utils.$('input[name="state"]:checked').value;
+                const cat = this.elements.filterCategory.value; const pr = this.elements.filterPriority.value;
                 if (q) tasks = tasks.filter(t => [t.title, t.description, ...(t.tags || [])].join(' ').toLowerCase().includes(q));
-                if (stateFilter === 'pending') tasks = tasks.filter(t => !t.completed);
-                if (stateFilter === 'completed') tasks = tasks.filter(t => t.completed);
-                if (cat !== 'all') tasks = tasks.filter(t => t.category === cat);
-                if (pr !== 'all') tasks = tasks.filter(t => t.priority === pr);
-
+                if (stateFilter === 'pending') tasks = tasks.filter(t => !t.completed); if (stateFilter === 'completed') tasks = tasks.filter(t => t.completed);
+                if (cat !== 'all') tasks = tasks.filter(t => t.category === cat); if (pr !== 'all') tasks = tasks.filter(t => t.priority === pr);
                 if (this.state.settings.orderMode === 'manual') {
                     tasks.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
                 } else {
                     tasks.sort((a, b) => {
-                        if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                        const prio = { high: 3, medium: 2, low: 1 };
+                        if (a.completed !== b.completed) return a.completed ? 1 : -1; const prio = { high: 3, medium: 2, low: 1 };
                         if (prio[b.priority] !== prio[a.priority]) return prio[b.priority] - prio[a.priority];
                         const da = a.dueDate ? new Date(a.dueDate) : Infinity, db = b.dueDate ? new Date(b.dueDate) : Infinity;
-                        if (da !== db) return da - db;
-                        return new Date(a.createdAt) - new Date(b.createdAt);
+                        if (da !== db) return da - db; return new Date(a.createdAt) - new Date(b.createdAt);
                     });
                 }
                 return tasks;
             },
-            
             updateCompletionStats(task) {
-                const { stats } = this.state;
-                const today = new Date();
-                const ymd = today.toISOString().slice(0, 10);
+                const { stats } = this.state; const today = new Date(); const ymd = today.toISOString().slice(0, 10);
                 if (stats.lastCompleteDate) {
-                    const prev = new Date(stats.lastCompleteDate);
-                    const diffDays = Math.floor((today - prev) / 864e5);
+                    const prev = new Date(stats.lastCompleteDate); const diffDays = Math.floor((today - prev) / 864e5);
                     if (diffDays === 1) stats.streak++; else if (diffDays > 1) stats.streak = 1;
                 } else { stats.streak = 1; }
-                stats.lastCompleteDate = ymd;
-                stats.completedTotal++;
+                stats.lastCompleteDate = ymd; stats.completedTotal++;
                 if (task.dueDate && new Date(task.dueDate) > new Date()) { stats.earlyCompletions++; }
             },
-            
             utils: {
-                $: (sel, el = document) => el.querySelector(sel),
-                $: (sel, el = document) => Array.from(el.querySelectorAll(sel)),
+                $: (sel, el = document) => el.querySelector(sel), $$: (sel, el = document) => Array.from(el.querySelectorAll(sel)),
                 uid: () => Math.random().toString(36).slice(2) + Date.now().toString(36),
                 escapeHTML: (str = '') => str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[m])),
                 niceDate: (iso) => !iso ? '—' : new Intl.RelativeTimeFormat('es', { numeric: 'auto' }).format(Math.round((new Date(iso)-new Date())/864e5), 'day'),
-                isOverdue: iso => iso && new Date(iso) < new Date(),
-                isSoon: iso => iso && (new Date(iso) - new Date() <= 864e5 && new Date(iso) > new Date()),
+                isOverdue: iso => iso && new Date(iso) < new Date(), isSoon: iso => iso && (new Date(iso) - new Date() <= 864e5 && new Date(iso) > new Date()),
                 isToday: iso => iso && new Date(iso).toDateString() === new Date().toDateString(),
                 isTomorrow: iso => { if (!iso) return false; const t = new Date(); t.setDate(t.getDate() + 1); return new Date(iso).toDateString() === t.toDateString(); },
                 isNext7Days: iso => iso && new Date(iso) > new Date() && new Date(iso) - new Date() <= 7 * 864e5,
                 isFuture: iso => iso && new Date(iso) - new Date() > 7 * 864e5,
                 toast(msg, type = 'success') {
-                    const t = document.createElement('div');
-                    t.className = `toast ${type}`; t.textContent = msg;
-                    document.getElementById('toasts').appendChild(t);
-                    document.getElementById('a11yLive').textContent = msg;
+                    const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
+                    document.getElementById('toasts').appendChild(t); document.getElementById('a11yLive').textContent = msg;
                     setTimeout(() => t.remove(), 2500);
                 },
                 debounce(fn, wait) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; },
                 randomColor: () => `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`
             }
         };
-        
-        // DatePicker completamente reescrito y mejorado
+
         class DatePicker {
-            constructor() {
-                this.input = document.getElementById('dueDate');
-                this.popover = document.getElementById('dpPopover');
-                this.currentDate = new Date();
-                this.selectedDate = null;
-                this.isVisible = false;
-                this.bind();
+            constructor(inputEl, popoverEl, options = {}) {
+                this.input = inputEl; this.popover = popoverEl; this.options = options; this.visible = false;
+                document.body.appendChild(this.popover); this.build(); this.bind();
             }
-
-            bind() {
-                // Elementos del popover
-                this.titleEl = document.getElementById('dpTitle');
-                this.gridEl = document.getElementById('dpGrid');
-                this.hourEl = document.getElementById('dpHour');
-                this.minEl = document.getElementById('dpMin');
-                this.prevBtn = document.getElementById('dpPrev');
-                this.nextBtn = document.getElementById('dpNext');
-                this.clearBtn = document.getElementById('dpClear');
-                this.setBtn = document.getElementById('dpSet');
-
-                // Event listeners
-                this.prevBtn.addEventListener('click', () => this.navigateMonth(-1));
-                this.nextBtn.addEventListener('click', () => this.navigateMonth(1));
-                this.clearBtn.addEventListener('click', () => this.clear());
-                this.setBtn.addEventListener('click', () => this.setDate());
-                
-                this.gridEl.addEventListener('click', (e) => this.handleDayClick(e));
-                
-                // Close on outside click
-                document.addEventListener('click', (e) => {
-                    if (this.isVisible && !this.popover.contains(e.target) && !e.target.closest('#openCalendar') && e.target !== this.input) {
-                        this.close();
-                    }
-                });
-
-                // Close on escape
-                document.addEventListener('keydown', (e) => {
-                    if (this.isVisible && e.key === 'Escape') {
-                        this.close();
-                    }
-                });
+            build() {
+                this.popover.innerHTML = `
+                    <div class="dp">
+                        <div class="dp-header">
+                            <button type="button" class="iconbtn dp-nav prev" aria-label="Mes anterior">◀</button>
+                            <div class="dp-title"></div>
+                            <button type="button" class="iconbtn dp-nav next" aria-label="Mes siguiente">▶</button>
+                        </div>
+                        <div class="dp-week">Lu Ma Mi Ju Vi Sa Do</div>
+                        <div class="dp-grid"></div>
+                        <div class="dp-time">
+                            <div class="form-group" style="margin:0;"><label>Hora</label><input class="form-control" type="number" min="0" max="23" id="dpHour"></div>
+                            <div class="form-group" style="margin:0;"><label>Min</label><input class="form-control" type="number" min="0" max="59" step="5" id="dpMin"></div>
+                            <button type="button" class="btn ghost clearBtn">Limpiar</button>
+                            <button type="button" class="btn primary setBtn">OK</button>
+                        </div>
+                    </div>`;
+                this.grid = this.popover.querySelector('.dp-grid'); this.titleEl = this.popover.querySelector('.dp-title');
+                this.hourEl = this.popover.querySelector('#dpHour'); this.minEl = this.popover.querySelector('#dpMin');
             }
-
-            open() {
-                // Parse current input value
-                if (this.input.value) {
-                    const date = new Date(this.input.value);
-                    if (!isNaN(date)) {
-                        this.selectedDate = date;
-                        this.currentDate = new Date(date.getFullYear(), date.getMonth(), 1);
-                        this.hourEl.value = String(date.getHours()).padStart(2, '0');
-                        this.minEl.value = String(Math.floor(date.getMinutes() / 5) * 5).padStart(2, '0');
-                    }
-                } else {
-                    this.selectedDate = null;
-                    this.currentDate = new Date();
-                    this.currentDate.setDate(1);
-                    this.hourEl.value = '09';
-                    this.minEl.value = '00';
-                }
-
-                this.render();
-                this.position();
-                this.popover.hidden = false;
-                this.isVisible = true;
-            }
-
-            close() {
-                this.popover.hidden = true;
-                this.isVisible = false;
-            }
-
-            position() {
-                const inputRect = this.input.getBoundingClientRect();
-                const popoverRect = this.popover.getBoundingClientRect();
-                const viewport = {
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                };
-
-                let top = inputRect.bottom + 8;
-                let left = inputRect.left;
-
-                // Adjust if popover goes off screen
-                if (left + popoverRect.width > viewport.width) {
-                    left = viewport.width - popoverRect.width - 16;
-                }
-                if (left < 16) {
-                    left = 16;
-                }
-
-                if (top + popoverRect.height > viewport.height) {
-                    top = inputRect.top - popoverRect.height - 8;
-                }
-
-                this.popover.style.top = `${top + window.scrollY}px`;
-                this.popover.style.left = `${left + window.scrollX}px`;
-            }
-
-            render() {
-                this.renderTitle();
-                this.renderGrid();
-            }
-
-            renderTitle() {
-                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                
-                this.titleEl.textContent = `${monthNames[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
-            }
-
             renderGrid() {
-                const year = this.currentDate.getFullYear();
-                const month = this.currentDate.getMonth();
-                
-                // First day of month and how many days
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                const daysInMonth = lastDay.getDate();
-                
-                // Start date (might be from previous month)
-                const startDay = (firstDay.getDay() + 6) % 7; // Convert to Monday = 0
-                const startDate = new Date(firstDay);
-                startDate.setDate(firstDay.getDate() - startDay);
-                
+                const y = this.viewDate.getFullYear(), m = this.viewDate.getMonth(); const first = new Date(y, m, 1);
+                const startDay = (first.getDay() + 6) % 7; const startDate = new Date(first); startDate.setDate(1 - startDay);
+                const title = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(first);
+                this.titleEl.textContent = title.charAt(0).toUpperCase() + title.slice(1);
                 let html = '';
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                
-                // Generate 6 weeks (42 days)
                 for (let i = 0; i < 42; i++) {
-                    const date = new Date(startDate);
-                    date.setDate(startDate.getDate() + i);
-                    
-                    const isCurrentMonth = date.getMonth() === month;
-                    const isToday = date.getTime() === today.getTime();
-                    const isSelected = this.selectedDate && 
-                        date.getFullYear() === this.selectedDate.getFullYear() &&
-                        date.getMonth() === this.selectedDate.getMonth() &&
-                        date.getDate() === this.selectedDate.getDate();
-                    
-                    const classes = ['dp-day'];
-                    if (!isCurrentMonth) classes.push('dp-day-outside');
-                    if (isToday) classes.push('dp-day-today');
-                    if (isSelected) classes.push('dp-day-selected');
-                    
-                    html += `<button class="${classes.join(' ')}" data-date="${date.toISOString()}">${date.getDate()}</button>`;
+                    const d = new Date(startDate); d.setDate(startDate.getDate() + i); const classes = ['dp-day'];
+                    if (d.getMonth() !== m) classes.push('outside');
+                    if (d.toDateString() === new Date().toDateString()) classes.push('today');
+                    if (this.selDate && d.toDateString() === this.selDate.toDateString()) classes.push('selected');
+                    html += `<button type="button" class="${classes.join(' ')}" data-date="${d.toISOString()}">${d.getDate()}</button>`;
                 }
-                
-                this.gridEl.innerHTML = html;
+                this.grid.innerHTML = html;
             }
-
-            handleDayClick(e) {
-                const dayBtn = e.target.closest('.dp-day');
-                if (!dayBtn || dayBtn.classList.contains('dp-day-outside')) return;
-                
-                const date = new Date(dayBtn.dataset.date);
-                this.selectedDate = date;
-                this.render();
+            bind() {
+                this.popover.addEventListener('click', e => {
+                    const dayBtn = e.target.closest('.dp-day');
+                    if (dayBtn) { this.selDate = new Date(dayBtn.dataset.date); this.updateTime(); this.renderGrid(); }
+                    if (e.target.closest('.setBtn')) this.setDate(); if (e.target.closest('.prev')) this.navigateMonth(-1);
+                    if (e.target.closest('.next')) this.navigateMonth(1); if (e.target.closest('.clearBtn')) this.clear();
+                });
+                [this.hourEl, this.minEl].forEach(el => el.addEventListener('change', () => this.updateTime()));
+                document.addEventListener('keydown', e => { if (this.visible && e.key === 'Escape') this.close(); });
+                document.addEventListener('click', e => {
+                    if (this.visible && !this.popover.contains(e.target) && e.target !== this.input && !e.target.closest('#openCalendar')) {
+                        this.close();
+                    }
+                });
             }
-
-            navigateMonth(direction) {
-                this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-                this.render();
+            open() {
+                if (this.visible) return this.close();
+                const seed = this.parse(this.input.value) || new Date();
+                this.selDate = this.parse(this.input.value); this.viewDate = new Date(seed.getFullYear(), seed.getMonth(), 1);
+                this.hourEl.value = String(seed.getHours()).padStart(2,'0'); this.minEl.value = String(seed.getMinutes() - (seed.getMinutes()%5)).padStart(2,'0');
+                this.renderGrid(); this.popover.classList.add('visible'); this.visible = true;
+                const inputRect = this.input.getBoundingClientRect(); const popoverHeight = this.popover.offsetHeight;
+                const popoverWidth = this.popover.offsetWidth; let top, left = inputRect.left;
+                if (inputRect.bottom + popoverHeight > window.innerHeight && inputRect.top - popoverHeight > 0) {
+                    top = inputRect.top + window.scrollY - popoverHeight - 8;
+                } else { top = inputRect.top + window.scrollY + inputRect.height + 8; }
+                if (left + popoverWidth > window.innerWidth) { left = window.innerWidth - popoverWidth - 8; }
+                if (left < 8) left = 8;
+                this.popover.style.top = `${top}px`; this.popover.style.left = `${left}px`;
             }
-
-            setDate() {
-                if (!this.selectedDate) {
-                    this.selectedDate = new Date();
-                }
-                
-                // Apply time
-                const hours = parseInt(this.hourEl.value) || 0;
-                const minutes = parseInt(this.minEl.value) || 0;
-                
-                this.selectedDate.setHours(hours, minutes, 0, 0);
-                
-                // Format for input
-                const formatted = this.selectedDate.getFullYear() + '-' +
-                    String(this.selectedDate.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(this.selectedDate.getDate()).padStart(2, '0') + 'T' +
-                    String(this.selectedDate.getHours()).padStart(2, '0') + ':' +
-                    String(this.selectedDate.getMinutes()).padStart(2, '0');
-                
-                this.input.value = formatted;
-                App.utils.toast('Fecha establecida 📅');
-                this.close();
-            }
-
-            clear() {
-                this.input.value = '';
-                this.selectedDate = null;
-                this.render();
-                App.utils.toast('Fecha borrada');
-                this.close();
-            }
+            close() { this.popover.classList.remove('visible'); this.visible = false; }
+            format(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+            parse(s) { const d = new Date(s); return isNaN(d) ? null : d; }
+            setDate() { if (!this.selDate) this.selDate = new Date(); this.updateTime(); this.input.value = this.format(this.selDate); if (this.options.onSelect) this.options.onSelect(); this.close(); }
+            updateTime() { if (!this.selDate) return; const h = parseInt(this.hourEl.value) || 0; const m = parseInt(this.minEl.value) || 0; this.selDate.setHours(h, m); }
+            navigateMonth(dir) { this.viewDate.setMonth(this.viewDate.getMonth() + dir); this.renderGrid(); }
+            clear() { this.input.value = ''; this.selDate = null; if (this.options.onClear) this.options.onClear(); this.close(); }
         }
 
         App.init();
