@@ -493,9 +493,10 @@
 
         .dp-time {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 8px;
             margin-bottom: 16px;
+            align-items: flex-end;
         }
 
         .dp-time-group {
@@ -621,7 +622,7 @@
             }
             
             .dp-time {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr 1fr auto;
                 gap: 8px;
             }
         }
@@ -801,11 +802,18 @@
             <div class="dp-time">
                 <div class="dp-time-group">
                     <label class="dp-time-label" for="dpHour">Hora</label>
-                    <input class="dp-time-input" type="number" id="dpHour" min="0" max="23" value="09">
+                    <input class="dp-time-input" type="number" id="dpHour" min="1" max="12" value="9">
                 </div>
                 <div class="dp-time-group">
                     <label class="dp-time-label" for="dpMin">Minutos</label>
                     <input class="dp-time-input" type="number" id="dpMin" min="0" max="59" step="5" value="00">
+                </div>
+                <div class="dp-time-group">
+                    <label class="dp-time-label" for="dpAmPm">&nbsp;</label>
+                    <select id="dpAmPm" class="form-control dp-time-input" style="height: 36px; padding: 0 8px;">
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                    </select>
                 </div>
             </div>
             
@@ -827,7 +835,7 @@
             state: {},
             elements: {},
             config: {
-                STORAGE_KEY: 'ttd_jordan_v3',
+                STORAGE_KEY: 'ttd_jordan_v4', // Incremented version to avoid conflicts
                 DEFAULT_DATA: {
                     tasks: [],
                     categories: [
@@ -847,7 +855,7 @@
                 this.bindEvents();
                 this.render();
                 
-                // Inicializar DatePicker mejorado
+                // Initialize DatePicker
                 this.datePicker = new DatePicker();
                 
                 setTimeout(() => this.showDueNotifications(), 600);
@@ -1331,15 +1339,28 @@
                     if (!iso) return { text: '', classes: '' };
                     const date = new Date(iso);
                     const now = new Date();
-                    const diffDays = (date.setHours(0,0,0,0) - now.setHours(0,0,0,0)) / 864e5;
-                    const rtf = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
-                    let text = rtf.format(diffDays, 'day');
-                    if (Math.abs(diffDays) > 6) {
-                        text = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(date);
+                    
+                    const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+
+                    const tomorrow = new Date();
+                    tomorrow.setDate(now.getDate() + 1);
+
+                    let dayText = '';
+                    if (isSameDay(date, now)) {
+                        dayText = 'Hoy, ';
+                    } else if (isSameDay(date, tomorrow)) {
+                        dayText = 'Mañana, ';
+                    } else {
+                        dayText = new Intl.DateTimeFormat('es', { month: 'short', day: 'numeric' }).format(date) + ', ';
                     }
+
+                    const timeText = new Intl.DateTimeFormat('es', { hour: 'numeric', minute: 'numeric', hour12: true }).format(date);
+                    const text = dayText + timeText;
+
                     let classes = '';
-                    if (diffDays < 0) classes = 'overdue';
-                    else if (diffDays < 2) classes = 'soon';
+                    if (date < new Date()) classes = 'overdue';
+                    else if (date - now < 864e5 * 2) classes = 'soon'; // Within 2 days
+                    
                     return { text, classes };
                 },
                 isOverdue: iso => iso && new Date(iso) < new Date(),
@@ -1474,6 +1495,7 @@
                 this.gridEl = document.getElementById('dpGrid');
                 this.hourEl = document.getElementById('dpHour');
                 this.minEl = document.getElementById('dpMin');
+                this.ampmEl = document.getElementById('dpAmPm');
                 this.prevBtn = document.getElementById('dpPrev');
                 this.nextBtn = document.getElementById('dpNext');
                 this.clearBtn = document.getElementById('dpClear');
@@ -1509,15 +1531,23 @@
                     if (!isNaN(date)) {
                         this.selectedDate = date;
                         this.currentDate = new Date(date.getFullYear(), date.getMonth(), 1);
-                        this.hourEl.value = String(date.getHours()).padStart(2, '0');
-                        this.minEl.value = String(Math.floor(date.getMinutes() / 5) * 5).padStart(2, '0');
+                        
+                        let hours = date.getHours();
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        hours = hours % 12;
+                        hours = hours ? hours : 12; // the hour '0' should be '12'
+                        
+                        this.hourEl.value = hours;
+                        this.minEl.value = String(date.getMinutes()).padStart(2, '0');
+                        this.ampmEl.value = ampm;
                     }
                 } else {
                     this.selectedDate = null;
                     const now = new Date();
                     this.currentDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                    this.hourEl.value = '09';
+                    this.hourEl.value = '9';
                     this.minEl.value = '00';
+                    this.ampmEl.value = 'AM';
                 }
 
                 this.render();
@@ -1634,13 +1664,21 @@
                     this.selectedDate = new Date();
                 }
                 
-                const hours = parseInt(this.hourEl.value) || 0;
+                let hours = parseInt(this.hourEl.value) || 12;
                 const minutes = parseInt(this.minEl.value) || 0;
+                const ampm = this.ampmEl.value;
+
+                if (ampm === 'PM' && hours < 12) {
+                    hours += 12;
+                }
+                if (ampm === 'AM' && hours === 12) { // Midnight case
+                    hours = 0;
+                }
                 
                 this.selectedDate.setHours(hours, minutes, 0, 0);
                 
                 // Set a user-friendly value for display and a machine-readable value for logic
-                this.input.value = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(this.selectedDate);
+                this.input.value = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short', hour12: true }).format(this.selectedDate);
                 this.input.dataset.isoValue = this.selectedDate.toISOString();
                 
                 App.utils.toast('Fecha establecida 📅');
