@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Things to Do — Jordan</title>
+  <style>
+    :root {
+      --bg: #0f1216;
+      --panel: #11161c;
+      --muted: #9aa4b2;
+      --text: #e6ebf2;
+      --primary: #5b8cff;
+      --primary-600: #4976dd;
+      --accent: #15c39a;
+      --danger: #ff6b6b;
+      --warning: #ffbe3d;
+      --success: #2ecc71;
+      --border: #1f2a37;
+      --input: #0b0f14;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .light {
+      --bg: #f7fafc;
+      --panel: #ffffff;
+      --muted: #5b6776;
+      --text: #0b0f14;
+      --primary: #3b82f6;
+      --primary-600: #2563eb;
+      --accent: #0ea5e9;
+      --danger: #e11d48;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --border: #e5e7eb;
+      --input: #f1f5f9;
+      --shadow: 0 10px 25px rgba(2, 6, 23, .08);
+    }
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; background: var(--bg); color: var(--text); }
+    .app { display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr auto; gap: 16px; max-width: 1200px; margin: 0 auto; padding: 16px; }
+    header.appbar { grid-column: 1 / -1; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; position: sticky; top: 8px; z-index: 5; box-shadow: var(--shadow); }
+    .appbar .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .2px; }
+    .brand svg { width: 28px; height: 28px }
+    .pill { background: var(--input); color: var(--muted); padding: 6px 10px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); }
+    .search { flex: 1; position: relative; }
+    .search input { width: 100%; border-radius: 12px; padding: 10px 36px 10px 36px; background: var(--input); border: 1px solid var(--border); color: var(--text); outline: none; }
+    .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; opacity: .7; }
+    .iconbtn { appearance: none; border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 12px; padding: 8px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: transform .05s ease, background .2s ease; }
+    .iconbtn:hover { background: color-mix(in srgb, var(--input), var(--panel) 50%); }
+    .iconbtn:active { transform: translateY(1px) }
+    .toggle { display: inline-flex; align-items: center; gap: 8px; }
+
+    .layout { display: contents }
+    aside { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; height: fit-content; position: sticky; top: 82px; align-self: start; }
+    main { display: grid; gap: 16px; }
+
+    fieldset { border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin: 0 0 12px 0; }
+    fieldset legend { padding: 0 8px; color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    label { font-size: 12px; color: var(--muted); display: block; margin: 4px 0 6px; }
+    .row { display: flex; gap: 8px; }
+    .col { display: grid; gap: 8px; }
+    .grid { display: grid; gap: 8px; grid-template-columns: repeat(12, 1fr) }
+
+    .control, select, textarea, input[type="text"], input[type="datetime-local"], input[type="color"] { width: 100%; background: var(--input); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; outline: none; }
+    textarea { min-height: 70px; resize: vertical }
+
+    /* Form Add */
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+
+    .btn { appearance: none; border: none; background: var(--primary); color: white; padding: 10px 14px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+    .btn.secondary { background: var(--accent) }
+    .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border) }
+    .btn.danger { background: var(--danger) }
+
+    /* Task list */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .toolbar .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .toolbar .filters select { max-width: 180px }
+
+    ul.tasks { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .task { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 10px; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; transition: outline .2s ease, background .2s ease; }
+    .task[draggable="true"] { cursor: grab }
+    .task.dragging { opacity: .5; outline: 2px dashed var(--primary) }
+    .task.over { outline: 2px dashed var(--primary) }
+
+    .checkbox { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); display: inline-grid; place-items: center; background: var(--input); cursor: pointer; }
+    .checkbox svg { width: 16px; height: 16px; opacity: 0; transition: opacity .12s ease }
+    .task.completed .checkbox { background: color-mix(in srgb, var(--success), var(--input) 30%); border-color: var(--success) }
+    .task.completed .checkbox svg { opacity: 1 }
+
+    .task-main { display: grid; gap: 2px; }
+    .task-title { font-weight: 700; line-height: 1.2; }
+    .task-title[contenteditable="true"], .task-desc[contenteditable="true"] { outline: 2px solid var(--primary); border-radius: 6px; padding: 2px 4px; }
+    .task-desc { color: var(--muted); font-size: 13px; }
+
+    .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .badge { font-size: 11px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--input); color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; border: 1px solid #0002 }
+    .prio.high { background: color-mix(in srgb, var(--danger), transparent 80%); color: #ff7f8a }
+    .prio.med { background: color-mix(in srgb, var(--warning), transparent 85%); color: #ffc168 }
+    .prio.low { background: color-mix(in srgb, var(--accent), transparent 85%); color: #78e0cf }
+    .due.overdue { color: var(--danger); font-weight: 700 }
+    .due.soon { color: var(--warning); font-weight: 700 }
+
+    .task-actions { display: flex; gap: 6px; align-items: center; }
+    .handle { cursor: grab; opacity: .6; }
+    .handle svg, .task-actions button svg { width: 18px; height: 18px }
+    .task-actions button { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 8px; border-radius: 10px; cursor: pointer; }
+    .task-actions button:hover { background: var(--input) }
+
+    /* Group by date */
+    .group { display: grid; gap: 8px; }
+    .group h3 { margin: 8px 4px 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+    /* Stats */
+    .stats { display: grid; gap: 12px; }
+    .progress { height: 12px; border-radius: 999px; background: var(--input); border: 1px solid var(--border); overflow: hidden; }
+    .progress > div { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0% }
+    .stat-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+    .catbars { display: grid; gap: 8px; }
+    .catbar { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; align-items: center; }
+    .catbar .bar { height: 8px; border-radius: 999px; background: var(--input); border: 1px solid var(--border); overflow: hidden; }
+    .catbar .bar > div { height: 100% }
+
+    .achievements { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge-ach { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px dashed var(--border); background: var(--panel); }
+
+    /* Toasts */
+    .toasts { position: fixed; right: 16px; bottom: 16px; display: grid; gap: 8px; z-index: 999; }
+    .toast { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 12px; box-shadow: var(--shadow); animation: slideIn .25s ease; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+
+    /* Responsive */
+    @media (max-width: 960px) { .app { grid-template-columns: 1fr } aside { position: static } header.appbar { position: static } }
+
+    /* Focus ring */
+    :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px }
+  
+    /* Datepicker */
+    .muted{ color: var(--muted); font-size:12px }
+    .dp-wrapper{ position: relative; display:flex; align-items:center; gap:6px }
+    .dp-popover{ position:absolute; z-index: 10; top:100%; left:0; margin-top:6px; background: var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow: var(--shadow); width: 320px; }
+    .dp{ display:grid; gap:8px }
+    .dp-header{ display:flex; align-items:center; justify-content:space-between }
+    .dp-title{ font-weight:700; text-transform:capitalize }
+    .dp-nav{ background: var(--input); border:1px solid var(--border); border-radius:10px; padding:4px 8px; cursor:pointer }
+    .dp-week{ font-size:12px; color: var(--muted); display:grid; grid-template-columns: repeat(7,1fr); gap:4px; padding: 0 2px }
+    .dp-grid{ display:grid; grid-template-columns: repeat(7,1fr); gap:4px }
+    .dp-day{ border:1px solid var(--border); background: var(--input); color: var(--text); border-radius:10px; padding:8px; cursor:pointer }
+    .dp-day.today{ outline:2px dashed var(--primary-600) }
+    .dp-day.selected, .dp-day:focus-visible{ outline:2px solid var(--primary) }
+    .dp-day.outside{ opacity:.45 }
+    .dp-time{ display:grid; grid-template-columns: repeat(2, auto) 1fr auto auto; gap:8px; align-items:center }
+    .dp-time input{ width:64px }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="appbar" role="banner">
+      <div class="row" aria-label="Barra superior">
+        <div class="brand" aria-label="Marca">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm1 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-3 3h4a1 1 0 0 1 1 1v8h-2v-3h-2v3H8v-8a1 1 0 0 1 1-1Z"/></svg>
+          <span>Things to Do</span>
+          <span class="pill" id="summaryPill" aria-live="polite">0 pendientes</span>
+        </div>
+        <div class="search" role="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 5 1.5-1.5-5-5ZM9.5 14A4.5 4.5 0 1 1 14 9.5 4.505 4.505 0 0 1 9.5 14Z"/></svg>
+          <label class="sr" for="searchInput">Buscar tareas</label>
+          <input id="searchInput" type="text" placeholder="Buscar por título, descripción o etiquetas…" aria-label="Buscar tareas" />
+        </div>
+        <div class="toggle" role="group" aria-label="Controles">
+          <button class="iconbtn" id="notifBtn" aria-label="Notificaciones de vencimiento">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V9a6 6 0 1 0-12 0v7l-2 2v1h16v-1l-2-2Z"/></svg>
+            <span id="notifCount" class="pill">0</span>
+          </button>
+          <button class="iconbtn" id="themeToggle" aria-pressed="false" aria-label="Cambiar tema claro/oscuro">
+            <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1 7 7 0 1 0 7 7 1 1 0 0 1 1-1 9 9 0 1 1-9-9Z"/></svg>
+            <span>Modo</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <aside aria-label="Panel lateral de filtros y estadísticas">
+      <form id="addForm" class="card" aria-labelledby="addTitle">
+        <h2 id="addTitle" style="margin:0 0 8px; font-size:16px">Nueva tarea</h2>
+        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap:8px">
+          <div style="grid-column: span 12">
+            <label for="title">Título *</label>
+            <input class="control" id="title" type="text" required placeholder="Ej. Estudiar capítulo de neumología" />
+          </div>
+          <div style="grid-column: span 12">
+            <label for="description">Descripción</label>
+            <textarea id="description" placeholder="Detalles adicionales" ></textarea>
+          </div>
+          <div style="grid-column: span 6">
+            <label for="category">Categoría</label>
+            <div class="row">
+              <select id="category" aria-label="Seleccionar categoría"></select>
+              <button type="button" id="addCategoryBtn" class="iconbtn" title="Nueva categoría" aria-label="Crear categoría">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2h5Z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="grid-column: span 6">
+            <label for="priority">Prioridad</label>
+            <select id="priority">
+              <option value="high">Alta</option>
+              <option value="medium" selected>Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
+          <div style="grid-column: span 12">
+            <label for="dueDate">Fecha límite</label>
+            <div class="dp-wrapper">
+            <input id="dueDate" type="text" inputmode="numeric" placeholder="YYYY-MM-DDTHH:mm" aria-describedby="dueHelp" autocomplete="off" />
+            <button type="button" id="openCalendar" class="iconbtn" aria-label="Abrir calendario" aria-haspopup="dialog" title="Abrir calendario">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1h3V2Zm14 7H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9ZM7 13h4v4H7v-4Z"/></svg>
+            </button>
+            <div id="dpPopover" class="dp-popover" role="dialog" aria-modal="true" aria-labelledby="dpLabel" hidden></div>
+          </div>
+          <small id="dueHelp" class="muted">Formato: <code>AAAA-MM-DDTHH:mm</code> o usa el calendario</small>
+          </div>
+          <div style="grid-column: span 12">
+            <label for="recurring">Recurrencia</label>
+            <select id="recurring">
+              <option value="none" selected>Sin recurrencia</option>
+              <option value="daily">Diaria</option>
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </div>
+          <div style="grid-column: span 12">
+            <label for="tags">Etiquetas (separadas por comas)</label>
+            <input id="tags" type="text" placeholder="ej. examen, cardio, guía ESC" />
+          </div>
+          <div style="grid-column: span 12">
+            <label for="notes">Notas / Enlaces</label>
+            <textarea id="notes" placeholder="Puedes pegar enlaces http(s):// y se convertirán en vínculos"></textarea>
+          </div>
+          <div style="grid-column: span 12; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <button class="btn" type="submit">Agregar</button>
+            <button type="button" class="btn ghost" id="clearForm">Limpiar</button>
+            <select id="templates" aria-label="Plantillas" title="Plantillas de tareas comunes"></select>
+            <button type="button" class="btn secondary" id="applyTemplate">Usar plantilla</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="card" style="margin-top:12px">
+        <h2 style="margin:0 0 12px; font-size:16px">Vista & Filtros</h2>
+        <fieldset>
+          <legend>Estado</legend>
+          <div class="row" role="radiogroup" aria-label="Filtro por estado">
+            <label><input type="radio" name="state" value="all" checked> Todas</label>
+            <label><input type="radio" name="state" value="pending"> Pendientes</label>
+            <label><input type="radio" name="state" value="completed"> Completadas</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Filtrar</legend>
+          <div class="col">
+            <label for="filterCategory">Categoría</label>
+            <select id="filterCategory"></select>
+            <label for="filterPriority">Prioridad</label>
+            <select id="filterPriority">
+              <option value="all" selected>Todas</option>
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Orden y Vista</legend>
+          <div class="col">
+            <label for="orderMode">Orden</label>
+            <select id="orderMode">
+              <option value="auto" selected>Automático (prioridad & fecha)</option>
+              <option value="manual">Manual (drag & drop)</option>
+            </select>
+            <label for="viewMode">Vista</label>
+            <select id="viewMode">
+              <option value="list" selected>Lista</option>
+              <option value="date">Por fecha</option>
+            </select>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="card stats" aria-live="polite">
+        <div class="stat-row"><strong>Progreso</strong><span id="progressText">0%</span></div>
+        <div class="progress" aria-label="Barra de progreso"><div id="progressBar"></div></div>
+        <div class="stat-row"><span>Pendientes</span><strong id="pendingCount">0</strong></div>
+        <div class="stat-row"><span>Completadas</span><strong id="completedCount">0</strong></div>
+        <div class="stat-row"><span>Total</span><strong id="totalCount">0</strong></div>
+        <div>
+          <strong>Por categoría</strong>
+          <div class="catbars" id="catBars"></div>
+        </div>
+        <div>
+          <strong>Logros</strong>
+          <div class="achievements" id="achievements"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="card toolbar" role="region" aria-label="Barra de tareas">
+        <div class="filters">
+          <span class="pill" id="orderHint">Orden automático activo</span>
+        </div>
+        <div class="row" style="gap:6px">
+          <button class="iconbtn" id="exportBtn" title="Exportar JSON" aria-label="Exportar tareas como JSON">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 20h14v-2H5v2Zm7-16-5 5h3v4h4v-4h3l-5-5Z"/></svg>
+            Exportar
+          </button>
+          <label class="iconbtn" for="importFile" title="Importar JSON" style="cursor:pointer">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 20h14v-2H5v2Zm7-14v4h4l-5 5-5-5h4V6h2Z"/></svg>
+            Importar <input id="importFile" type="file" accept="application/json" style="display:none" />
+          </label>
+          <button class="iconbtn" id="clearAllBtn" title="Vaciar lista" aria-label="Eliminar todas las tareas">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 3H8l1-3Z"/></svg>
+            Vaciar
+          </button>
+        </div>
+      </div>
+
+      <div id="listContainer" class="card" role="region" aria-label="Lista de tareas">
+        <!-- Lista/render dinámico -->
+      </div>
+    </main>
+
+    <footer style="grid-column:1/-1; text-align:center; color:var(--muted); padding:8px">
+      <small>Hecho con ❤ para Jordan • 100% localStorage • Accesible • Sin dependencias</small>
+    </footer>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+  <div class="sr" id="a11yLive" aria-live="polite" style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden">Actualizaciones de la aplicación</div>
+
+  <script>
+    // Utilidades
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+    const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const escapeHTML = (str='') => str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+    const formatDate = d => d ? new Date(d).toLocaleString() : '';
+    const niceDate = (iso) => {
+      if (!iso) return '—';
+      const d = new Date(iso), now = new Date();
+      const diffMs = d - now; const abs = Math.abs(diffMs);
+      const days = Math.floor(abs / 86400000); const hours = Math.floor((abs % 86400000)/3600000);
+      const inPast = diffMs < 0;
+      if (days === 0) return (inPast? 'Hace ' : 'En ') + (hours ? hours + ' h' : Math.ceil(abs/60000) + ' min');
+      return (inPast? 'Hace ' : 'En ') + days + ' d';
+    };
+    const isOverdue = iso => iso && new Date(iso) < new Date();
+    const isSoon = iso => {
+      if (!iso) return false; const d = new Date(iso).getTime(); const now = Date.now();
+      return d >= now && d - now <= 24*3600*1000; // dentro de 24h
+    };
+    const prioScore = p => p==='high'?3:p==='medium'?2:1;
+
+    // Persistencia
+    const STORAGE_KEY = 'ttd_jordan_v1';
+    const DEFAULT_DATA = {
+      tasks: [],
+      categories: [
+        { name: 'Personal', color: '#8b5cf6' },
+        { name: 'Estudio', color: '#22c55e' },
+        { name: 'Trabajo', color: '#3b82f6' },
+        { name: 'Salud', color: '#f97316' }
+      ],
+      settings: { theme: 'dark', orderMode: 'auto', viewMode: 'list' },
+      stats: { completedTotal: 0, streak: 0, lastCompleteDate: null, earlyCompletions: 0 }
+    };
+
+    let state = load();
+    function load(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(DEFAULT_DATA); }
+      catch { return structuredClone(DEFAULT_DATA); }
+    }
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    // Tema
+    const applyTheme = () => {
+      const prefer = state.settings.theme;
+      const root = document.body;
+      if (prefer === 'light') root.classList.add('light');
+      else root.classList.remove('light');
+      $('#themeToggle').setAttribute('aria-pressed', prefer==='light');
+      $('#themeIcon').innerHTML = prefer==='light'
+        ? '<path fill="currentColor" d="M6.76 4.84l-1.8-1.79L3.17 4.84 4.96 6.6 6.76 4.84Zm10.48 0 1.79-1.79 1.79 1.79-1.79 1.76-1.79-1.76ZM12 4a8 8 0 1 0 8 8 8.009 8.009 0 0 0-8-8Z"/>'
+        : '<path fill="currentColor" d="M9.37 5.51A7 7 0 1 0 18.49 14.63 8 8 0 0 1 9.37 5.51Z"/>';
+    };
+
+    // Categorías
+    function ensureCategoryOptions(){
+      const catSel = $('#category'); const filterCat = $('#filterCategory');
+      const opts = ['<option value="">(Sin categoría)</option>'].concat(state.categories.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`)).join('');
+      catSel.innerHTML = opts; filterCat.innerHTML = '<option value="all">Todas</option>' + state.categories.map(c=>`<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join('');
+    }
+    function addCategoryFlow(){
+      const name = prompt('Nombre de la nueva categoría:');
+      if (!name) return;
+      const color = prompt('Color (hex, ej. #22c55e):', '#22c55e');
+      const exists = state.categories.some(c => c.name.toLowerCase() === name.toLowerCase());
+      if (exists) return toast('Esa categoría ya existe');
+      state.categories.push({ name, color: color||'#22c55e' }); save(); ensureCategoryOptions();
+      $('#category').value = name; renderStats(); toast('Categoría creada');
+    }
+    function colorForCategory(name){
+      const c = state.categories.find(c => c.name === name);
+      if (c) return c.color;
+      if (!name) return '#64748b';
+      // fallback determinístico
+      let h = 0; for (let i=0; i<name.length; i++) h = (h*31 + name.charCodeAt(i)) % 360;
+      return `hsl(${h} 70% 50%)`;
+    }
+
+    // Plantillas
+    const TEMPLATES = [
+      { title:'Estudiar 1h (respiratorio)', description:'Revisar guía GINA/GOLD. Resumen rápido.', category:'Estudio', priority:'high', tags:['estudio','neumo'], notes:'', recurring:'daily' },
+      { title:'Pago de servicios', description:'Agua, luz, internet', category:'Personal', priority:'medium', tags:['finanzas'], notes:'', recurring:'monthly' },
+      { title:'Ejercicio 30 min', description:'Cardio suave + estiramientos', category:'Salud', priority:'medium', tags:['salud'], notes:'', recurring:'daily' },
+      { title:'Revisión de correos', description:'Responder pendientes importantes', category:'Trabajo', priority:'low', tags:['trabajo'], notes:'', recurring:'daily' }
+    ];
+
+    // Inicializar selects de plantilla
+    function initTemplates(){
+      const sel = $('#templates'); sel.innerHTML = '<option value="">Plantillas…</option>' + TEMPLATES.map((t,i)=>`<option value="${i}">${escapeHTML(t.title)}</option>`).join('');
+    }
+
+    // Crear tarea
+    function createTaskFromForm(){
+      const title = $('#title').value.trim(); if (!title) { toast('El título es obligatorio'); $('#title').focus(); return; }
+      const description = $('#description').value.trim();
+      const category = $('#category').value.trim();
+      const priority = $('#priority').value;
+      const dueDate = $('#dueDate').value ? new Date($('#dueDate').value).toISOString() : null;
+      const tags = $('#tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+      const notes = $('#notes').value.trim();
+      const recurringSel = $('#recurring').value;
+      const recurring = recurringSel==='none' ? false : { frequency: recurringSel, interval: 1 };
+      const now = new Date().toISOString();
+      const task = { id: uid(), title, description, category, priority, dueDate, completed: false, createdAt: now, updatedAt: now, tags, notes, recurring, orderIndex: Date.now() };
+      state.tasks.push(task); save(); renderAll(); toast('Tarea agregada ✅');
+      if (dueDate && isOverdue(dueDate)) toast('⚠️ La tarea ya está vencida');
+      $('#addForm').reset(); $('#title').focus();
+    }
+
+    // Aplicar plantilla
+    function applyTemplate(){
+      const idx = $('#templates').value; if (idx === '') return;
+      const t = TEMPLATES[Number(idx)]; if (!t) return;
+      $('#title').value = t.title; $('#description').value = t.description; $('#category').value = t.category;
+      $('#priority').value = t.priority; $('#tags').value = t.tags.join(', '); $('#notes').value = t.notes; $('#recurring').value = t.recurring||'none';
+      toast('Plantilla cargada');
+    }
+
+    // Export / Import
+    function exportJSON(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'things-to-do.json'; a.click(); URL.revokeObjectURL(url);
+    }
+    function importJSON(file){
+      const reader = new FileReader(); reader.onload = () => {
+        try { const data = JSON.parse(reader.result);
+          if (!data || !Array.isArray(data.tasks)) throw new Error('Archivo no válido');
+          state = data; save(); renderAll(); toast('Importación exitosa ✅');
+        } catch(e){ toast('Error al importar: ' + e.message); }
+      }; reader.readAsText(file);
+    }
+
+    // Borrar todo
+    function clearAll(){
+      if (!confirm('¿Eliminar TODAS las tareas? Esta acción no se puede deshacer.')) return;
+      state.tasks = []; state.stats = structuredClone(DEFAULT_DATA.stats); save(); renderAll(); toast('Lista vaciada');
+    }
+
+    // Completar tarea y recurrencia
+    function toggleComplete(id){
+      const t = state.tasks.find(x=>x.id===id); if (!t) return;
+      t.completed = !t.completed; t.updatedAt = new Date().toISOString();
+      if (t.completed) {
+        // logros & racha
+        updateCompletionStats(t);
+        // recurrencia
+        if (t.recurring && t.dueDate) {
+          const next = nextDueDate(t.dueDate, t.recurring);
+          const now = new Date().toISOString();
+          const newTask = { ...t, id: uid(), completed:false, createdAt: now, updatedAt: now, dueDate: next, orderIndex: Date.now() };
+          state.tasks.push(newTask);
+          toast('Nueva ocurrencia creada 🔁');
+        }
+      }
+      save(); renderAll();
+    }
+
+    function nextDueDate(iso, rec){
+      const d = new Date(iso); const i = rec.interval||1; const f = rec.frequency;
+      if (f==='daily') d.setDate(d.getDate()+i);
+      else if (f==='weekly') d.setDate(d.getDate()+7*i);
+      else if (f==='monthly') d.setMonth(d.getMonth()+i);
+      return d.toISOString();
+    }
+
+    function updateCompletionStats(task){
+      const today = new Date(); const ymd = today.toISOString().slice(0,10);
+      const last = state.stats.lastCompleteDate; if (last){
+        const prev = new Date(last);
+        const diffDays = Math.floor((today - prev)/86400000);
+        if (diffDays === 1) state.stats.streak += 1;
+        else if (diffDays === 0) {/* mismo día no cambia */}
+        else state.stats.streak = 1;
+      } else { state.stats.streak = 1; }
+      state.stats.lastCompleteDate = ymd; state.stats.completedTotal += 1;
+      if (task.dueDate && new Date(task.dueDate) > new Date()) state.stats.earlyCompletions += 1;
+      save();
+    }
+
+    // Editar inline
+    function enableInlineEdit(el, task, field){
+      el.setAttribute('contenteditable','true'); el.focus();
+      const original = el.textContent;
+      function commit(){
+        const val = el.textContent.trim(); el.removeAttribute('contenteditable');
+        if (val === original) return; task[field] = val; task.updatedAt = new Date().toISOString(); save(); renderAll(); toast('Tarea actualizada ✏️');
+      }
+      function cancel(){ el.textContent = original; el.removeAttribute('contenteditable'); }
+      el.addEventListener('keydown', function onKey(e){
+        if (e.key==='Enter'){ e.preventDefault(); commit(); el.removeEventListener('keydown', onKey); }
+        if (e.key==='Escape'){ e.preventDefault(); cancel(); el.removeEventListener('keydown', onKey); }
+      });
+      el.addEventListener('blur', function onBlur(){ commit(); el.removeEventListener('blur', onBlur); });
+    }
+
+    // Eliminar
+    function removeTask(id){
+      const t = state.tasks.find(x=>x.id===id); if (!t) return;
+      if (!confirm(`¿Eliminar la tarea "${t.title}"?`)) return;
+      state.tasks = state.tasks.filter(x=>x.id!==id); save(); renderAll(); toast('Tarea eliminada 🗑️');
+    }
+
+    // DnD
+    let dragId = null;
+    function setupDrag(el, id){
+      const manual = state.settings.orderMode === 'manual';
+      el.draggable = manual; if (!manual) return;
+      el.addEventListener('dragstart', e=>{ dragId = id; el.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      el.addEventListener('dragend', ()=>{ dragId=null; el.classList.remove('dragging'); $$('.task.over').forEach(x=>x.classList.remove('over')); });
+      el.addEventListener('dragover', e=>{ e.preventDefault(); if (!dragId) return; el.classList.add('over'); });
+      el.addEventListener('dragleave', ()=> el.classList.remove('over'));
+      el.addEventListener('drop', e=>{ e.preventDefault(); el.classList.remove('over'); if (!dragId || dragId===id) return; reorderTasks(dragId, id); });
+    }
+    function reorderTasks(srcId, dstId){
+      const arr = state.tasks; const srcIdx = arr.findIndex(t=>t.id===srcId); const dstIdx = arr.findIndex(t=>t.id===dstId);
+      if (srcIdx<0||dstIdx<0) return; const [item] = arr.splice(srcIdx,1); arr.splice(dstIdx,0,item);
+      // Reasignar orderIndex
+      arr.forEach((t,i)=> t.orderIndex = i+1);
+      save(); renderAll();
+    }
+
+    // Render lista
+    function currentFilters(){
+      const q = $('#searchInput').value.toLowerCase();
+      const stateFilter = $('input[name="state"]:checked').value;
+      const cat = $('#filterCategory').value;
+      const pr = $('#filterPriority').value;
+      return { q, stateFilter, cat, pr };
+    }
+
+    function filteredTasks(){
+      const {q, stateFilter, cat, pr} = currentFilters();
+      let arr = state.tasks.slice();
+      // Buscar
+      if (q){ arr = arr.filter(t => (t.title+" "+t.description+" "+(t.tags||[]).join(' ')).toLowerCase().includes(q)); }
+      // Estado
+      if (stateFilter==='pending') arr = arr.filter(t=>!t.completed);
+      if (stateFilter==='completed') arr = arr.filter(t=>t.completed);
+      // Categoría
+      if (cat && cat!=='all') arr = arr.filter(t=> t.category===cat);
+      // Prioridad
+      if (pr && pr!=='all') arr = arr.filter(t=> t.priority===pr);
+
+      // Orden
+      if (state.settings.orderMode==='manual') arr.sort((a,b)=> (a.orderIndex||0) - (b.orderIndex||0));
+      else {
+        arr.sort((a,b)=> {
+          const c1 = (a.completed?-1:1) - (b.completed?-1:1); if (c1!==0) return -c1; // pendientes primero
+          const p = prioScore(b.priority) - prioScore(a.priority); if (p!==0) return p; // alta primero
+          const da = a.dueDate? new Date(a.dueDate).getTime() : Infinity;
+          const db = b.dueDate? new Date(b.dueDate).getTime() : Infinity;
+          if (da!==db) return da-db;
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        });
+      }
+      return arr;
+    }
+
+    function renderList(){
+      const container = $('#listContainer');
+      const tasks = filteredTasks();
+      const manual = state.settings.orderMode==='manual';
+      $('#orderHint').textContent = manual? 'Orden manual (arrastrar para reordenar)' : 'Orden automático activo';
+      // Notificaciones de vencimiento
+      const dueSoon = tasks.filter(t=>!t.completed && (isOverdue(t.dueDate) || isSoon(t.dueDate)));
+      $('#notifCount').textContent = dueSoon.length;
+
+      const buildTask = (t) => {
+        const catColor = colorForCategory(t.category);
+        const overdue = isOverdue(t.dueDate), soon = isSoon(t.dueDate);
+        const li = document.createElement('div'); li.className = 'task' + (t.completed?' completed':''); li.setAttribute('role','listitem'); li.id = 'task-'+t.id;
+        li.innerHTML = `
+          <button class="checkbox" aria-label="Alternar completado">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 7 9 18l-5-5 1.5-1.5L9 15l9.5-9.5L20 7Z"/></svg>
+          </button>
+          <div class="task-main">
+            <div class="task-title" title="Doble clic para editar título">${escapeHTML(t.title)}</div>
+            <div class="task-desc" title="Doble clic para editar descripción">${escapeHTML(t.description||'')}</div>
+            <div class="meta">
+              <span class="badge" title="Categoría"><span class="dot" style="background:${catColor}"></span>${escapeHTML(t.category||'General')}</span>
+              <span class="badge prio ${t.priority==='high'?'high':t.priority==='medium'?'med':'low'}" title="Prioridad">${t.priority==='high'?'Alta':t.priority==='medium'?'Media':'Baja'}</span>
+              <span class="badge due ${overdue?'overdue':(soon?'soon':'')}" title="Fecha límite">${t.dueDate? new Date(t.dueDate).toLocaleString() : 'Sin fecha'} • ${t.dueDate? niceDate(t.dueDate):''}</span>
+              ${(t.tags||[]).map(tag=>`<span class="badge" title="Etiqueta">#${escapeHTML(tag)}</span>`).join('')}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button class="editBtn" title="Editar inline" aria-label="Editar">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82Z"/></svg>
+            </button>
+            <button class="deleteBtn" title="Eliminar" aria-label="Eliminar">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 3H8l1-3Z"/></svg>
+            </button>
+            <span class="handle" title="Arrastrar para reordenar" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 4h4v2h-4V4Zm0 14h4v2h-4v-2ZM10 9h4v2h-4V9Zm0 5h4v2h-4v-2Z"/></svg>
+            </span>
+          </div>`;
+        // Eventos
+        $('.checkbox', li).addEventListener('click', ()=> toggleComplete(t.id));
+        $('.deleteBtn', li).addEventListener('click', ()=> removeTask(t.id));
+        $('.editBtn', li).addEventListener('click', ()=> {
+          enableInlineEdit($('.task-title', li), t, 'title');
+          enableInlineEdit($('.task-desc', li), t, 'description');
+        });
+        $('.task-title', li).addEventListener('dblclick', ()=> enableInlineEdit($('.task-title', li), t, 'title'));
+        $('.task-desc', li).addEventListener('dblclick', ()=> enableInlineEdit($('.task-desc', li), t, 'description'));
+        setupDrag(li, t.id);
+        return li;
+      };
+
+      // Vista
+      const view = state.settings.viewMode;
+      if (view==='list'){
+        const ul = document.createElement('div'); ul.setAttribute('role','list'); ul.className = 'tasks';
+        tasks.forEach(t => ul.appendChild(buildTask(t)));
+        container.innerHTML = ''; container.appendChild(ul);
+      } else {
+        // Agrupar por fecha
+        const groups = [
+          { key:'overdue', title:'Vencidas', filter: t=> !t.completed && isOverdue(t.dueDate) },
+          { key:'today', title:'Hoy', filter: t=> !t.completed && sameDay(new Date(t.dueDate), new Date()) },
+          { key:'tomorrow', title:'Mañana', filter: t=> !t.completed && sameDay(new Date(t.dueDate), addDays(new Date(),1)) },
+          { key:'week', title:'Esta semana', filter: t=> !t.completed && inNextDays(t.dueDate,7) },
+          { key:'future', title:'Futuro', filter: t=> !t.completed && futureBeyond(t.dueDate,7) },
+          { key:'done', title:'Completadas', filter: t=> t.completed }
+        ];
+        function sameDay(a,b){ if(!a||!b) return false; return a.toDateString()===b.toDateString(); }
+        function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+        function inNextDays(iso, n){ if(!iso) return false; const d=new Date(iso).getTime(); const now=Date.now(); return d>now && d-now<=n*86400000; }
+        function futureBeyond(iso, n){ if(!iso) return false; const d=new Date(iso).getTime(); const now=Date.now(); return d-now>n*86400000; }
+        container.innerHTML = '';
+        groups.forEach(g=>{
+          const arr = tasks.filter(g.filter);
+          if (!arr.length) return;
+          const wrap = document.createElement('div'); wrap.className = 'group';
+          wrap.innerHTML = `<h3>${g.title}</h3>`;
+          const list = document.createElement('div'); list.className = 'tasks'; list.setAttribute('role','list');
+          arr.forEach(t => list.appendChild(buildTask(t)));
+          wrap.appendChild(list); container.appendChild(wrap);
+        });
+      }
+
+      // Resumen
+      const pending = state.tasks.filter(t=>!t.completed).length;
+      $('#summaryPill').textContent = `${pending} pendientes`;
+    }
+
+    // Render estadísticas
+    function renderStats(){
+      const total = state.tasks.length; const completed = state.tasks.filter(t=>t.completed).length; const pending = total - completed;
+      $('#totalCount').textContent = total; $('#completedCount').textContent = completed; $('#pendingCount').textContent = pending;
+      const pct = total? Math.round((completed/total)*100) : 0; $('#progressText').textContent = pct+'%'; $('#progressBar').style.width = pct+'%';
+      // Categorías
+      const counts = new Map();
+      state.tasks.forEach(t=>{ const key = t.category||'General'; counts.set(key, (counts.get(key)||0)+1); });
+      const catBars = $('#catBars'); catBars.innerHTML = '';
+      counts.forEach((count, cat)=>{
+        const div = document.createElement('div'); div.className = 'catbar';
+        const color = colorForCategory(cat);
+        const width = total? Math.round((count/total)*100) : 0;
+        div.innerHTML = `<span class="badge" style="justify-self:start"><span class="dot" style="background:${color}"></span>${escapeHTML(cat)}</span><div class="bar"><div style="width:${width}%; background:${color}"></div></div><strong>${count}</strong>`;
+        catBars.appendChild(div);
+      });
+      // Logros
+      renderAchievements();
+    }
+
+    function renderAchievements(){
+      const cont = $('#achievements'); cont.innerHTML = '';
+      const s = state.stats; const items = [];
+      const thresholds = [1,5,10,25,50,100];
+      thresholds.forEach(th => { if (s.completedTotal>=th) items.push({icon:'🏆', text:`${th} completadas`}); });
+      if (s.streak>=3) items.push({icon:'🔥', text:`Racha ${s.streak} días`});
+      if (s.earlyCompletions>=5) items.push({icon:'⏰', text:`${s.earlyCompletions} a tiempo`});
+      if (!items.length) items.push({icon:'🌱', text:'¡A por el primer logro!'});
+      items.forEach(it=>{
+        const el = document.createElement('span'); el.className = 'badge-ach'; el.textContent = `${it.icon} ${it.text}`; cont.appendChild(el);
+      });
+    }
+
+    // Notificaciones visuales
+    function showDueNotifications(){
+      const list = state.tasks.filter(t=>!t.completed && (isOverdue(t.dueDate)||isSoon(t.dueDate)));
+      if (!list.length) return;
+      const msg = `${list.length} tarea${list.length>1?'s':''} ${list.some(isOverdue)?'vencidas o':''} próximas al vencimiento`;
+      toast(msg);
+    }
+
+    // Toasts
+    function toast(msg){
+      const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; $('#toasts').appendChild(t);
+      $('#a11yLive').textContent = msg;
+      setTimeout(()=>{ t.style.opacity = '0'; t.style.transform = 'translateY(6px)'; setTimeout(()=> t.remove(), 300); }, 2400);
+    }
+
+    // Eventos UI
+    function bindEvents(){
+      $('#addForm').addEventListener('submit', e=>{ e.preventDefault(); createTaskFromForm(); });
+      $('#clearForm').addEventListener('click', ()=> $('#addForm').reset());
+      $('#applyTemplate').addEventListener('click', applyTemplate);
+      $('#addCategoryBtn').addEventListener('click', addCategoryFlow);
+      $('#exportBtn').addEventListener('click', exportJSON);
+      $('#importFile').addEventListener('change', e=>{ const f=e.target.files[0]; if (f) importJSON(f); e.target.value=''; });
+      $('#clearAllBtn').addEventListener('click', clearAll);
+      $('#searchInput').addEventListener('input', debounce(()=> renderList(), 120));
+      $$('input[name="state"]').forEach(r=> r.addEventListener('change', renderList));
+      $('#filterCategory').addEventListener('change', renderList);
+      $('#filterPriority').addEventListener('change', renderList);
+      $('#orderMode').addEventListener('change', e=>{ state.settings.orderMode = e.target.value; save(); renderList(); });
+      $('#viewMode').addEventListener('change', e=>{ state.settings.viewMode = e.target.value; save(); renderList(); });
+      $('#themeToggle').addEventListener('click', ()=>{ state.settings.theme = state.settings.theme==='light' ? 'dark' : 'light'; save(); applyTheme(); });
+      $('#notifBtn').addEventListener('click', showDueNotifications);
+    }
+
+    function debounce(fn, wait){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=> fn(...args), wait); }; }
+
+    // Accesibilidad: atajos simples
+    document.addEventListener('keydown', e=>{
+      if (e.key==='n' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); $('#title').focus(); toast('Enfocado en nueva tarea'); }
+      if (e.key==='/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); $('#searchInput').focus(); }
+    });
+
+    // Inicio
+    function init(){
+      applyTheme(); ensureCategoryOptions(); initTemplates(); bindEvents(); renderAll();
+      // Notificaciones iniciales
+      setTimeout(showDueNotifications, 600);
+    }
+
+    function renderAll(){ renderList(); renderStats(); }
+
+    // Primer render
+    init();
+  
+    /* === Calendario visual (DatePicker) === */
+    class DatePicker{constructor(i,p){this.input=i;this.pop=p;this.visible=false;this.build();this.bind()}pad(n){return String(n).padStart(2,'0')}format(d){return `${d.getFullYear()}-${this.pad(d.getMonth()+1)}-${this.pad(d.getDate())}T${this.pad(d.getHours())}:${this.pad(d.getMinutes())}`}parse(s){if(!s)return null;const d=new Date(s);return isNaN(d)?null:d}build(){this.pop.innerHTML=`<div class="dp" aria-labelledby="dpLabel"><div class="dp-header"><button class="dp-nav prev" aria-label="Mes anterior">◀</button><div class="dp-title" id="dpLabel"></div><button class="dp-nav next" aria-label="Mes siguiente">▶</button></div><div class="dp-week" role="row" aria-hidden="true">Lu Ma Mi Ju Vi Sá Do</div><div class="dp-grid" role="grid" aria-label="Calendario"></div><div class="dp-time"><label>Hora <input id="dpHour" type="number" min="0" max="23" aria-label="Hora"></label><label>Min <input id="dpMin" type="number" min="0" max="59" step="5" aria-label="Minutos"></label><div class="spacer"></div><button class="btn secondary setBtn" type="button">Establecer</button><button class="btn ghost clearBtn" type="button">Quitar fecha</button></div></div>`;this.grid=this.pop.querySelector('.dp-grid');this.titleEl=this.pop.querySelector('.dp-title');this.hourEl=this.pop.querySelector('#dpHour');this.minEl=this.pop.querySelector('#dpMin');const seed=this.parse(this.input.value)||new Date();this.viewDate=new Date(seed.getFullYear(),seed.getMonth(),1);this.selDate=seed;this.hourEl.value=seed.getHours();this.minEl.value=seed.getMinutes()-(seed.getMinutes()%5);this.renderGrid()}renderGrid(){const y=this.viewDate.getFullYear(),m=this.viewDate.getMonth();const first=new Date(y,m,1);const start=new Date(first);const day=(first.getDay()+6)%7;start.setDate(1-day);this.titleEl.textContent=first.toLocaleString(undefined,{month:'long',year:'numeric'});let html='';for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const outside=d.getMonth()!==m;const isToday=(new Date()).toDateString()===d.toDateString();const isSelected=this.selDate&&this.selDate.toDateString()===d.toDateString();html+=`<button class="dp-day ${outside?'outside':''} ${isToday?'today':''} ${isSelected?'selected':''}" role="gridcell" data-date="${d.toISOString()}"><span>${d.getDate()}</span></button>`}this.grid.innerHTML=html}bind(){this.pop.addEventListener('click',e=>{const b=e.target.closest('.dp-day');if(b){const d=new Date(b.dataset.date);const h=clamp(Number(this.hourEl.value)||0,0,23);const mi=clamp(Number(this.minEl.value)||0,0,59);this.selDate=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,mi);this.input.value=this.format(this.selDate);this.renderGrid()}if(e.target.closest('.setBtn')){this.close();this.input.dispatchEvent(new Event('change'));toast('Fecha establecida 📅')}if(e.target.closest('.clearBtn')){this.input.value='';this.close();toast('Fecha borrada')}if(e.target.closest('.prev')){this.viewDate.setMonth(this.viewDate.getMonth()-1);this.renderGrid()}if(e.target.closest('.next')){this.viewDate.setMonth(this.viewDate.getMonth()+1);this.renderGrid()}});document.addEventListener('keydown',this._escHandler=e=>{if(this.visible&&e.key==='Escape'){this.close()}});document.addEventListener('click',this._outsideHandler=e=>{if(this.visible&&!this.pop.contains(e.target)&&e.target!==document.getElementById('openCalendar')&&e.target!==this.input){this.close()}})}open(){const seed=this.parse(this.input.value)||new Date();this.viewDate=new Date(seed.getFullYear(),seed.getMonth(),1);this.selDate=seed;this.hourEl.value=seed.getHours();this.minEl.value=seed.getMinutes()-(seed.getMinutes()%5);this.renderGrid();this.pop.hidden=false;this.visible=true;const wrap=this.input.closest('.dp-wrapper')||this.pop.parentElement;wrap.style.position='relative';this.pop.style.left='0px';this.pop.style.top=(this.input.offsetTop+this.input.offsetHeight+6)+'px';this.pop.querySelector('.dp-day.selected')?.focus({preventScroll:true})}close(){this.pop.hidden=true;this.visible=false}}
+
+    window.addEventListener('load', ()=>{ try{ window._dp = new DatePicker(document.getElementById('dueDate'), document.getElementById('dpPopover')); document.getElementById('openCalendar').addEventListener('click', ()=> window._dp.open()); }catch(e){} });
+  </script>
+</body>
+</html>
