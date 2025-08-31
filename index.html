@@ -1,1702 +1,1428 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Things to Do — Jordan</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamService Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <style>
-        /* --- 1. Variables y Diseño Global (Tokens) --- */
-        :root {
-            --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
-
-            /* Paleta de Colores (Modo Oscuro) */
-            --bg: #111827;      /* Fondo principal (más oscuro) */
-            --panel: #1f2937;   /* Paneles y tarjetas (un poco más claro) */
-            --border: #374151;  /* Bordes y separadores */
-            --text: #f3f4f6;    /* Texto principal */
-            --muted: #9ca3af;   /* Texto secundario y placeholders */
-            --input: #111827;   /* Fondo de inputs */
-            
-            --primary: #60a5fa; /* Azul primario */
-            --primary-focus: #3b82f6;
-            --accent: #34d399;  /* Verde menta */
-            --danger: #f87171;  /* Rojo suave */
-            --warning: #fbbf24; /* Ámbar */
-            
-            --shadow-color: 22, 29, 44;
-            --shadow-sm: 0 1px 2px 0 rgb(var(--shadow-color) / 0.15);
-            --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color) / 0.15), 0 2px 4px -2px rgb(var(--shadow-color) / 0.15);
-            --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color) / 0.2), 0 4px 6px -4px rgb(var(--shadow-color) / 0.2);
-
-            /* Métricas de Diseño */
-            --spacing-unit: 8px;
-            --radius-sm: 6px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        body { font-family: 'Inter', sans-serif; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            transition: opacity 0.3s ease;
         }
-
-        .light {
-            /* Paleta de Colores (Modo Claro) */
-            --bg: #f9fafb;
-            --panel: #ffffff;
-            --border: #e5e7eb;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --input: #f3f4f6;
-
-            --primary: #3b82f6;
-            --primary-focus: #2563eb;
-            --accent: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-
-            --shadow-color: 180, 190, 210;
+        .modal-content {
+            transition: transform 0.3s ease;
         }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        .dark ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
 
-        /* --- 2. Reseteo y Estilos Base --- */
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body { height: 100%; }
-        body {
-            margin: 0;
-            font-family: var(--font-sans);
-            background-color: var(--bg);
-            color: var(--text);
-            transition: background-color var(--transition-base), color var(--transition-base);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        .custom-checkbox {
+            appearance: none; width: 18px; height: 18px; border: 2px solid #d1d5db;
+            border-radius: 4px; background-color: white; position: relative;
+            cursor: pointer; transition: all 0.2s;
         }
-        h1, h2, h3, h4, p, ul { margin: 0; padding: 0; }
-        ul { list-style: none; }
-        button, input, select, textarea { font: inherit; color: inherit; }
-        :focus-visible {
-            outline: 2px solid var(--primary-focus);
-            outline-offset: 2px;
-            border-radius: var(--radius-sm);
-        }
-
-        /* --- 3. Estructura y Layout Principal --- */
-        .app {
-            display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: calc(var(--spacing-unit) * 2);
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: calc(var(--spacing-unit) * 2);
-        }
-
-        header.appbar {
-            grid-column: 1 / -1;
-            background-color: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
-            position: sticky;
-            top: var(--spacing-unit);
-            z-index: 10;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-unit) * 2);
-            transition: background-color var(--transition-base), border-color var(--transition-base);
+        .dark .custom-checkbox { border-color: #4b5563; background-color: #374151; }
+        .custom-checkbox:checked { background-color: #3b82f6; border-color: #3b82f6; }
+        .custom-checkbox:checked::after {
+            content: '✓'; color: white; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); font-size: 12px; font-weight: bold;
         }
         
-        aside {
-            position: sticky;
-            top: 86px; /* Altura de appbar + gap */
-            align-self: start;
-            display: grid;
-            gap: calc(var(--spacing-unit) * 2);
+        #sidebar {
+            transition: width 0.3s ease-in-out;
         }
-
+        #sidebar.collapsed {
+            width: 5rem;
+        }
+        #sidebar.collapsed .nav-text, #sidebar.collapsed .sidebar-toggle-text {
+            display: none;
+        }
+        #sidebar.collapsed .nav-link, #sidebar.collapsed #sidebar-toggle {
+            justify-content: center;
+        }
+        #sidebar #sidebar-toggle-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        #sidebar.collapsed #sidebar-toggle-icon {
+            transform: rotate(180deg);
+        }
         main {
-            display: grid;
-            gap: calc(var(--spacing-unit) * 2);
-            align-content: start;
-        }
-
-        footer {
-            grid-column: 1 / -1;
-            text-align: center;
-            color: var(--muted);
-            padding: var(--spacing-unit);
-            font-size: 0.8rem;
-        }
-
-        /* --- 4. Componentes Reutilizables --- */
-        
-        /* Card */
-        .card {
-            background-color: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: calc(var(--spacing-unit) * 2);
-            box-shadow: var(--shadow-md);
-            transition: all var(--transition-base);
-        }
-        .card-header {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: calc(var(--spacing-unit) * 2);
-        }
-
-        /* Botones */
-        .btn, .iconbtn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-unit);
-            height: 40px;
-            padding: 0 calc(var(--spacing-unit) * 2);
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-base);
-            user-select: none;
-            border: 1px solid transparent;
-        }
-        .iconbtn { width: 40px; padding: 0; flex-shrink: 0; }
-        .btn:active, .iconbtn:active { transform: scale(0.97); }
-        .btn:disabled, .iconbtn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn.primary { background-color: var(--primary); color: white; border-color: var(--primary); }
-        .btn.primary:hover { background-color: var(--primary-focus); border-color: var(--primary-focus); }
-        
-        .btn.secondary { background-color: var(--accent); color: white; border-color: var(--accent); }
-        .btn.secondary:hover { background-color: color-mix(in srgb, var(--accent), #000 10%); border-color: color-mix(in srgb, var(--accent), #000 10%);}
-
-        .btn.ghost, .iconbtn { background-color: transparent; color: var(--muted); border-color: var(--border); }
-        .btn.ghost:hover, .iconbtn:hover { background-color: var(--border); color: var(--text); }
-        
-        .btn.danger { background-color: var(--danger); color: white; border-color: var(--danger); }
-        .btn.danger:hover { background-color: color-mix(in srgb, var(--danger), #000 10%); border-color: color-mix(in srgb, var(--danger), #000 10%);}
-
-        /* Formularios */
-        .form-group { margin-bottom: calc(var(--spacing-unit) * 1.5); }
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--muted);
-            margin-bottom: var(--spacing-unit);
-        }
-        .form-control {
-            width: 100%;
-            height: 40px;
-            background-color: var(--input);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 0 calc(var(--spacing-unit) * 1.5);
-            outline: none;
-            transition: all var(--transition-base);
-        }
-        textarea.form-control { height: auto; min-height: 80px; padding-top: var(--spacing-unit); resize: vertical; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary), transparent 70%); }
-        .form-row { display: flex; gap: var(--spacing-unit); align-items: flex-end; }
-        .form-row > * { flex: 1; }
-
-        /* Pill / Badge */
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background-color: var(--input);
-            border: 1px solid var(--border);
-            color: var(--muted);
-        }
-        .dot { width: 8px; height: 8px; border-radius: 50%; }
-
-        /* --- 5. Componentes Específicos de la App --- */
-        
-        /* Appbar */
-        .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.1rem; }
-        .brand svg { width: 28px; height: 28px; color: var(--primary); }
-        .search { flex: 1; position: relative; min-width: 150px; }
-        .search .form-control { padding-left: 40px; }
-        .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; opacity: 0.5; }
-        .appbar-actions { display: flex; align-items: center; gap: var(--spacing-unit); }
-
-        /* Lista de Tareas */
-        .tasks-list { display: grid; gap: 10px; }
-        .task {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background-color: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            transition: all var(--transition-base);
-            animation: fadeIn 0.3s ease forwards;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .task[draggable="true"] { cursor: grab; }
-        .task.dragging { opacity: 0.5; box-shadow: var(--shadow-lg); }
-        .task.over { outline: 2px dashed var(--primary); }
-
-        .task.completed { opacity: 0.6; }
-        .task.completed .task-title, .task.completed .task-desc { text-decoration: line-through; color: var(--muted); }
-
-        .checkbox {
-            width: 22px; height: 22px;
-            border-radius: var(--radius-sm);
-            border: 2px solid var(--border);
-            display: grid;
-            place-items: center;
-            background-color: var(--input);
-            cursor: pointer;
-            transition: all var(--transition-base);
-        }
-        .checkbox svg { width: 16px; height: 16px; opacity: 0; transform: scale(0.5); transition: all var(--transition-base); }
-        .task.completed .checkbox { background-color: var(--accent); border-color: var(--accent); }
-        .task.completed .checkbox svg { opacity: 1; transform: scale(1); color: white; }
-        
-        .task-main { display: grid; gap: 4px; }
-        .task-title { font-weight: 600; line-height: 1.3; }
-        .task-desc { color: var(--muted); font-size: 0.85rem; }
-        [contenteditable="true"] { outline: 2px solid var(--primary); border-radius: var(--radius-sm); padding: 2px 4px; }
-
-        .meta { display: flex; align-items: center; gap: var(--spacing-unit); flex-wrap: wrap; margin-top: 8px; }
-        .prio.high { background-color: color-mix(in srgb, var(--danger), transparent 85%); color: var(--danger); }
-        .prio.medium { background-color: color-mix(in srgb, var(--warning), transparent 85%); color: var(--warning); }
-        .prio.low { background-color: color-mix(in srgb, var(--accent), transparent 85%); color: var(--accent); }
-        .due.overdue { color: var(--danger); font-weight: 700; }
-        .due.soon { color: var(--warning); font-weight: 700; }
-
-        .task-actions { display: flex; gap: 6px; align-items: center; }
-        .task-actions .iconbtn { width: 32px; height: 32px; }
-        .task-actions .handle { cursor: grab; opacity: 0.4; }
-        
-        .iconbtn.loading svg {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-
-        /* Filtros y Estadísticas (Aside) */
-        fieldset {
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 1.5);
-            margin: 0;
-        }
-        legend {
-            padding: 0 8px;
-            color: var(--muted);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-        }
-        .filter-radios { display: flex; gap: var(--spacing-unit); flex-wrap: wrap; }
-        .filter-radios label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; }
-
-        .stats .stat-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.9rem; margin-bottom: var(--spacing-unit); }
-        .stats .stat-row strong { font-size: 1rem; font-weight: 600; }
-        .progress { height: 12px; border-radius: 999px; background-color: var(--input); border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
-        .progress > div { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.5s ease; }
-        .catbars { display: grid; gap: 8px; }
-        .catbar { display: grid; grid-template-columns: 100px 1fr auto; gap: 8px; align-items: center; font-size: 0.8rem; }
-        .catbar .bar { height: 8px; border-radius: 999px; background-color: var(--input); border: 1px solid var(--border); overflow: hidden; }
-        .catbar .bar > div { height: 100%; transition: width 0.5s ease; }
-        .achievements { display: flex; gap: 8px; flex-wrap: wrap; }
-        .badge-ach {
-            display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
-            border-radius: 999px; border: 1px dashed var(--border);
-            background-color: var(--input); font-size: 0.8rem;
-        }
-
-        /* Toolbar (Main) */
-        .toolbar { 
-            display: flex; 
-            flex-wrap: wrap;
-            align-items: flex-end; 
-            justify-content: space-between; 
-            gap: var(--spacing-unit); 
-        }
-        .toolbar-group {
-            display: flex;
-            gap: var(--spacing-unit);
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        /* Vista por Fecha */
-        .group { display: grid; gap: var(--spacing-unit); }
-        .group h3 {
-            margin: var(--spacing-unit) 0;
-            font-size: 0.8rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            font-weight: 600;
-        }
-
-        /* DatePicker - TOTALMENTE REESCRITO Y MEJORADO */
-        .dp-wrapper { position: relative; }
-        .dp-wrapper .dp-input-row {
-            display: flex;
-            align-items: center;
-            gap: 0;
-        }
-        .dp-wrapper input {
-            border-radius: var(--radius-md) 0 0 var(--radius-md);
-            border-right: none;
-        }
-        .dp-wrapper #openCalendar {
-            border-radius: 0 var(--radius-md) var(--radius-md) 0;
-            border-left: 1px solid var(--border);
-        }
-
-        .dp-popover {
-            position: fixed;
-            z-index: 999;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
-            width: 360px;
-            max-width: calc(100vw - 24px);
-            animation: dpSlideIn 0.2s ease-out;
-            backdrop-filter: blur(8px);
-            overflow: hidden;
-        }
-
-        @keyframes dpSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-8px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .dp {
-            padding: 20px;
-        }
-
-        .dp-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .dp-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--text);
-            text-align: center;
-            flex: 1;
-            margin: 0 12px;
-        }
-
-        .dp-nav {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            background: var(--input);
-            border: 1px solid var(--border);
-            color: var(--muted);
-            font-size: 16px;
-            font-weight: bold;
-            transition: all var(--transition-base);
-        }
-        .dp-nav:hover {
-            background: var(--border);
-            color: var(--text);
-            border-color: var(--primary);
-        }
-
-        .dp-weekdays {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 8px;
-            padding: 0 4px;
-        }
-        .dp-weekday {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-align: center;
-            padding: 8px 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-
-        .dp-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 16px;
-            padding: 0 4px;
-        }
-
-        .dp-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radius-md);
-            background: transparent;
-            border: 1px solid transparent;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all var(--transition-base);
-            color: var(--text);
-            position: relative;
-        }
-
-        .dp-day:hover:not(.dp-day-outside) {
-            background: var(--border);
-            border-color: var(--primary);
-        }
-
-        .dp-day.dp-day-today {
-            background: color-mix(in srgb, var(--primary), transparent 85%);
-            color: var(--primary);
-            font-weight: 700;
-            border-color: var(--primary);
-        }
-
-        .dp-day.dp-day-selected {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            font-weight: 700;
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary), transparent 70%);
-        }
-
-        .dp-day.dp-day-outside {
-            color: var(--muted);
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .dp-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 0 -20px 16px;
-        }
-
-        .dp-time {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
-            gap: 8px;
-            margin-bottom: 16px;
-            align-items: flex-end;
-        }
-
-        .dp-time-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .dp-time-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-
-        .dp-time-input {
-            height: 36px;
-            font-size: 1rem;
-            font-weight: 600;
-            text-align: center;
-            background: var(--input);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            color: var(--text);
-        }
-
-        .dp-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-        .dp-btn {
-            height: 36px;
-            padding: 0 16px;
-            border-radius: var(--radius-md);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-base);
-            border: 1px solid var(--border);
-        }
-
-        .dp-btn.dp-btn-clear {
-            background: transparent;
-            color: var(--muted);
-        }
-        .dp-btn.dp-btn-clear:hover {
-            background: var(--border);
-            color: var(--text);
-        }
-
-        .dp-btn.dp-btn-set {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        .dp-btn.dp-btn-set:hover {
-            background: var(--primary-focus);
-            border-color: var(--primary-focus);
-        }
-
-        /* Toasts */
-        .toasts { position: fixed; right: 16px; bottom: 16px; display: grid; gap: 8px; z-index: 999; }
-        .toast {
-            background-color: var(--panel); border: 1px solid var(--border); color: var(--text);
-            padding: 12px 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
-            animation: slideInUp 0.3s ease, fadeOut 0.3s 2.2s ease forwards;
-        }
-        @keyframes slideInUp { from { opacity: 0; transform: translateY(15px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(5px); } }
-        
-        /* Modal Dialog */
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 1000;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            display: grid; place-items: center;
-            animation: fadeIn 0.2s ease;
-        }
-        .modal-dialog {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: calc(var(--spacing-unit) * 3);
-            box-shadow: var(--shadow-lg);
-            width: 90%; max-width: 400px;
-            animation: slideInUp 0.2s ease;
-        }
-        .modal-title { font-size: 1.2rem; font-weight: 600; margin-bottom: var(--spacing-unit); }
-        .modal-body { color: var(--muted); margin-bottom: calc(var(--spacing-unit) * 3); }
-        .modal-input { width: 100%; margin-bottom: calc(var(--spacing-unit) * 3); }
-        .modal-actions { display: flex; justify-content: flex-end; gap: var(--spacing-unit); }
-
-
-        /* --- 6. Clases de Utilidad y Responsividad --- */
-        .sr-only {
-            position: absolute !important; width: 1px !important; height: 1px !important;
-            padding: 0 !important; margin: -1px !important; overflow: hidden !important;
-            clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
-        }
-        .hidden { display: none !important; }
-
-        @media (max-width: 960px) {
-            .app { grid-template-columns: 1fr; }
-            aside { position: static; top: auto; }
-            header.appbar { position: static; }
-            
-            .dp-popover {
-                width: calc(100vw - 32px);
-                max-height: calc(100vh - 64px);
-                overflow-y: auto;
-            }
-        }
-        
-        @media (max-width: 640px) {
-            .app { padding: var(--spacing-unit); }
-            header.appbar { flex-direction: column; align-items: stretch; }
-            
-            .dp {
-                padding: 16px;
-            }
-            
-            .dp-time {
-                grid-template-columns: 1fr 1fr auto;
-                gap: 8px;
-            }
+            transition: margin-left 0.3s ease-in-out;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+    <div id="app-loader" class="fixed inset-0 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+        <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-lg">Conectando a la base de datos...</p>
+    </div>
 
-    <div class="app" id="app">
-        <header class="appbar" role="banner">
-            <div class="brand">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm1 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-3 3h4a1 1 0 0 1 1 1v8h-2v-3h-2v3H8v-8a1 1 0 0 1 1-1Z"/></svg>
-                <span>Things to Do</span>
-                <span class="pill" id="summaryPill" aria-live="polite">0 pendientes</span>
+    <div id="app-content" class="flex h-screen opacity-0 transition-opacity duration-300">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700 flex flex-col flex-shrink-0">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white"><span class="nav-text">StreamService Pro</span></h1>
             </div>
-            <div class="search" role="search">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 5 1.5-1.5-5-5ZM9.5 14A4.5 4.5 0 1 1 14 9.5 4.505 4.505 0 0 1 9.5 14Z"/></svg>
-                <label class="sr-only" for="searchInput">Buscar tareas</label>
-                <input id="searchInput" class="form-control" type="text" placeholder="Buscar tareas..." />
-            </div>
-            <div class="appbar-actions">
-                <button class="iconbtn" id="notifBtn" aria-label="Notificaciones de vencimiento" title="Notificaciones">
-                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V9a6 6 0 1 0-12 0v7l-2 2v1h16v-1l-2-2Z"/></svg>
-                    <span id="notifCount" class="pill hidden">0</span>
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#dashboard" class="nav-link flex items-center px-3 py-2 rounded-md font-medium bg-slate-200 dark:bg-slate-700">
+                    <svg class="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#clients" class="nav-link flex items-center px-3 py-2 rounded-md font-medium hover:bg-slate-200 dark:hover:bg-slate-700">
+                     <svg class="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 21a6 6 0 006-6v-1a3 3 0 00-3-3H9a3 3 0 00-3 3v1a6 6 0 006 6z"/></svg>
+                     <span class="nav-text">Clientes</span>
+                </a>
+                <a href="#settings" class="nav-link flex items-center px-3 py-2 rounded-md font-medium hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <svg class="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span class="nav-text">Ajustes</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4 flex-shrink-0">
+                 <button id="sidebar-toggle" class="w-full flex items-center px-3 py-2 rounded-md font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <svg id="sidebar-toggle-icon" class="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+                    <span class="sidebar-toggle-text">Contraer</span>
                 </button>
-                <button class="iconbtn" id="themeToggle" aria-pressed="false" aria-label="Cambiar tema" title="Cambiar tema">
-                    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
-                </button>
-            </div>
-        </header>
-
-        <aside aria-label="Panel lateral">
-            <form id="addForm" class="card" aria-labelledby="addTitle">
-                <h2 id="addTitle" class="card-header">Nueva Tarea</h2>
-                <div class="form-group">
-                    <label for="title">Título *</label>
-                    <input class="form-control" id="title" type="text" required placeholder="Ej. Estudiar capítulo..." />
-                </div>
-                <div class="form-group">
-                    <label for="description">Descripción</label>
-                    <textarea id="description" class="form-control" placeholder="Detalles adicionales..."></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="category">Categoría</label>
-                        <div class="form-row">
-                            <select id="category" class="form-control"></select>
-                            <button type="button" id="addCategoryBtn" class="iconbtn" title="Nueva categoría">
-                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V6h2v5h5v2h-5v5h-2v-5H6v-2h5Z"/></svg>
-                            </button>
-                        </div>
+                <label for="dark-mode-toggle" class="flex items-center cursor-pointer">
+                    <div class="relative">
+                        <input type="checkbox" id="dark-mode-toggle" class="sr-only">
+                        <div class="block bg-slate-300 dark:bg-slate-600 w-14 h-8 rounded-full"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
                     </div>
-                    <div class="form-group">
-                        <label for="priority">Prioridad</label>
-                        <select id="priority" class="form-control">
-                            <option value="high">Alta</option>
-                            <option value="medium" selected>Media</option>
-                            <option value="low">Baja</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="dueDate">Fecha Límite</label>
-                    <div class="dp-wrapper">
-                        <div class="dp-input-row">
-                            <input id="dueDate" type="text" class="form-control" placeholder="Seleccionar fecha..." autocomplete="off" readonly />
-                            <button type="button" id="openCalendar" class="iconbtn" aria-label="Abrir calendario">
-                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1h3V2Zm14 7H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9ZM7 13h4v4H7v-4Z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="tags">Etiquetas (separadas por comas)</label>
-                    <input id="tags" class="form-control" type="text" placeholder="ej. examen, cardio" />
-                </div>
-                <div class="form-row" style="align-items: center;">
-                    <button class="btn primary" type="submit">Agregar Tarea</button>
-                    <button type="button" class="btn ghost" id="clearForm">Limpiar</button>
-                </div>
-            </form>
-
-            <div class="card">
-                <h2 class="card-header">Filtros</h2>
-                <div class="form-group">
-                    <fieldset>
-                        <legend>Estado</legend>
-                        <div class="filter-radios" role="radiogroup">
-                            <label><input type="radio" name="state" value="all" checked> Todas</label>
-                            <label><input type="radio" name="state" value="pending"> Pendientes</label>
-                            <label><input type="radio" name="state" value="completed"> Completadas</label>
-                        </div>
-                    </fieldset>
-                </div>
-                <div class="form-row">
-                     <div class="form-group">
-                        <label for="filterCategory">Categoría</label>
-                        <select id="filterCategory" class="form-control"></select>
-                    </div>
-                     <div class="form-group">
-                        <label for="filterPriority">Prioridad</label>
-                        <select id="filterPriority" class="form-control">
-                            <option value="all">Todas</option> <option value="high">Alta</option>
-                            <option value="medium">Media</option> <option value="low">Baja</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card stats" aria-live="polite">
-                <h2 class="card-header">Estadísticas</h2>
-                <div class="stat-row"><strong>Progreso</strong><span id="progressText">0%</span></div>
-                <div class="progress"><div id="progressBar"></div></div>
-                <div id="catBars" class="catbars"></div>
-                <h3 class="card-header" style="font-size: 1rem; margin-top: 16px;">Logros</h3>
-                <div class="achievements" id="achievements"></div>
+                    <div class="ml-3 font-medium nav-text">Modo Oscuro</div>
+                </label>
             </div>
         </aside>
 
-        <main>
-            <div class="card toolbar">
-                <div class="toolbar-group">
-                    <div class="form-group" style="margin:0;">
-                        <label for="orderMode">Ordenar por</label>
-                        <select id="orderMode" class="form-control">
-                            <option value="auto" selected>Automático</option>
-                            <option value="manual">Manual</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <label for="viewMode">Vista</label>
-                        <select id="viewMode" class="form-control">
-                            <option value="list" selected>Lista</option>
-                            <option value="date">Por fecha</option>
-                        </select>
-                    </div>
-                </div>
-                 <div class="toolbar-group">
-                    <button class="btn ghost" id="exportBtn">Exportar</button>
-                    <label class="btn ghost" for="importFile">Importar</label>
-                    <input id="importFile" type="file" accept=".json" class="sr-only" />
-                    <button class="btn danger" id="clearAllBtn">Vaciar</button>
-                </div>
-            </div>
-
-            <div id="listContainer" aria-label="Lista de tareas">
-                </div>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Vistas se renderizarán aquí -->
         </main>
-
-        <footer>
-            <small>Hecho con ❤️ para Jordan • 100% LocalStorage • Sin dependencias</small>
-        </footer>
     </div>
 
-    <!-- DatePicker Popover -->
-    <div id="dpPopover" class="dp-popover" hidden>
-        <div class="dp">
-            <div class="dp-header">
-                <button class="dp-nav" id="dpPrev" aria-label="Mes anterior">‹</button>
-                <div class="dp-title" id="dpTitle">Octubre 2024</div>
-                <button class="dp-nav" id="dpNext" aria-label="Mes siguiente">›</button>
-            </div>
-            
-            <div class="dp-weekdays">
-                <div class="dp-weekday">Lu</div>
-                <div class="dp-weekday">Ma</div>
-                <div class="dp-weekday">Mi</div>
-                <div class="dp-weekday">Ju</div>
-                <div class="dp-weekday">Vi</div>
-                <div class="dp-weekday">Sa</div>
-                <div class="dp-weekday">Do</div>
-            </div>
-            
-            <div class="dp-grid" id="dpGrid"></div>
-            
-            <div class="dp-divider"></div>
-            
-            <div class="dp-time">
-                <div class="dp-time-group">
-                    <label class="dp-time-label" for="dpHour">Hora</label>
-                    <input class="dp-time-input" type="number" id="dpHour" min="1" max="12" value="9">
-                </div>
-                <div class="dp-time-group">
-                    <label class="dp-time-label" for="dpMin">Minutos</label>
-                    <input class="dp-time-input" type="number" id="dpMin" min="0" max="59" step="5" value="00">
-                </div>
-                <div class="dp-time-group">
-                    <label class="dp-time-label" for="dpAmPm">&nbsp;</label>
-                    <select id="dpAmPm" class="form-control dp-time-input" style="height: 36px; padding: 0 8px;">
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="dp-actions">
-                <button class="dp-btn dp-btn-clear" id="dpClear">Limpiar</button>
-                <button class="dp-btn dp-btn-set" id="dpSet">Establecer</button>
-            </div>
-        </div>
-    </div>
+    <!-- Notificación -->
+    <div id="notificacion" class="fixed top-4 right-4 z-50"></div>
+    
+    <!-- Modales -->
+    <div id="client-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 relative max-h-full overflow-y-auto"><form id="client-form" class="p-6"><h3 id="client-modal-title" class="text-xl font-semibold mb-4"></h3><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Nombre del Cliente</label><input type="text" name="name" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div><div><label class="block text-sm font-medium mb-1">WhatsApp (Ej: 5076...)</label><input type="tel" name="phone" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div><label class="block text-sm font-medium mb-1">Crédito Previo ($)</label><input type="number" name="credit" value="0.00" step="0.01" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div><label class="block text-sm font-medium mb-1">Notas Adicionales</label><textarea name="notes" rows="3" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></textarea></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium mb-1">Estado</label><select name="status" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="activo">Activo</option><option value="moroso">Moroso</option><option value="suspendido">Suspendido</option></select></div><div><label class="block text-sm font-medium mb-1">Etiquetas (coma)</label><input type="text" name="tags" placeholder="VIP, prueba" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div><div><label class="block text-sm font-medium mb-1">Link de pago</label><input type="url" name="payment_link" placeholder="https://..." class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-md">Guardar</button></div></form></div></div>
+    <div id="service-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg m-4 relative"><form id="service-form" class="p-6"><h3 class="text-xl font-semibold mb-4">Añadir Servicio</h3><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Servicio</label><select name="serviceId" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></select></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium mb-1">Precio por Perfil ($)</label><input type="number" name="price" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div><div><label class="block text-sm font-medium mb-1">Fecha de Inicio de Ciclo</label><input type="date" name="date" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label class="block text-sm font-medium mb-1">Cantidad de perfiles</label><input type="number" name="qty_profiles" value="1" min="1" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Distribución</label><p class="text-xs text-slate-500">Se sugiere automáticamente según disponibilidad. Puedes ajustar por perfil.</p></div></div><div id="profiles-dynamic" class="mt-3 space-y-3 max-h-60 overflow-y-auto pr-2"></div><div id="master-account-suggestion" class="hidden p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-md"><p class="text-sm font-medium mb-2">Cuentas disponibles por servicio:</p><div id="accounts-availability" class="max-h-32 overflow-y-auto"></div></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="service-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-md">Guardar</button></div></form></div></div>
+    <div id="invoice-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 relative max-h-full flex flex-col"><div class="p-6 border-b border-slate-200 dark:border-slate-700"><h3 class="text-xl font-semibold">Generar Factura de Liquidación</h3></div><div class="p-6 flex-1 overflow-y-auto"><div id="invoice-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><label class="flex items-center"><input type="checkbox" id="inv-explicacion" class="custom-checkbox mr-2"><span class="text-sm">Incluir explicación de cese</span></label><label class="flex items-center"><input type="checkbox" id="inv-netflix-cobro" class="custom-checkbox mr-2"><span class="text-sm">Netflix: No Pagó (Cobro)</span></label><label class="flex items-center"><input type="checkbox" id="inv-netflix-recordatorio" class="custom-checkbox mr-2"><span class="text-sm">Netflix: Recordatorio (Dev.)</span></label><label class="flex items-center"><input type="checkbox" id="inv-netflix-prorrateo" class="custom-checkbox mr-2"><span class="text-sm">Netflix: Prorratear si &lt; 66%</span></label></div><div id="invoice-result" class="hidden"><div class="flex justify-between items-center mb-2"><h4 class="font-semibold">Mensaje Generado</h4><div class="flex gap-2"><button id="copy-invoice-btn" class="bg-blue-500 text-white text-xs font-medium py-1 px-3 rounded hover:bg-blue-600">📋 Copiar</button><a id="whatsapp-invoice-btn" href="#" target="_blank" class="hidden bg-green-500 text-white text-xs font-medium py-1 px-3 rounded hover:bg-green-600">📱 WhatsApp</a></div></div><textarea id="generated-invoice-message" readonly class="w-full h-80 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-md text-sm resize-none"></textarea></div></div><div class="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700"><button type="button" id="invoice-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button id="generate-invoice-action-btn" class="bg-amber-500 text-white font-medium py-2 px-4 rounded-md">Generar</button></div></div></div>
+    <div id="master-account-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 relative"><form id="master-account-form" class="p-6"><h3 id="master-account-modal-title" class="text-xl font-semibold mb-4"></h3><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Servicio</label><select name="serviceId" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></select></div><div><label class="block text-sm font-medium mb-1">Email de la Cuenta</label><div class="relative"><input type="email" name="login_email" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required><button type="button" data-role="copy-email" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-blue-600" title="Copiar email"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button></div></div><div><label class="block text-sm font-medium mb-1">Contraseña</label><div class="relative"><input type="password" name="password" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><button type="button" data-role="toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-blue-600" title="Mostrar contraseña"><svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg><svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 .847 0 1.673.12 2.468.355M7.125 7.125A3 3 0 009 9m3 3a3 3 0 00-3-3m-3.875 5.25A10.025 10.025 0 0112 15c4.478 0 8.268-2.943 9.542-7a10.025 10.025 0 00-4.03-4.38M1 1l22 22"></path></svg></button></div><p class="text-xs text-slate-500 mt-1">La contraseña se muestra para tu referencia. Edita este campo para actualizarla.</p></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium mb-1">Estado</label><select name="status" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="activa">Activa</option><option value="pausada">Pausada</option><option value="bloqueada">Bloqueada</option></select></div><div><label class="block text-sm font-medium mb-1">Plazas (override)</label><input type="number" name="seat_limit_override" min="0" placeholder="(Opcional)" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="master-account-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-md">Guardar</button></div></form></div></div>
+    <div id="invoice-view-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 relative max-h-full flex flex-col"><div class="p-6 border-b border-slate-200 dark:border-slate-700"><h3 class="text-xl font-semibold">Detalle de la Factura</h3></div><div class="p-6 flex-1 overflow-y-auto"><textarea id="invoice-view-content" readonly class="w-full h-96 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-md text-sm resize-none"></textarea></div><div class="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700"><button type="button" id="invoice-view-close-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cerrar</button></div></div></div>
 
-    <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
-    <div class="sr-only" id="a11yLive" aria-live="polite"></div>
-    <div id="modal-container"></div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, deleteDoc, updateDoc, arrayUnion, runTransaction, getDoc, getDocs, query, where, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        const App = {
-            state: {},
-            elements: {},
-            config: {
-                STORAGE_KEY: 'ttd_jordan_v4', // Incremented version to avoid conflicts
-                DEFAULT_DATA: {
-                    tasks: [],
-                    categories: [
-                        { name: 'Personal', color: '#8b5cf6' }, { name: 'Estudio', color: '#22c55e' },
-                        { name: 'Trabajo', color: '#3b82f6' }, { name: 'Salud', color: '#f97316' }
-                    ],
-                    settings: { theme: 'dark', orderMode: 'auto', viewMode: 'list' },
-                    stats: { completedTotal: 0, streak: 0, lastCompleteDate: null, earlyCompletions: 0 }
-                }
-            },
-
-            init() {
-                this.cacheElements();
-                this.loadState();
-                this.applyTheme();
-                this.ensureCategoryOptions();
-                this.bindEvents();
-                this.render();
-                
-                // Initialize DatePicker
-                this.datePicker = new DatePicker();
-                
-                setTimeout(() => this.showDueNotifications(), 600);
-            },
-            
-            cacheElements() {
-                this.elements = {
-                    app: this.utils.$('#app'),
-                    themeToggle: this.utils.$('#themeToggle'),
-                    themeIcon: this.utils.$('#themeIcon'),
-                    addForm: this.utils.$('#addForm'),
-                    listContainer: this.utils.$('#listContainer'),
-                    summaryPill: this.utils.$('#summaryPill'),
-                    notifBtn: this.utils.$('#notifBtn'),
-                    notifCount: this.utils.$('#notifCount'),
-                    searchInput: this.utils.$('#searchInput'),
-                    filterStateRadios: this.utils.$$('input[name="state"]'),
-                    filterCategory: this.utils.$('#filterCategory'),
-                    filterPriority: this.utils.$('#filterPriority'),
-                    orderMode: this.utils.$('#orderMode'),
-                    viewMode: this.utils.$('#viewMode'),
-                    dueDate: this.utils.$('#dueDate')
-                };
-            },
-
-            loadState() {
-                try {
-                    const data = localStorage.getItem(this.config.STORAGE_KEY);
-                    this.state = data ? JSON.parse(data) : JSON.parse(JSON.stringify(this.config.DEFAULT_DATA));
-                } catch {
-                    this.state = JSON.parse(JSON.stringify(this.config.DEFAULT_DATA));
-                }
-            },
-
-            saveState() {
-                localStorage.setItem(this.config.STORAGE_KEY, JSON.stringify(this.state));
-            },
-
-            render() {
-                this.renderTasks();
-                this.renderStats();
-                this.updateUIState();
-            },
-            
-            renderTasks() {
-                const tasks = this.getFilteredTasks();
-                const view = this.state.settings.viewMode;
-                this.elements.listContainer.innerHTML = '';
-                
-                const buildTaskHTML = (t) => {
-                    const cat = this.state.categories.find(c => c.name === t.category) || { color: '#64748b' };
-                    const { text: dateText, classes: dateClasses } = this.utils.formatDueDate(t.dueDate);
-                    const tagsHTML = (t.tags || []).map(tag => `<span class="pill">#${this.utils.escapeHTML(tag)}</span>`).join('');
-                    
-                    return `
-                        <div class="task ${t.completed ? 'completed' : ''}" data-id="${t.id}" role="listitem" ${this.state.settings.orderMode === 'manual' ? 'draggable="true"' : ''}>
-                            <button class="checkbox" aria-label="Marcar como completada">
-                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 7 9 18l-5-5 1.5-1.5L9 15l9.5-9.5L20 7Z"/></svg>
-                            </button>
-                            <div class="task-main">
-                                <div class="task-title">${this.utils.escapeHTML(t.title)}</div>
-                                ${t.description ? `<div class="task-desc">${this.utils.escapeHTML(t.description)}</div>` : ''}
-                                <div class="meta">
-                                    <span class="pill" title="Categoría"><span class="dot" style="background:${cat.color}"></span>${this.utils.escapeHTML(t.category || 'General')}</span>
-                                    <span class="pill prio ${t.priority}">${t.priority}</span>
-                                    ${t.dueDate ? `<span class="pill due ${dateClasses}">${dateText}</span>` : ''}
-                                    ${tagsHTML}
-                                </div>
-                            </div>
-                            <div class="task-actions">
-                                <button class="iconbtn breakdownBtn" title="✨ Desglosar Tarea con IA">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.8 0 1.5.7 1.5 1.5S12.8 6 12 6s-1.5-.7-1.5-1.5S11.2 3 12 3zM5 11c.8 0 1.5.7 1.5 1.5S5.8 14 5 14s-1.5-.7-1.5-1.5S4.2 11 5 11zM19 11c.8 0 1.5.7 1.5 1.5S19.8 14 19 14s-1.5-.7-1.5-1.5S18.2 11 19 11zM12 18c.8 0 1.5.7 1.5 1.5S12.8 21 12 21s-1.5-.7-1.5-1.5S11.2 18 12 18z"/></svg>
-                                </button>
-                                <button class="iconbtn deleteBtn" title="Eliminar"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 3H8l1-3Z"/></svg></button>
-                                ${this.state.settings.orderMode === 'manual' ? `<span class="handle" title="Arrastrar"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 4h4v2h-4V4Zm0 14h4v2h-4v-2ZM10 9h4v2h-4V9Zm0 5h4v2h-4v-2Z"/></svg></span>` : ''}
-                            </div>
-                        </div>`;
-                };
-
-                if (tasks.length === 0) {
-                    this.elements.listContainer.innerHTML = `<div class="card" style="text-align:center; color: var(--muted);">No hay tareas que mostrar. ¡Añade una!</div>`;
-                    return;
-                }
-
-                if (view === 'list') {
-                    const list = document.createElement('div');
-                    list.className = 'tasks-list';
-                    tasks.forEach(t => list.innerHTML += buildTaskHTML(t));
-                    this.elements.listContainer.appendChild(list);
-                } else {
-                    this.renderTasksByDate(tasks, buildTaskHTML);
-                }
-            },
-            
-            renderTasksByDate(tasks, buildTaskHTML) {
-                const groups = [
-                    { title: 'Vencidas', filter: t => !t.completed && this.utils.isOverdue(t.dueDate) },
-                    { title: 'Hoy', filter: t => !t.completed && this.utils.isToday(t.dueDate) },
-                    { title: 'Mañana', filter: t => !t.completed && this.utils.isTomorrow(t.dueDate) },
-                    { title: 'Próximos 7 días', filter: t => !t.completed && this.utils.isNext7Days(t.dueDate) },
-                    { title: 'Futuro', filter: t => !t.completed && this.utils.isFuture(t.dueDate) },
-                    { title: 'Sin Fecha', filter: t => !t.completed && !t.dueDate },
-                    { title: 'Completadas', filter: t => t.completed }
-                ];
-
-                let contentAdded = false;
-                groups.forEach(group => {
-                    const filtered = tasks.filter(group.filter);
-                    if (filtered.length > 0) {
-                        contentAdded = true;
-                        const groupEl = document.createElement('div');
-                        groupEl.className = 'group';
-                        groupEl.innerHTML = `<h3>${group.title}</h3>`;
-                        const list = document.createElement('div');
-                        list.className = 'tasks-list';
-                        filtered.forEach(t => list.innerHTML += buildTaskHTML(t));
-                        groupEl.appendChild(list);
-                        this.elements.listContainer.appendChild(groupEl);
-                    }
-                });
-                if (!contentAdded) {
-                     this.elements.listContainer.innerHTML = `<div class="card" style="text-align:center; color: var(--muted);">No hay tareas que mostrar para esta vista.</div>`;
-                }
-            },
-
-            renderStats() {
-                const { tasks } = this.state;
-                const total = tasks.length;
-                const completed = tasks.filter(t => t.completed).length;
-                const pending = total - completed;
-                const pct = total ? Math.round((completed / total) * 100) : 0;
-                
-                this.utils.$('#progressText').textContent = `${pct}%`;
-                this.utils.$('#progressBar').style.width = `${pct}%`;
-                this.elements.summaryPill.textContent = `${pending} pendiente${pending !== 1 ? 's' : ''}`;
-                
-                const catCounts = tasks.reduce((acc, t) => {
-                    const cat = t.category || 'General';
-                    acc[cat] = (acc[cat] || 0) + 1;
-                    return acc;
-                }, {});
-
-                const catBarsEl = this.utils.$('#catBars');
-                catBarsEl.innerHTML = '';
-                for (const catName in catCounts) {
-                    const count = catCounts[catName];
-                    const catData = this.state.categories.find(c => c.name === catName) || { color: '#64748b' };
-                    const width = total ? (count / total) * 100 : 0;
-                    catBarsEl.innerHTML += `
-                        <div class="catbar">
-                            <span class="pill"><span class="dot" style="background:${catData.color}"></span>${this.utils.escapeHTML(catName)}</span>
-                            <div class="bar"><div style="width:${width}%; background:${catData.color}"></div></div>
-                            <strong>${count}</strong>
-                        </div>`;
-                }
-                
-                this.renderAchievements();
-            },
-
-            renderAchievements() {
-                const container = this.utils.$('#achievements');
-                container.innerHTML = '';
-                const { stats } = this.state;
-                const achievements = [
-                    { icon: '🚀', text: '¡A por ello!', earned: stats.completedTotal > 0 },
-                    { icon: '✅', text: '5 Tareas', earned: stats.completedTotal >= 5 },
-                    { icon: '🏆', text: '25 Tareas', earned: stats.completedTotal >= 25 },
-                    { icon: '🔥', text: `Racha ${stats.streak} días`, earned: stats.streak >= 3 },
-                    { icon: '⏰', text: `${stats.earlyCompletions} a tiempo`, earned: stats.earlyCompletions >= 5 }
-                ].filter(a => a.earned);
-
-                if (achievements.length === 0) {
-                    container.innerHTML = `<span class="badge-ach">🌱 ¡Completa tu primera tarea!</span>`;
-                } else {
-                    achievements.forEach(a => {
-                        container.innerHTML += `<span class="badge-ach">${a.icon} ${a.text}</span>`;
-                    });
-                }
-            },
-            
-            updateUIState() {
-                this.elements.orderMode.value = this.state.settings.orderMode;
-                this.elements.viewMode.value = this.state.settings.viewMode;
-            },
-
-            applyTheme() {
-                const isLight = this.state.settings.theme === 'light';
-                document.body.classList.toggle('light', isLight);
-                this.elements.themeToggle.setAttribute('aria-pressed', isLight);
-                this.elements.themeIcon.innerHTML = isLight
-                    ? '<path fill="currentColor" d="M12 4a8 8 0 1 0 8 8 8.009 8.009 0 0 0-8-8Z"/>'
-                    : '<path fill="currentColor" d="M9.37 5.51A7 7 0 1 0 18.49 14.63 8 8 0 0 1 9.37 5.51Z"/>';
-            },
-
-            ensureCategoryOptions() {
-                const catSel = this.utils.$('#category');
-                const filterCat = this.utils.$('#filterCategory');
-                const opts = [{ name: '(Sin categoría)', value: '' }, ...this.state.categories]
-                    .map(c => `<option value="${this.utils.escapeHTML(c.name)}">${this.utils.escapeHTML(c.name)}</option>`).join('');
-                
-                catSel.innerHTML = opts;
-                filterCat.innerHTML = '<option value="all">Todas</option>' + this.state.categories
-                    .map(c => `<option value="${this.utils.escapeHTML(c.name)}">${this.utils.escapeHTML(c.name)}</option>`).join('');
-            },
-            
-            showDueNotifications() {
-                const dueSoon = this.state.tasks.filter(t => !t.completed && (this.utils.isOverdue(t.dueDate) || this.utils.isSoon(t.dueDate)));
-                this.elements.notifCount.textContent = dueSoon.length;
-                this.elements.notifCount.classList.toggle('hidden', dueSoon.length === 0);
-                if (dueSoon.length > 0) {
-                    this.utils.toast(`${dueSoon.length} tarea${dueSoon.length > 1 ? 's' : ''} próxima${dueSoon.length > 1 ? 's' : ''} a vencer.`);
-                }
-            },
-
-            bindEvents() {
-                this.elements.themeToggle.addEventListener('click', () => this.handleThemeToggle());
-                this.elements.addForm.addEventListener('submit', (e) => this.handleAddTask(e));
-                this.utils.$('#clearForm').addEventListener('click', () => this.elements.addForm.reset());
-                this.utils.$('#addCategoryBtn').addEventListener('click', () => this.handleAddCategory());
-                this.utils.$('#exportBtn').addEventListener('click', () => this.handleExport());
-                this.utils.$('#importFile').addEventListener('change', (e) => this.handleImport(e));
-                this.utils.$('#clearAllBtn').addEventListener('click', () => this.handleClearAll());
-                this.elements.notifBtn.addEventListener('click', () => this.showDueNotifications());
-                
-                this.elements.listContainer.addEventListener('click', (e) => this.handleListClick(e));
-                this.elements.listContainer.addEventListener('dragstart', (e) => this.handleDragStart(e));
-                this.elements.listContainer.addEventListener('dragover', (e) => this.handleDragOver(e));
-                this.elements.listContainer.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-                this.elements.listContainer.addEventListener('drop', (e) => this.handleDrop(e));
-                
-                this.elements.searchInput.addEventListener('input', this.utils.debounce(() => this.render(), 200));
-                this.elements.filterStateRadios.forEach(r => r.addEventListener('change', () => this.render()));
-                this.elements.filterCategory.addEventListener('change', () => this.render());
-                this.elements.filterPriority.addEventListener('change', () => this.render());
-                this.elements.orderMode.addEventListener('change', (e) => this.handleSettingChange('orderMode', e.target.value));
-                this.elements.viewMode.addEventListener('change', (e) => this.handleSettingChange('viewMode', e.target.value));
-                
-                // DatePicker events
-                this.utils.$('#openCalendar').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this.datePicker.open();
-                });
-            },
-
-            handleThemeToggle() {
-                this.state.settings.theme = this.state.settings.theme === 'light' ? 'dark' : 'light';
-                this.applyTheme();
-                this.saveState();
-            },
-            
-            handleAddTask(e) {
-                e.preventDefault();
-                const form = e.target;
-                const title = form.title.value.trim();
-                if (!title) {
-                    this.utils.toast('El título es obligatorio', 'warning');
-                    form.title.focus(); return;
-                }
-                const now = new Date().toISOString();
-                const task = {
-                    id: this.utils.uid(), title, completed: false,
-                    description: form.description.value.trim(), category: form.category.value,
-                    priority: form.priority.value,
-                    dueDate: form.dueDate.dataset.isoValue || null, // Use hidden value from date picker
-                    tags: form.tags.value.split(',').map(t => t.trim()).filter(Boolean),
-                    createdAt: now, updatedAt: now, orderIndex: Date.now()
-                };
-                this.state.tasks.push(task);
-                this.saveState(); this.render();
-                this.utils.toast('Tarea agregada ✅');
-                form.reset();
-                this.utils.$('#dueDate').dataset.isoValue = '';
-                form.title.focus();
-            },
-            
-            async handleAddCategory() {
-                const name = await this.utils.prompt('Nueva Categoría', 'Nombre de la nueva categoría:');
-                if (!name) return;
-                const exists = this.state.categories.some(c => c.name.toLowerCase() === name.toLowerCase());
-                if (exists) return this.utils.toast('Esa categoría ya existe', 'warning');
-                this.state.categories.push({ name, color: this.utils.randomColor() });
-                this.saveState(); this.ensureCategoryOptions();
-                this.utils.$('#category').value = name; this.utils.toast('Categoría creada');
-            },
-
-            handleListClick(e) {
-                const taskEl = e.target.closest('.task'); if (!taskEl) return;
-                const id = taskEl.dataset.id;
-                if (e.target.closest('.checkbox')) this.handleToggleComplete(id);
-                if (e.target.closest('.deleteBtn')) this.handleDeleteTask(id);
-                if (e.target.closest('.breakdownBtn')) this.handleBreakdownTask(id, e.target.closest('.breakdownBtn'));
-            },
-
-            async handleBreakdownTask(id, btnEl) {
-                const task = this.state.tasks.find(t => t.id === id);
-                if (!task) return;
-
-                btnEl.classList.add('loading');
-                btnEl.disabled = true;
-
-                const prompt = `You are a helpful productivity assistant. A user has a large task and needs it broken down into smaller, actionable sub-tasks.
-                Main Task Title: "${task.title}"
-                Main Task Description: "${task.description || 'No description provided.'}"
-                Please generate a list of 2 to 5 sub-tasks. Each sub-task should be a clear, concise action item.`;
-
-                const schema = {
-                    type: "ARRAY",
-                    items: {
-                        type: "OBJECT",
-                        properties: {
-                            "title": { "type": "STRING" }
-                        },
-                        required: ["title"]
-                    }
-                };
-
-                try {
-                    const subTasks = await this.utils.callGemini(prompt, schema);
-                    if (!subTasks || !Array.isArray(subTasks) || subTasks.length === 0) {
-                        throw new Error("Invalid response from AI.");
-                    }
-
-                    const now = new Date().toISOString();
-                    const newTasks = subTasks.map((sub, index) => ({
-                        id: this.utils.uid(),
-                        title: `${sub.title}`,
-                        description: `Sub-tarea de "${task.title}"`,
-                        completed: false,
-                        category: task.category,
-                        priority: task.priority,
-                        dueDate: task.dueDate,
-                        tags: task.tags,
-                        createdAt: now,
-                        updatedAt: now,
-                        orderIndex: (task.orderIndex || Date.now()) + 0.1 + (index * 0.01)
-                    }));
-
-                    this.state.tasks.push(...newTasks);
-                    this.saveState();
-                    this.render();
-                    this.utils.toast(`✨ Tarea desglosada en ${newTasks.length} sub-tareas.`);
-
-                } catch (error) {
-                    console.error("Error breaking down task:", error);
-                    this.utils.toast("No se pudo desglosar la tarea.", "danger");
-                } finally {
-                    btnEl.classList.remove('loading');
-                    btnEl.disabled = false;
-                }
-            },
-
-            handleToggleComplete(id) {
-                const task = this.state.tasks.find(t => t.id === id); if (!task) return;
-                task.completed = !task.completed;
-                task.updatedAt = new Date().toISOString();
-                if (task.completed) this.updateCompletionStats(task);
-                this.saveState(); this.render();
-            },
-            
-            async handleDeleteTask(id) {
-                const task = this.state.tasks.find(t => t.id === id);
-                if (await this.utils.confirm('¿Eliminar Tarea?', `¿Seguro que quieres eliminar "${task.title}"?`)) {
-                    this.state.tasks = this.state.tasks.filter(t => t.id !== id);
-                    this.saveState(); this.render(); this.utils.toast('Tarea eliminada 🗑️');
-                }
-            },
-            
-            handleExport() {
-                const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'things-to-do.json'; a.click(); URL.revokeObjectURL(url);
-            },
-
-            handleImport(e) {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const data = JSON.parse(event.target.result);
-                        if (!data || !Array.isArray(data.tasks)) throw new Error('Archivo inválido');
-                        this.state = data;
-                        this.saveState(); this.applyTheme(); this.ensureCategoryOptions(); this.render();
-                        this.utils.toast('Datos importados con éxito ✅');
-                    } catch (err) { this.utils.toast('Error al importar el archivo', 'danger'); }
-                };
-                reader.readAsText(file); e.target.value = '';
-            },
-
-            async handleClearAll() {
-                if (await this.utils.confirm('¿ELIMINAR TODO?', 'Esta acción es irreversible y borrará todas las tareas.')) {
-                    this.state.tasks = [];
-                    this.state.stats = JSON.parse(JSON.stringify(this.config.DEFAULT_DATA.stats));
-                    this.saveState(); this.render(); this.utils.toast('Todas las tareas han sido eliminadas.');
-                }
-            },
-            
-            handleSettingChange(key, value) {
-                this.state.settings[key] = value;
-                this.saveState(); this.render();
-            },
-
-            draggedEl: null,
-            handleDragStart(e) {
-                if (this.state.settings.orderMode !== 'manual') return;
-                this.draggedEl = e.target.closest('.task');
-                this.draggedEl.classList.add('dragging');
-            },
-            handleDragOver(e) {
-                e.preventDefault(); if (this.state.settings.orderMode !== 'manual') return;
-                const overEl = e.target.closest('.task');
-                if (overEl && overEl !== this.draggedEl) {
-                    this.utils.$$('.task.over').forEach(el => el.classList.remove('over'));
-                    overEl.classList.add('over');
-                }
-            },
-            handleDragLeave(e) { const el = e.target.closest('.task'); if (el) el.classList.remove('over'); },
-            handleDrop(e) {
-                e.preventDefault(); if (!this.draggedEl) return;
-                const dropTarget = e.target.closest('.task');
-                this.draggedEl.classList.remove('dragging');
-                this.utils.$$('.task.over').forEach(el => el.classList.remove('over'));
-                if (dropTarget && dropTarget !== this.draggedEl) {
-                    const srcId = this.draggedEl.dataset.id, dstId = dropTarget.dataset.id;
-                    const tasks = this.state.tasks;
-                    const srcIdx = tasks.findIndex(t => t.id === srcId), dstIdx = tasks.findIndex(t => t.id === dstId);
-                    const [item] = tasks.splice(srcIdx, 1); tasks.splice(dstIdx, 0, item);
-                    tasks.forEach((t, i) => t.orderIndex = i);
-                    this.saveState(); this.render();
-                }
-                this.draggedEl = null;
-            },
-            
-            getFilteredTasks() {
-                let tasks = [...this.state.tasks];
-                const q = this.elements.searchInput.value.toLowerCase();
-                const stateFilter = this.utils.$('input[name="state"]:checked').value;
-                const cat = this.elements.filterCategory.value;
-                const pr = this.elements.filterPriority.value;
-                if (q) tasks = tasks.filter(t => [t.title, t.description, ...(t.tags || [])].join(' ').toLowerCase().includes(q));
-                if (stateFilter === 'pending') tasks = tasks.filter(t => !t.completed);
-                if (stateFilter === 'completed') tasks = tasks.filter(t => t.completed);
-                if (cat !== 'all') tasks = tasks.filter(t => t.category === cat);
-                if (pr !== 'all') tasks = tasks.filter(t => t.priority === pr);
-
-                if (this.state.settings.orderMode === 'manual') {
-                    tasks.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-                } else {
-                    tasks.sort((a, b) => {
-                        if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                        const prio = { high: 3, medium: 2, low: 1 };
-                        if (prio[b.priority] !== prio[a.priority]) return prio[b.priority] - prio[a.priority];
-                        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity, db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-                        if (da !== db) return da - db;
-                        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                    });
-                }
-                return tasks;
-            },
-            
-            updateCompletionStats(task) {
-                const { stats } = this.state;
-                const today = new Date();
-                const ymd = today.toISOString().slice(0, 10);
-                if (stats.lastCompleteDate) {
-                    const prev = new Date(stats.lastCompleteDate);
-                    const diffDays = Math.floor((today - prev) / 864e5);
-                    if (diffDays === 1) stats.streak++; else if (diffDays > 1) stats.streak = 1;
-                } else { stats.streak = 1; }
-                stats.lastCompleteDate = ymd;
-                stats.completedTotal++;
-                if (task.dueDate && new Date(task.dueDate) > new Date()) { stats.earlyCompletions++; }
-            },
-            
-            utils: {
-                $: (sel, el = document) => el.querySelector(sel),
-                $$: (sel, el = document) => Array.from(el.querySelectorAll(sel)),
-                uid: () => Math.random().toString(36).slice(2) + Date.now().toString(36),
-                escapeHTML: (str = '') => str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[m])),
-                formatDueDate(iso) {
-                    if (!iso) return { text: '', classes: '' };
-                    const date = new Date(iso);
-                    const now = new Date();
-                    
-                    const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
-
-                    const tomorrow = new Date();
-                    tomorrow.setDate(now.getDate() + 1);
-
-                    let dayText = '';
-                    if (isSameDay(date, now)) {
-                        dayText = 'Hoy, ';
-                    } else if (isSameDay(date, tomorrow)) {
-                        dayText = 'Mañana, ';
-                    } else {
-                        dayText = new Intl.DateTimeFormat('es', { month: 'short', day: 'numeric' }).format(date) + ', ';
-                    }
-
-                    const timeText = new Intl.DateTimeFormat('es', { hour: 'numeric', minute: 'numeric', hour12: true }).format(date);
-                    const text = dayText + timeText;
-
-                    let classes = '';
-                    if (date < new Date()) classes = 'overdue';
-                    else if (date - now < 864e5 * 2) classes = 'soon'; // Within 2 days
-                    
-                    return { text, classes };
-                },
-                isOverdue: iso => iso && new Date(iso) < new Date(),
-                isSoon: iso => iso && (new Date(iso) - new Date() <= 864e5 * 2 && new Date(iso) > new Date()),
-                isToday: iso => iso && new Date(iso).toDateString() === new Date().toDateString(),
-                isTomorrow: iso => { if (!iso) return false; const t = new Date(); t.setDate(t.getDate() + 1); return new Date(iso).toDateString() === t.toDateString(); },
-                isNext7Days: iso => iso && new Date(iso) > new Date() && new Date(iso) - new Date() <= 7 * 864e5,
-                isFuture: iso => iso && new Date(iso) - new Date() > 7 * 864e5,
-                toast(msg, type = 'success') {
-                    const t = document.createElement('div');
-                    t.className = `toast ${type}`; t.textContent = msg;
-                    document.getElementById('toasts').appendChild(t);
-                    document.getElementById('a11yLive').textContent = msg;
-                    setTimeout(() => t.remove(), 2500);
-                },
-                debounce(fn, wait) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; },
-                randomColor: () => `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`,
-                
-                async callGemini(prompt, schema) {
-                    const apiKey = ""; // Provided by the environment
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                    const payload = {
-                        contents: [{ role: "user", parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            responseSchema: schema
-                        }
-                    };
-
-                    let response;
-                    let attempts = 0;
-                    const maxAttempts = 5;
-                    let delay = 1000;
-
-                    while (attempts < maxAttempts) {
-                        try {
-                            response = await fetch(apiUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-
-                            if (response.ok) {
-                                const result = await response.json();
-                                if (result.candidates && result.candidates.length > 0 &&
-                                    result.candidates[0].content && result.candidates[0].content.parts &&
-                                    result.candidates[0].content.parts.length > 0) {
-                                    return JSON.parse(result.candidates[0].content.parts[0].text);
-                                }
-                            }
-                        } catch (error) {
-                            console.error("Gemini API call failed on attempt", attempts + 1, error);
-                        }
-
-                        attempts++;
-                        if (attempts < maxAttempts) {
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; // Exponential backoff
-                        }
-                    }
-
-                    throw new Error("Failed to get a valid response from Gemini API after multiple attempts.");
-                },
-
-                // --- MODAL UTILITIES ---
-                confirm(title, body) {
-                    return this._createModal({ title, body, type: 'confirm' });
-                },
-                prompt(title, body) {
-                    return this._createModal({ title, body, type: 'prompt' });
-                },
-                _createModal({ title, body, type }) {
-                    return new Promise((resolve) => {
-                        const container = document.getElementById('modal-container');
-                        const overlay = document.createElement('div');
-                        overlay.className = 'modal-overlay';
-                        
-                        let inputHTML = '';
-                        if (type === 'prompt') {
-                            inputHTML = `<input class="form-control modal-input" type="text" />`;
-                        }
-
-                        overlay.innerHTML = `
-                            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-                                <h2 id="modal-title" class="modal-title">${this.escapeHTML(title)}</h2>
-                                <p class="modal-body">${this.escapeHTML(body)}</p>
-                                ${inputHTML}
-                                <div class="modal-actions">
-                                    <button class="btn ghost cancel-btn">Cancelar</button>
-                                    <button class="btn primary ok-btn">${type === 'confirm' ? 'Confirmar' : 'OK'}</button>
-                                </div>
-                            </div>
-                        `;
-                        container.appendChild(overlay);
-
-                        const dialog = overlay.querySelector('.modal-dialog');
-                        const input = overlay.querySelector('.modal-input');
-                        const okBtn = overlay.querySelector('.ok-btn');
-                        const cancelBtn = overlay.querySelector('.cancel-btn');
-
-                        if (input) input.focus(); else okBtn.focus();
-
-                        const close = (value) => {
-                            overlay.remove();
-                            resolve(value);
-                        };
-
-                        okBtn.onclick = () => close(type === 'prompt' ? input.value : true);
-                        cancelBtn.onclick = () => close(type === 'prompt' ? null : false);
-                        overlay.onclick = (e) => { if (e.target === overlay) close(type === 'prompt' ? null : false); };
-                        dialog.onkeydown = (e) => { if (e.key === 'Escape') close(type === 'prompt' ? null : false); };
-                    });
-                }
-            }
+        const app = {
+            appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
+            currentView: 'dashboard',
+            selectedClientId: null,
+            clients: [],
+            services: [],
+            masterAccounts: [],
+            ui: {}
         };
         
-        // DatePicker completamente reescrito y mejorado
-        class DatePicker {
-            constructor() {
-                this.input = document.getElementById('dueDate');
-                this.popover = document.getElementById('dpPopover');
-                this.currentDate = new Date();
-                this.selectedDate = null;
-                this.isVisible = false;
-                this.bind();
-            }
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            if (!firebaseConfig.apiKey) { showFirebaseError(); return; }
 
-            bind() {
-                // Elementos del popover
-                this.titleEl = document.getElementById('dpTitle');
-                this.gridEl = document.getElementById('dpGrid');
-                this.hourEl = document.getElementById('dpHour');
-                this.minEl = document.getElementById('dpMin');
-                this.ampmEl = document.getElementById('dpAmPm');
-                this.prevBtn = document.getElementById('dpPrev');
-                this.nextBtn = document.getElementById('dpNext');
-                this.clearBtn = document.getElementById('dpClear');
-                this.setBtn = document.getElementById('dpSet');
-
-                // Event listeners
-                this.prevBtn.addEventListener('click', () => this.navigateMonth(-1));
-                this.nextBtn.addEventListener('click', () => this.navigateMonth(1));
-                this.clearBtn.addEventListener('click', () => this.clear());
-                this.setBtn.addEventListener('click', () => this.setDate());
+            try {
+                app.firebaseApp = initializeApp(firebaseConfig);
+                app.auth = getAuth(app.firebaseApp);
+                app.db = getFirestore(app.firebaseApp);
                 
-                this.gridEl.addEventListener('click', (e) => this.handleDayClick(e));
-                
-                // Close on outside click
-                document.addEventListener('click', (e) => {
-                    if (this.isVisible && !this.popover.contains(e.target) && !e.target.closest('#openCalendar')) {
-                        this.close();
-                    }
+                const authUser = await new Promise((resolve, reject) => {
+                    const unsubscribe = onAuthStateChanged(app.auth, async (user) => {
+                        unsubscribe();
+                        if (user) return resolve(user);
+                        try {
+                            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                            const creds = token ? await signInWithCustomToken(app.auth, token) : await signInAnonymously(app.auth);
+                            resolve(creds.user);
+                        } catch(e) { reject(e); }
+                    }, reject);
                 });
 
-                // Close on escape
-                document.addEventListener('keydown', (e) => {
-                    if (this.isVisible && e.key === 'Escape') {
-                        this.close();
-                    }
+                if (authUser) {
+                    app.userId = authUser.uid;
+                    initializeAppUI();
+                } else { throw new Error("Authentication failed."); }
+            } catch (error) { showFirebaseError(error); }
+        });
+
+        function initializeAppUI() {
+            app.ui.mainContent = document.querySelector('main');
+            setupNavigation();
+            setupDarkMode();
+            setupSidebar();
+            setupClientModal();
+            setupServiceModal();
+            setupInvoiceModal();
+            setupMasterAccountModal();
+            setupInvoiceViewModal();
+            setupRealtimeListeners();
+            setupGlobalEventListeners();
+            
+            renderView('dashboard');
+
+            document.getElementById('app-loader').classList.add('opacity-0');
+            document.getElementById('app-content').classList.remove('opacity-0');
+            setTimeout(() => document.getElementById('app-loader').style.display = 'none', 300);
+        }
+        
+        // --- VISTAS Y NAVEGACIÓN ---
+        function setupNavigation() {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const viewName = link.getAttribute('href').substring(1);
+                    renderView(viewName);
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-slate-200', 'dark:bg-slate-700'));
+                    link.classList.add('bg-slate-200', 'dark:bg-slate-700');
                 });
-            }
+            });
+        }
+        
+        function renderView(viewName, params = {}) {
+            app.currentView = viewName;
+            const contentWrapper = `<div class="max-w-7xl mx-auto p-6 lg:p-8"></div>`;
+            app.ui.mainContent.innerHTML = contentWrapper;
+            const container = app.ui.mainContent.firstChild;
 
-            open() {
-                // Parse current input value
-                if (this.input.dataset.isoValue) {
-                    const date = new Date(this.input.dataset.isoValue);
-                    if (!isNaN(date)) {
-                        this.selectedDate = date;
-                        this.currentDate = new Date(date.getFullYear(), date.getMonth(), 1);
-                        
-                        let hours = date.getHours();
-                        const ampm = hours >= 12 ? 'PM' : 'AM';
-                        hours = hours % 12;
-                        hours = hours ? hours : 12; // the hour '0' should be '12'
-                        
-                        this.hourEl.value = hours;
-                        this.minEl.value = String(date.getMinutes()).padStart(2, '0');
-                        this.ampmEl.value = ampm;
+            switch(viewName) {
+                case 'dashboard':
+                    container.innerHTML = getDashboardViewHTML();
+                    updateDashboard();
+                    break;
+                case 'clients':
+                    app.selectedClientId = params.clientId || null;
+                    renderClientsView(container);
+                    break;
+                case 'settings':
+                    container.innerHTML = getSettingsViewHTML();
+                    attachSettingsEventListeners();
+                    populateServicesSettings();
+                    populateMasterAccountsSettings();
+                    break;
+            }
+        }
+        
+        // --- DATOS (FIRESTORE) ---
+        function setupRealtimeListeners() {
+            onSnapshot(query(collection(app.db,'artifacts',app.appId,'users',app.userId,'clients'), orderBy('name')), (snapshot) => {
+                app.clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (app.currentView === 'dashboard') updateDashboard();
+                if (app.currentView === 'clients') renderClientsView(app.ui.mainContent.firstChild);
+            });
+
+            onSnapshot(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'services'), (snapshot) => {
+                app.services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (app.currentView === 'settings') renderView('settings');
+                if (app.currentView === 'clients' && app.selectedClientId) renderClientsView(app.ui.mainContent.firstChild);
+            });
+
+            onSnapshot(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts'), (snapshot) => {
+                app.masterAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (app.currentView === 'settings') populateMasterAccountsSettings();
+            });
+        }
+        
+        // --- VISTA: DASHBOARD ---
+        function getDashboardViewHTML() {
+            return `<div class="flex justify-between items-center mb-6"> <h2 class="text-3xl font-bold">Dashboard</h2> <button data-role="open-fullscreen" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md flex items-center gap-2">⤢ <span class="hidden sm:inline">Abrir en pantalla completa</span></button></div> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"> <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium text-slate-500 dark:text-slate-400">Clientes Activos</h3> <p id="db-active-clients" class="text-4xl font-bold mt-2">0</p> </div> <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium text-slate-500 dark:text-slate-400">Cuentas por Cobrar</h3> <p id="db-accounts-receivable" class="text-4xl font-bold mt-2">$0.00</p> </div> <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium text-slate-500 dark:text-slate-400">Crédito por Devolver</h3> <p id="db-credit-to-return" class="text-4xl font-bold mt-2">$0.00</p> </div> <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium text-slate-500 dark:text-slate-400">Próximos Vencimientos</h3> <p id="db-upcoming-renewals" class="text-4xl font-bold mt-2">0</p> </div> </div> <div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium mb-4">Clientes con Vencimientos Próximos (7 días)</h3> <div id="db-upcoming-renewals-list" class="max-h-96 overflow-y-auto"></div> </div>`;
+        }
+        
+        async function updateDashboard() {
+            const active = document.getElementById('db-active-clients');
+            if (active) active.textContent = app.clients?.length || 0;
+
+            const arEl = document.getElementById('db-accounts-receivable');
+            if (arEl) arEl.textContent = `$${(await computeAccountsReceivable()).toFixed(2)}`;
+
+            const creditEl = document.getElementById('db-credit-to-return');
+            if(creditEl) creditEl.textContent = `$${computeCreditToReturn().toFixed(2)}`;
+
+            const upEl = document.getElementById('db-upcoming-renewals');
+            if (upEl) upEl.textContent = countUpcomingRenewals(7);
+        }
+        
+        // --- VISTA: CLIENTES ---
+        function renderClientsView(container) {
+            if (app.selectedClientId) {
+                renderClientProfileView(container, app.selectedClientId);
+            } else {
+                renderClientListView(container);
+            }
+        }
+        
+        function renderClientListView(container) {
+            container.innerHTML = `<div class="flex justify-between items-center mb-6"> <h2 class="text-3xl font-bold">Clientes</h2><div class="flex gap-2"><button id="add-client-btn" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-md hover:bg-blue-700">Añadir Cliente</button><button data-role="open-fullscreen" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md flex items-center gap-2">⤢</button></div> </div> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <div class="p-4"><input type="text" id="client-search" placeholder="Buscar por nombre, tel, notas o etiqueta..." class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div> <div class="overflow-x-auto"> <table class="w-full text-left"> <thead class="bg-slate-50 dark:bg-slate-700/50"> <tr> <th class="p-4 font-semibold">Nombre</th> <th class="p-4 font-semibold">Contacto</th> <th class="p-4 font-semibold text-center">Servicios Activos</th> <th class="p-4 font-semibold">Próximo Vencimiento</th> </tr> </thead> <tbody id="clients-table-body"></tbody> </table> </div> </div>`;
+            document.getElementById('add-client-btn').addEventListener('click', () => openClientModal());
+            document.getElementById('client-search').addEventListener('input', (e) => populateClientsTable(e.target.value));
+            populateClientsTable();
+        }
+
+        function populateClientsTable(filter = '') {
+            const tableBody = document.getElementById('clients-table-body');
+            const lowerCaseFilter = filter.toLowerCase();
+            const filteredClients = app.clients.filter(c => {
+                const bag = [ c.name, c.phone, c.notes, ...(c.tags||[]) ].join(' ').toLowerCase();
+                return bag.includes(lowerCaseFilter);
+            });
+            if (filteredClients.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center p-8 text-slate-500">No se encontraron clientes.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = filteredClients.map(client => {
+                const serviceCount = client.services ? Object.keys(client.services).length : 0;
+                let nextDueDate = 'N/A';
+                if (serviceCount > 0) {
+                    const dates = Object.values(client.services).map(s => s.date).filter(Boolean);
+                    if (dates.length > 0) {
+                        const nextDates = dates.map(d_str => {
+                            let next = new Date(d_str + 'T00:00:00');
+                            while (next < new Date()) next.setMonth(next.getMonth() + 1);
+                            return next;
+                        });
+                        nextDueDate = formatDate(new Date(Math.min.apply(null, nextDates)));
                     }
-                } else {
-                    this.selectedDate = null;
-                    const now = new Date();
-                    this.currentDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                    this.hourEl.value = '9';
-                    this.minEl.value = '00';
-                    this.ampmEl.value = 'AM';
                 }
+                const chips = (client.tags||[]).slice(0,2).map(t=>`<span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">${t}</span>`).join(' ');
+                const statusChip = client.status==='moroso' ? 'bg-red-100 text-red-700' : client.status==='suspendido' ? 'bg-yellow-100 text-yellow-700' : 'bg-emerald-100 text-emerald-700';
+                return `<tr class="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer" data-id="${client.id}"> <td class="p-4 font-medium">${client.name} <span class="ml-2 text-[10px] ${statusChip} px-2 py-0.5 rounded">${client.status||'activo'}</span> <span class="ml-1">${chips}</span></td> <td class="p-4 text-slate-500">${client.phone || 'No registrado'}</td> <td class="p-4 text-slate-500 text-center">${serviceCount}</td> <td class="p-4 text-slate-500 font-mono">${nextDueDate}</td> </tr>`;
+            }).join('');
+            tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => renderView('clients', {
+                clientId: row.dataset.id
+            })));
+        }
 
-                this.render();
-                this.popover.hidden = false;
-                this.isVisible = true;
-                // Position after it's visible to get correct dimensions
-                requestAnimationFrame(() => this.position());
+        function renderClientProfileView(container, clientId) {
+            const client = app.clients.find(c => c.id === clientId);
+            if (!client) {
+                renderView('clients');
+                return;
             }
+            container.innerHTML = `<div class="mb-6"> <button id="back-to-clients" class="text-sm font-medium text-blue-600 hover:underline">&larr; Volver</button> <div class="flex justify-between items-start mt-2"> <div> <h2 class="text-3xl font-bold">${client.name}</h2> <p class="text-slate-500">${client.phone || 'Sin WhatsApp'}</p> <p class="text-sm text-slate-500 mt-2 whitespace-pre-wrap">${client.notes || 'Sin notas.'}</p> </div><div class="flex items-center gap-2"><button type="button" data-role="quick-wa" class="bg-green-600 text-white font-medium py-2 px-3 rounded-md">WhatsApp</button><button type="button" data-role="toggle-suspend" class="bg-yellow-500 text-white font-medium py-2 px-3 rounded-md">Suspender/Reactivar</button><button id="edit-client-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Editar</button> <button id="delete-client-btn" class="bg-red-600 text-white font-medium py-2 px-4 rounded-md">Eliminar</button></div></div> </div> <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> <div class="lg:col-span-2 space-y-6"> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <div class="flex justify-between items-center mb-4"> <h3 class="text-xl font-semibold">Servicios Contratados</h3> <button id="add-service-to-client-btn" class="text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium py-1 px-3 rounded-md">Añadir Servicio</button> </div> <div id="client-services-list" class="space-y-3"></div> </div> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <h3 class="text-xl font-semibold mb-4">Facturación de Liquidación</h3> <p class="text-sm text-slate-500 mb-4">Genera una factura combinada de todos los servicios.</p> <button id="generate-special-invoice-btn" class="bg-amber-500 text-white font-medium py-2 px-4 rounded-md">Generar Factura</button> </div> </div> <div class="space-y-6"> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <h3 class="text-xl font-semibold mb-4">Historial de Facturas</h3> <div id="client-invoice-history" class="max-h-96 overflow-y-auto"></div> </div> </div> </div>`;
+            document.getElementById('back-to-clients').addEventListener('click', () => renderView('clients'));
+            document.getElementById('edit-client-btn').addEventListener('click', () => openClientModal(client));
+            document.getElementById('delete-client-btn').addEventListener('click', () => handleDeleteClient(client));
+            document.getElementById('add-service-to-client-btn').addEventListener('click', () => openServiceModal(client));
+            document.getElementById('generate-special-invoice-btn').addEventListener('click', () => openInvoiceModal(client));
+            populateClientServices(client);
+            populateClientInvoices(client);
+        }
 
-            close() {
-                this.popover.hidden = true;
-                this.isVisible = false;
+        async function handleDeleteClient(client) {
+            if (confirm(`¿Eliminar a ${client.name}?`)) {
+                await deleteDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', client.id));
+                renderView('clients');
             }
-
-            position() {
-                const anchor = document.getElementById('openCalendar');
-                const inputRect = anchor.getBoundingClientRect();
-                const popoverRect = this.popover.getBoundingClientRect();
-                const viewport = {
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                };
-
-                let top = inputRect.bottom + 8;
-                let left = inputRect.left;
-
-                // Adjust if popover goes off screen
-                if (left + popoverRect.width > viewport.width) {
-                    left = inputRect.right - popoverRect.width;
-                }
-                if (left < 16) {
-                    left = 16;
-                }
-
-                if (top + popoverRect.height > viewport.height) {
-                    top = inputRect.top - popoverRect.height - 8;
-                }
-
-                this.popover.style.top = `${top + window.scrollY}px`;
-                this.popover.style.left = `${left + window.scrollX}px`;
+        }
+        
+        function populateClientServices(client) {
+            const container = document.getElementById('client-services-list');
+            const clientServices = client.services || {};
+            if (Object.keys(clientServices).length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-4">Sin servicios activos.</p>`;
+                return;
             }
-
-            render() {
-                this.renderTitle();
-                this.renderGrid();
-            }
-
-            renderTitle() {
-                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            container.innerHTML = Object.entries(clientServices).map(([serviceId, serviceData]) => {
+                const serviceInfo = app.services.find(s => s.id === serviceId);
+                if (!serviceInfo) return '';
                 
-                this.titleEl.textContent = `${monthNames[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
-            }
-
-            renderGrid() {
-                const year = this.currentDate.getFullYear();
-                const month = this.currentDate.getMonth();
-                
-                const firstDay = new Date(year, month, 1);
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                
-                const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
-                
-                let html = '';
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                // Previous month days
-                for (let i = startDay; i > 0; i--) {
-                    const date = new Date(year, month, 1 - i);
-                    html += `<button class="dp-day dp-day-outside" disabled>${date.getDate()}</button>`;
+                const profiles = Array.isArray(serviceData.profiles) ? serviceData.profiles : [];
+                // Compatibility for old data model
+                if (!serviceData.profiles && serviceData.credentials) {
+                    profiles.push({
+                        profile_id: 'legacy-profile',
+                        profile_name: 'Perfil (Heredado)',
+                        ...serviceData.credentials
+                    });
                 }
 
-                // Current month days
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const date = new Date(year, month, i);
-                    const isToday = date.getTime() === today.getTime();
-                    const isSelected = this.selectedDate && date.toDateString() === this.selectedDate.toDateString();
-                    
-                    const classes = ['dp-day'];
-                    if (isToday) classes.push('dp-day-today');
-                    if (isSelected) classes.push('dp-day-selected');
-                    
-                    html += `<button class="${classes.join(' ')}" data-date="${date.toISOString()}">${date.getDate()}</button>`;
-                }
-
-                // Next month days
-                const totalDays = startDay + daysInMonth;
-                const remaining = totalDays > 35 ? 42 - totalDays : 35 - totalDays;
-                for (let i = 1; i <= remaining; i++) {
-                     const date = new Date(year, month + 1, i);
-                     html += `<button class="dp-day dp-day-outside" disabled>${date.getDate()}</button>`;
-                }
+                const profilesHTML = profiles.length ? `
+                <div class="mt-2 space-y-2">
+                    ${profiles.map(p => `
+                    <div class="flex items-center justify-between p-2 rounded bg-white/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700">
+                        <div class="min-w-0">
+                        <p class="text-sm font-medium truncate">${p.profile_name || 'Perfil'}</p>
+                        <p class="text-xs text-slate-500">Cuenta: ${p.login_email} • PIN: ${p.pin || 'N/A'}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                        <button type="button" data-role="remove-client-profile"
+                            data-service-id="${serviceId}" data-profile-id="${p.profile_id}"
+                            class="text-red-500 hover:text-red-700 text-sm font-medium">Quitar</button>
+                        </div>
+                    </div>
+                    `).join('')}
+                </div>
+                ` : `<p class="text-xs text-slate-500 mt-1">Sin perfiles asignados.</p>`;
                 
-                this.gridEl.innerHTML = html;
+                return `
+                <div class="p-3 rounded-md bg-slate-100 dark:bg-slate-700/50">
+                    <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-medium">${serviceInfo.name}</p>
+                        <p class="text-sm text-slate-500">
+                        Precio x perfil: $${(serviceData.price||0).toFixed(2)} |
+                        Ciclo: ${serviceData.date || 'N/A'} |
+                        Perfiles: ${profiles.length}
+                        </p>
+                    </div>
+                    <button type="button" data-role="remove-client-service"
+                        data-service-id="${serviceId}"
+                        class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Quitar servicio completo" title="Quitar servicio completo">&times;</button>
+                    </div>
+                    ${profilesHTML}
+                </div>`;
+
+            }).join('');
+        }
+        
+        async function populateClientInvoices(client) {
+            const container = document.getElementById('client-invoice-history');
+            const invoices = await listInvoices(client.id);
+            if (invoices.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-4">Sin historial.</p>`;
+                return;
             }
+            container.innerHTML = invoices.map((inv, idx) => `
+                <div class="flex items-center justify-between p-2 border-b border-slate-200 dark:border-slate-700">
+                <div>
+                    <p class="text-sm font-medium">${inv.created_at?.toDate().toLocaleString('es-PA') || ''} — <span class="uppercase text-xs">${inv.status}</span></p>
+                    <p class="text-xs text-slate-500 mt-1 whitespace-pre-wrap line-clamp-2">${inv.content}</p>
+                </div>
+                <div class="flex gap-2">
+                    ${inv.payment_link ? `<a href="${inv.payment_link}" target="_blank" class="text-xs bg-emerald-600 text-white py-1 px-2 rounded">Pagar</a>` : ''}
+                    <button type="button" data-role="view-invoice" data-invoice-id="${inv.id}" class="text-sm bg-slate-200 dark:bg-slate-700 font-medium py-1 px-3 rounded-md">Ver</button>
+                </div>
+                </div>
+            `).join('');
+        }
+        
+        // --- VISTA: AJUSTES ---
+        function getSettingsViewHTML() {
+            return `<div class="flex justify-between items-center mb-6"> <h2 class="text-3xl font-bold">Ajustes del Negocio</h2><button data-role="open-fullscreen" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md flex items-center gap-2">⤢ <span class="hidden sm:inline">Abrir en pantalla completa</span></button></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Catálogo de Servicios -->
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+                            <h3 class="text-xl font-semibold">Catálogo de Servicios</h3>
+                            <p class="text-sm text-slate-500 mt-1">Define los tipos de servicios que ofreces y sus reglas.</p>
+                        </div>
+                        <div id="services-settings-list" class="p-6 space-y-3"></div>
+                        <form id="add-service-form" class="p-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                            <h4 class="font-semibold">Añadir Nuevo Servicio al Catálogo</h4>
+                            <div><label class="text-sm font-medium">Nombre del Servicio</label><input type="text" name="name" placeholder="Ej: Disney+" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-sm font-medium">Límite de Plazas</label><input type="number" name="seat_limit" value="1" min="1" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div>
+                                <div><label class="text-sm font-medium">Longitud del PIN</label><input type="number" name="pin_length" value="4" min="0" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div>
+                            </div>
+                            <div><label class="flex items-center"><input type="checkbox" name="isNetflix" class="custom-checkbox mr-2"><span class="text-sm">Es Netflix (Lógica Especial)</span></label></div>
+                            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-md hover:bg-blue-700">Añadir al Catálogo</button>
+                        </form>
+                    </div>
 
-            handleDayClick(e) {
-                const dayBtn = e.target.closest('.dp-day');
-                if (!dayBtn || dayBtn.classList.contains('dp-day-outside')) return;
-                
-                const date = new Date(dayBtn.dataset.date);
-                this.selectedDate = date;
-                this.render();
-            }
+                    <!-- Inventario de Cuentas Maestras -->
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                         <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+                            <h3 class="text-xl font-semibold">Inventario de Cuentas Maestras</h3>
+                            <p class="text-sm text-slate-500 mt-1">Registra tus cuentas principales y sus credenciales.</p>
+                        </div>
+                        <div id="master-accounts-list"></div>
+                         <div class="p-6 border-t border-slate-200 dark:border-slate-700">
+                            <button id="add-master-account-btn" class="w-full bg-green-600 text-white font-medium py-2 px-4 rounded-md hover:bg-green-700">Añadir Cuenta Maestra</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        function attachSettingsEventListeners() {
+            document.getElementById('add-service-form').addEventListener('submit', handleAddService);
+            document.getElementById('add-master-account-btn').addEventListener('click', () => openMasterAccountModal());
+        }
 
-            navigateMonth(direction) {
-                this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-                this.render();
-            }
-
-            setDate() {
-                if (!this.selectedDate) {
-                    this.selectedDate = new Date();
-                }
-                
-                let hours = parseInt(this.hourEl.value) || 12;
-                const minutes = parseInt(this.minEl.value) || 0;
-                const ampm = this.ampmEl.value;
-
-                if (ampm === 'PM' && hours < 12) {
-                    hours += 12;
-                }
-                if (ampm === 'AM' && hours === 12) { // Midnight case
-                    hours = 0;
-                }
-                
-                this.selectedDate.setHours(hours, minutes, 0, 0);
-                
-                // Set a user-friendly value for display and a machine-readable value for logic
-                this.input.value = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short', hour12: true }).format(this.selectedDate);
-                this.input.dataset.isoValue = this.selectedDate.toISOString();
-                
-                App.utils.toast('Fecha establecida 📅');
-                this.close();
-            }
-
-            clear() {
-                this.input.value = '';
-                this.input.dataset.isoValue = '';
-                this.selectedDate = null;
-                this.render();
-                App.utils.toast('Fecha borrada');
-                this.close();
+        async function handleAddService(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const name = formData.get('name').trim();
+            if (name) {
+                await addDoc(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'services'), { 
+                    name: name,
+                    seat_limit: parseInt(formData.get('seat_limit')) || 1,
+                    pin_length: parseInt(formData.get('pin_length')) || 0,
+                    isNetflix: formData.get('isNetflix') === 'on'
+                });
+                e.target.reset();
             }
         }
 
-        App.init();
-    });
+        function populateServicesSettings() {
+            const container = document.getElementById('services-settings-list');
+            if (app.services.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-4">Aún no has definido servicios en tu catálogo.</p>`; return;
+            }
+            container.innerHTML = app.services.map(service => `
+                <div class="flex items-center justify-between p-3 rounded-md bg-slate-100 dark:bg-slate-700/50">
+                    <div>
+                        <p class="font-medium">${service.name} ${service.isNetflix ? '<span class="text-xs text-red-500">(Netflix)</span>' : ''}</p>
+                        <p class="text-sm text-slate-500">Plazas: ${service.seat_limit} | PIN: ${service.pin_length} dígitos</p>
+                    </div>
+                    <button type="button" data-role="delete-service-type" data-id="${service.id}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Eliminar servicio del catálogo" title="Eliminar servicio del catálogo">&times;</button>
+                </div>
+            `).join('');
+        }
+        
+        function populateMasterAccountsSettings() {
+            const container = document.getElementById('master-accounts-list');
+            if (!app.masterAccounts.length) {
+                container.innerHTML = `<p class="text-center text-slate-500 p-6">No has registrado ninguna cuenta maestra.</p>`;
+                return;
+            }
+
+            const svcById = {};
+            app.services.forEach(s => svcById[s.id] = s);
+
+            const groups = {};
+            for (const acc of app.masterAccounts) {
+                const sid = acc.serviceId || 'unknown';
+                if (!groups[sid]) groups[sid] = [];
+                groups[sid].push(acc);
+            }
+
+            const searchBoxId = 'master-acc-search';
+            const searchHTML = `<div class="p-4"><input type="text" id="${searchBoxId}" placeholder="Buscar por email o estado..." class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div>`;
+
+            let html = searchHTML + '<div class="px-4 pb-4">';
+
+            Object.entries(groups).forEach(([serviceId, accounts], idx) => {
+                const svc = svcById[serviceId];
+                const title = svc ? svc.name : 'Servicio desconocido';
+                const groupId = `acc-group-${serviceId}`;
+                const limitSum = accounts.reduce((a,acc) => a + effectiveSeatLimit(acc, svc), 0);
+                const usedSum  = accounts.reduce((a,acc) => a + (acc.seats_used || 0), 0);
+
+                html += `
+                <div class="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-3">
+                    <button type="button" data-role="toggle-acc-group" data-target="${groupId}" class="w-full flex items-center justify-between px-4 py-3 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700">
+                        <span class="font-semibold">${title}</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-slate-500">${usedSum}/${limitSum} ocupadas</span>
+                            <span class="chev transition-transform">&#9656;</span>
+                        </div>
+                    </button>
+                    <div id="${groupId}" class="hidden">
+                    <div class="p-3 space-y-2">
+                        ${accounts.map(acc => {
+                        const limit = effectiveSeatLimit(acc, svc);
+                        const used  = acc.seats_used || 0;
+                        const pct   = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+                        const color = pct > 80 ? 'bg-red-500' : (pct > 50 ? 'bg-yellow-500' : 'bg-green-500');
+                        const statusChip = acc.status === 'pausada' ? 'bg-yellow-600' : acc.status === 'bloqueada' ? 'bg-red-600' : 'bg-emerald-600';
+                        return `
+                            <div class="flex items-center justify-between p-3 rounded-md bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 acc-item"
+                                data-search="${(acc.login_email||'').toLowerCase()} ${acc.status||''}">
+                            <div class="min-w-0">
+                                <p class="font-medium truncate">
+                                ${acc.login_email}
+                                <span class="text-[10px] text-white ${statusChip} px-2 py-0.5 rounded-full ml-2 uppercase">${acc.status||'activa'}</span>
+                                </p>
+                                <div class="flex items-center gap-2 mt-1">
+                                <div class="w-28 h-2 bg-slate-300 dark:bg-slate-600 rounded-full">
+                                    <div class="${color} h-2 rounded-full" style="width:${pct}%"></div>
+                                </div>
+                                <p class="text-xs text-slate-500">${used} / ${limit} plazas</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" data-role="edit-master-account" data-id="${acc.id}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                                <button type="button" data-role="delete-master-account" data-id="${acc.id}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Eliminar">&times;</button>
+                            </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    </div>
+                </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+
+            const search = document.getElementById(searchBoxId);
+            if (search) {
+                search.addEventListener('input', () => {
+                const q = search.value.trim().toLowerCase();
+                container.querySelectorAll('.acc-item').forEach(el => {
+                    const bag = (el.getAttribute('data-search') || '');
+                    el.style.display = bag.includes(q) ? 'flex' : 'none';
+                });
+                });
+            }
+        }
+
+        // --- MODALES ---
+        let selectedMasterAccountId = null;
+
+        function setupClientModal() { app.ui.clientModal = document.getElementById('client-modal'); app.ui.clientModal.querySelector('.modal-backdrop').addEventListener('click', closeClientModal); document.getElementById('modal-cancel-btn').addEventListener('click', closeClientModal); document.getElementById('client-form').addEventListener('submit', handleClientFormSubmit); }
+        async function handleClientFormSubmit(e) { e.preventDefault(); const d = new FormData(e.target); const tagsStr = d.get('tags') || ''; const cd = {name:d.get('name'),phone:d.get('phone'),credit:parseFloat(d.get('credit'))||0,notes:d.get('notes'),status:d.get('status')||'activo',tags:tagsStr?tagsStr.split(',').map(t=>t.trim()).filter(Boolean):[],payment_link: d.get('payment_link') || null,}; try{if(app.selectedClientId){ await updateDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', app.selectedClientId), cd);}else{cd.services={};cd.invoices=[];await addDoc(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients'), cd);} closeClientModal();}catch(err){console.error(err);}}
+        function openClientModal(c=null) { app.selectedClientId = c?c.id:null; const f = document.getElementById('client-form'); f.reset(); document.getElementById('client-modal-title').textContent = c?'Editar Cliente':'Añadir Cliente'; if(c){f.elements.name.value=c.name;f.elements.phone.value=c.phone||'';f.elements.credit.value=c.credit||'0.00';f.elements.notes.value=c.notes||''; f.elements.status.value = c.status || 'activo'; f.elements.tags.value = Array.isArray(c.tags) ? c.tags.join(', ') : ''; f.elements.payment_link.value = c.payment_link || '';} app.ui.clientModal.classList.remove('hidden'); app.ui.clientModal.classList.add('flex');}
+        function closeClientModal() { app.ui.clientModal.classList.add('hidden'); app.ui.clientModal.classList.remove('flex');}
+
+        function setupServiceModal() { app.ui.serviceModal = document.getElementById('service-modal'); app.ui.serviceModal.querySelector('.modal-backdrop').addEventListener('click', closeServiceModal); document.getElementById('service-modal-cancel-btn').addEventListener('click', closeServiceModal); document.getElementById('service-form').addEventListener('submit', handleServiceFormSubmit); }
+        async function handleServiceFormSubmit(e) {
+            e.preventDefault();
+            const client = app.clients.find(cl => cl.id === app.selectedClientId);
+            if (!client) return;
+
+            const formData = new FormData(e.target);
+            const serviceId = formData.get('serviceId');
+            const price = parseFloat(formData.get('price'));
+            const date = formData.get('date');
+
+            const serviceInfo = app.services.find(s => s.id === serviceId);
+            if (!serviceInfo) return;
+
+            // Recoger perfiles
+            const names = formData.getAll('profile_name[]');
+            const pins = formData.getAll('profile_pin[]');
+            const accs = formData.getAll('profile_account[]');
+            const profilesRequested = names.map((nm, i) => ({
+                name: (nm || `Perfil ${i + 1}`).trim(),
+                pin: (pins[i] || '').trim(),
+                accountId: accs[i] || null
+            })).filter(p => true);
+
+            if (!profilesRequested.length) return mostrarNotificacion("Debes crear al menos 1 perfil.", true);
+
+            const accounts = app.masterAccounts.filter(ma => ma.serviceId === serviceId && ma.status === 'activa');
+            const ranked = sortAccountsByAvailability(accounts, serviceInfo);
+            for (const p of profilesRequested) {
+                if (!p.accountId) {
+                    const choice = ranked.find(a => freeSeatsForAccount(a, serviceInfo) > 0);
+                    if (choice) p.accountId = choice.id;
+                }
+            }
+            if (profilesRequested.some(p => !p.accountId)) {
+                return mostrarNotificacion("No hay suficiente capacidad en cuentas maestras para todos los perfiles.", true);
+            }
+
+            const clientRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', client.id);
+            const usedAccountIds = [...new Set(profilesRequested.map(p => p.accountId))];
+            const accRefs = usedAccountIds.map(id => doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', id));
+
+            await runTransaction(app.db, async (tx) => {
+                const clientSnap = await tx.get(clientRef);
+                const clientData = clientSnap.data() || {};
+                const svcNode = { ...(clientData.services?.[serviceId] || {})};
+                const existingProfiles = Array.isArray(svcNode.profiles) ? svcNode.profiles.slice() : [];
+
+                const accSnaps = await Promise.all(accRefs.map(r => tx.get(r)));
+                const accMap = {};
+                accSnaps.forEach(s => {
+                    if (!s.exists()) throw new Error("Una cuenta ya no existe.");
+                    accMap[s.id] = s.data();
+                });
+
+                const needByAcc = {};
+                for (const p of profilesRequested) needByAcc[p.accountId] = (needByAcc[p.accountId] || 0) + 1;
+                for (const [accId, need] of Object.entries(needByAcc)) {
+                    const acc = accMap[accId];
+                    const limit = effectiveSeatLimit(acc, serviceInfo);
+                    const used = acc.seats_used || 0;
+                    if (used + need > limit) throw new Error(`Capacidad insuficiente en ${acc.login_email}.`);
+                }
+
+                const newProfiles = [];
+                for (const p of profilesRequested) {
+                    const accId = p.accountId;
+                    const acc = accMap[accId];
+                    const seatsArr = Array.isArray(acc.seats) ? acc.seats.slice() : [];
+
+                    let finalPin = p.pin;
+                    if (!finalPin && (serviceInfo.pin_length || 0) > 0) {
+                        finalPin = generatePin(serviceInfo.pin_length);
+                    }
+                    if (finalPin && seatsArr.some(s => s.pin === finalPin)) {
+                        finalPin = generatePin(serviceInfo.pin_length || 4);
+                    }
+
+                    const seat_uid = `${client.id}-${serviceId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    seatsArr.push({
+                        seat_uid,
+                        clientId: client.id,
+                        serviceId,
+                        assigned_at: new Date().toISOString(),
+                        pin: finalPin || null,
+                        profile: p.name
+                    });
+
+                    tx.update(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', accId), {
+                        seats_used: (acc.seats_used || 0) + 1,
+                        seats: seatsArr
+                    });
+
+                    newProfiles.push({
+                        profile_id: seat_uid,
+                        profile_name: p.name,
+                        master_account_id: accId,
+                        login_email: acc.login_email,
+                        pin: finalPin || null,
+                        assigned_at: new Date().toISOString()
+                    });
+                }
+
+                const newServices = { ...(clientData.services || {})};
+                svcNode.price = price;
+                svcNode.date = date;
+                svcNode.profiles = existingProfiles.concat(newProfiles);
+                newServices[serviceId] = svcNode;
+
+                tx.update(clientRef, {
+                    services: newServices
+                });
+            });
+
+            mostrarNotificacion("Perfiles asignados correctamente.");
+            closeServiceModal();
+        }
+        function openServiceModal(client) {
+            app.selectedClientId = client.id;
+            const form = document.getElementById('service-form');
+            form.reset();
+
+            form.elements.serviceId.innerHTML = app.services.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+            const svcSelect = form.elements.serviceId;
+            const qtyInput  = form.elements.qty_profiles;
+
+            function refresh() {
+                const svcId   = svcSelect.value;
+                const service = app.services.find(s => s.id === svcId);
+                if (!service) { document.getElementById('profiles-dynamic').innerHTML = ''; return; }
+                const accounts = app.masterAccounts.filter(ma => ma.serviceId === svcId);
+                const n = Math.max(1, parseInt(qtyInput.value,10) || 1);
+                renderProfileForms(n, accounts, service);
+            }
+
+            svcSelect.addEventListener('change', refresh);
+            qtyInput.addEventListener('input', refresh);
+
+            refresh();
+            app.ui.serviceModal.classList.remove('hidden');
+            app.ui.serviceModal.classList.add('flex');
+        }
+        function closeServiceModal() { app.ui.serviceModal.classList.add('hidden'); app.ui.serviceModal.classList.remove('flex');}
+
+        function setupInvoiceModal() { app.ui.invoiceModal = document.getElementById('invoice-modal'); app.ui.invoiceModal.querySelector('.modal-backdrop').addEventListener('click', closeInvoiceModal); document.getElementById('invoice-modal-cancel-btn').addEventListener('click', closeInvoiceModal); document.getElementById('generate-invoice-action-btn').addEventListener('click', handleGenerateInvoiceAction); document.getElementById('copy-invoice-btn').addEventListener('click', ()=>{document.getElementById('generated-invoice-message').select();document.execCommand('copy');});}
+        function openInvoiceModal(c) { app.selectedClientId = c.id; document.getElementById('invoice-result').classList.add('hidden'); document.getElementById('invoice-options').querySelectorAll('input').forEach(i => i.checked = false); app.ui.invoiceModal.classList.remove('hidden'); app.ui.invoiceModal.classList.add('flex');}
+        function closeInvoiceModal() { app.ui.invoiceModal.classList.add('hidden'); app.ui.invoiceModal.classList.remove('flex');}
+
+        function setupInvoiceViewModal() {
+            app.ui.invoiceViewModal = document.getElementById('invoice-view-modal');
+            app.ui.invoiceViewModal.querySelector('.modal-backdrop').addEventListener('click', closeInvoiceViewModal);
+            document.getElementById('invoice-view-close-btn').addEventListener('click', closeInvoiceViewModal);
+        }
+        function openInvoiceViewModal(invoiceContent) {
+            document.getElementById('invoice-view-content').value = invoiceContent;
+            app.ui.invoiceViewModal.classList.remove('hidden');
+            app.ui.invoiceViewModal.classList.add('flex');
+        }
+        function closeInvoiceViewModal() {
+            app.ui.invoiceViewModal.classList.add('hidden');
+            app.ui.invoiceViewModal.classList.remove('flex');
+        }
+        
+        function setupMasterAccountModal() { app.ui.masterAccountModal = document.getElementById('master-account-modal'); app.ui.masterAccountModal.querySelector('.modal-backdrop').addEventListener('click', closeMasterAccountModal); document.getElementById('master-account-modal-cancel-btn').addEventListener('click', closeMasterAccountModal); document.getElementById('master-account-form').addEventListener('submit', handleMasterAccountFormSubmit); }
+        async function handleMasterAccountFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const payload = {
+                serviceId: formData.get('serviceId'),
+                login_email: formData.get('login_email'),
+                status: formData.get('status') || 'activa',
+            };
+            const override = parseInt(formData.get('seat_limit_override'), 10);
+            if (!isNaN(override) && override > 0) payload.seat_limit_override = override;
+
+            const pwd = formData.get('password');
+            if (pwd) payload.password = pwd;
+
+            if (selectedMasterAccountId) {
+                const accRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', selectedMasterAccountId);
+                await runTransaction(app.db, async (tx) => {
+                    const snap = await tx.get(accRef);
+                    if (!snap.exists()) throw new Error("La cuenta maestra ya no existe.");
+                    const prev = snap.data();
+                    payload.seats = Array.isArray(prev.seats) ? prev.seats : [];
+                    payload.seats_used = prev.seats_used || 0;
+                    const svc = app.services.find(s => s.id === payload.serviceId);
+                    const effLimit = effectiveSeatLimit(payload, svc);
+                    if (effLimit < payload.seats_used) {
+                        throw new Error(`No puedes reducir plazas a ${effLimit} si ya hay ${payload.seats_used} ocupadas.`);
+                    }
+                    tx.update(accRef, payload);
+                });
+                mostrarNotificacion("Cuenta maestra actualizada.");
+            } else {
+                payload.seats = [];
+                payload.seats_used = 0;
+                payload.created_at = new Date().toISOString();
+                await addDoc(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts'), payload);
+                mostrarNotificacion("Cuenta maestra añadida.");
+            }
+            closeMasterAccountModal();
+        }
+        function openMasterAccountModal(account = null) {
+            const form = document.getElementById('master-account-form');
+            form.reset();
+            form.elements.serviceId.innerHTML = app.services.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+            if (account) {
+                selectedMasterAccountId = account.id;
+                document.getElementById('master-account-modal-title').textContent = "Editar Cuenta Maestra";
+                form.elements.serviceId.value = account.serviceId || '';
+                form.elements.login_email.value = account.login_email || '';
+                form.elements.password.value = account.password || ''; // SHOW PASSWORD
+                form.elements.status.value = account.status || 'activa';
+                form.elements.seat_limit_override.value = account.seat_limit_override || '';
+            } else {
+                selectedMasterAccountId = null;
+                document.getElementById('master-account-modal-title').textContent = "Añadir Cuenta Maestra";
+            }
+            
+            // Reset password visibility
+            const passwordInput = form.elements.password;
+            const toggleBtn = passwordInput.nextElementSibling;
+            passwordInput.type = 'password';
+            toggleBtn.querySelector('.eye-open').classList.remove('hidden');
+            toggleBtn.querySelector('.eye-closed').classList.add('hidden');
+
+            app.ui.masterAccountModal.classList.remove('hidden');
+            app.ui.masterAccountModal.classList.add('flex');
+        }
+        function closeMasterAccountModal() { app.ui.masterAccountModal.classList.add('hidden'); app.ui.masterAccountModal.classList.remove('flex');}
+
+        // --- LÓGICA DE FACTURACIÓN ---
+        async function handleGenerateInvoiceAction() {
+            const client = app.clients.find(c => c.id === app.selectedClientId);
+            if (!client) return;
+            const options = {
+                explicacion: document.getElementById('inv-explicacion').checked,
+                cobro: document.getElementById('inv-netflix-cobro').checked,
+                recordatorio: document.getElementById('inv-netflix-recordatorio').checked,
+                prorrateo: document.getElementById('inv-netflix-prorrateo').checked
+            };
+            const { message, total } = generateCombinedInvoice(client, options);
+            document.getElementById('invoice-result').classList.remove('hidden');
+            document.getElementById('generated-invoice-message').value = message;
+            const whatsappBtn = document.getElementById('whatsapp-invoice-btn');
+            if (client.phone) {
+                whatsappBtn.href = `https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                whatsappBtn.classList.remove('hidden');
+            } else {
+                whatsappBtn.classList.add('hidden');
+            }
+            await addInvoice(client.id, {
+                content: message,
+                total: total,
+                status: 'pendiente',
+                payment_link: client.payment_link || null
+            });
+            mostrarNotificacion("Factura generada y guardada.");
+        }
+
+        function generateCombinedInvoice(client, options) {
+            let message = `**Este es un mensaje generado automáticamente por el sistema de notificaciones de StreamService.**\n\nEstimado/a ${client.name},\n\n`;
+            if (options.explicacion) {
+                message += `Como es de su conocimiento, el pasado 17 de agosto Netflix realizó cambios que nos impidieron continuar ofreciendo el servicio, obligándonos a cesar las operaciones. Le agradecemos sinceramente por haber sido parte de StreamService.\n\n`;
+            }
+            let totalGeneral = 0;
+            const bloques = [];
+            const clientServices = client.services || {};
+
+            for (const serviceId in clientServices) {
+                const serviceData = clientServices[serviceId];
+                const serviceInfo = app.services.find(s => s.id === serviceId);
+                if (!serviceInfo) continue;
+
+                if (serviceInfo.isNetflix) {
+                    const {
+                        bloqueStr,
+                        deuda
+                    } = processNetflixLogic(serviceData, options);
+                    if (bloqueStr) bloques.push(bloqueStr);
+                    totalGeneral += deuda;
+                } else {
+                    const {
+                        bloqueStr,
+                        subtotal
+                    } = processOtherServiceLogic(serviceInfo, serviceData);
+                    if (bloqueStr) bloques.push(bloqueStr);
+                    totalGeneral += subtotal;
+                }
+            }
+
+            message += bloques.join('');
+            message += `--- RESUMEN FINAL DE FACTURACIÓN ---\n`;
+            message += `Subtotal Servicios: $${totalGeneral.toFixed(2)}\n`;
+
+            let totalAPagar = totalGeneral;
+            if (client.credit && client.credit > 0) {
+                totalAPagar = Math.max(0, totalGeneral - client.credit);
+                message += `Crédito Previo Aplicado: -$${client.credit.toFixed(2)}\n`;
+            }
+            message += `--------------------------------\n`;
+            message += `**Total a Pagar: $${totalAPagar.toFixed(2)}**\n`;
+            message += `--------------------------------\n\n`;
+            message += `Quedamos atentos para coordinar el pago o la devolución, según corresponda. ¡Gracias!`;
+
+            return {
+                message,
+                total: totalAPagar
+            };
+        }
+
+        function processNetflixLogic(serviceData, options) {
+            const FECHA_BLOQUEO = new Date('2025-08-17T00:00:00');
+            const precio = serviceData.price || 0;
+            const fechaCicloStr = serviceData.date;
+            const profiles = Array.isArray(serviceData.profiles) ? serviceData.profiles : [];
+            const perfilesCount = profiles.length || 1; 
+
+            if (!precio || !fechaCicloStr || !options.cobro) return {
+                bloqueStr: '',
+                deuda: 0
+            };
+
+            let deuda = 0;
+            let bloqueStr = "--- Estado de Cuenta: Netflix ---\n";
+            const fechaCiclo = new Date(fechaCicloStr + 'T00:00:00');
+
+            let mesesCompletos = 0;
+            let detalleMesesStr = "";
+            let fechaDeCalculo = new Date(fechaCiclo);
+
+            while (fechaDeCalculo < FECHA_BLOQUEO) {
+                let proximoCiclo = new Date(fechaDeCalculo);
+                proximoCiclo.setMonth(proximoCiclo.getMonth() + 1);
+                if (proximoCiclo > FECHA_BLOQUEO) break;
+                
+                const mesTotal = precio * perfilesCount;
+                detalleMesesStr += `▪️ Período ${formatDate(fechaDeCalculo)} a ${formatDate(proximoCiclo)}: $${precio.toFixed(2)} x ${perfilesCount} perfiles = $${mesTotal.toFixed(2)}\n`;
+                mesesCompletos++;
+                fechaDeCalculo.setMonth(fechaDeCalculo.getMonth() + 1);
+            }
+            deuda = mesesCompletos * (precio * perfilesCount);
+
+            if (mesesCompletos > 0) {
+                bloqueStr += "**Meses Completos Adeudados:**\n" + detalleMesesStr;
+            }
+            
+            let finUltimoPeriodo = new Date(fechaDeCalculo);
+            finUltimoPeriodo.setMonth(finUltimoPeriodo.getMonth() + 1);
+            
+            let textoUltimoPeriodo = `▪️ Último período (${formatDate(fechaDeCalculo)} a ${formatDate(finUltimoPeriodo)})`;
+
+            const diasTotales = new Date(fechaDeCalculo.getFullYear(), fechaDeCalculo.getMonth() + 1, 0).getDate();
+            const diasFuncionales = Math.max(0, Math.floor((FECHA_BLOQUEO - fechaDeCalculo) / (1000 * 60 * 60 * 24)));
+            const ratio = diasFuncionales / diasTotales;
+
+            const ultimoMesTotal = precio * perfilesCount;
+            if (ratio >= 0.66) {
+                deuda += ultimoMesTotal;
+                bloqueStr += `\n${textoUltimoPeriodo}: $${precio.toFixed(2)} x ${perfilesCount} perfiles = $${ultimoMesTotal.toFixed(2)}\n`;
+            } else {
+                bloqueStr += `\n${textoUltimoPeriodo}: Entendiendo los inconvenientes, hemos decidido no facturar este período para asegurar que solo pague por un servicio completamente funcional.\n`;
+            }
+            bloqueStr += `Subtotal Deuda Netflix: $${deuda.toFixed(2)}\n`;
+            bloqueStr += `--------------------------------\n\n`;
+            return {
+                bloqueStr,
+                deuda
+            };
+        }
+
+        function processOtherServiceLogic(serviceInfo, serviceData) {
+            const FECHA_ACTUAL = new Date();
+            const precio = serviceData.price || 0;
+            const fechaCicloStr = serviceData.date;
+            const profiles = Array.isArray(serviceData.profiles) ? serviceData.profiles : [];
+            const perfilesCount = profiles.length || 1;
+
+            if (!precio || !fechaCicloStr) return {
+                bloqueStr: '',
+                subtotal: 0
+            };
+
+            let fechaCicloActual = new Date(fechaCicloStr + 'T00:00:00');
+            if (isNaN(fechaCicloActual.getTime()) || fechaCicloActual > FECHA_ACTUAL) return {
+                bloqueStr: '',
+                subtotal: 0
+            };
+
+            let mesesFacturados = 0,
+                detalleStr = "",
+                subtotal = 0;
+            while (fechaCicloActual < FECHA_ACTUAL) {
+                let proximoCiclo = new Date(fechaCicloActual);
+                proximoCiclo.setMonth(proximoCiclo.getMonth() + 1);
+
+                const mesTotal = precio * perfilesCount;
+                subtotal += mesTotal;
+                detalleStr += `▪️ Período (${formatDate(fechaCicloActual)} a ${formatDate(proximoCiclo)}): $${precio.toFixed(2)} x ${perfilesCount} perfiles = $${mesTotal.toFixed(2)}\n`;
+                mesesFacturados++;
+                fechaCicloActual.setMonth(fechaCicloActual.getMonth() + 1);
+            }
+
+            if (mesesFacturados > 0) {
+                let bloqueStr = `--- Resumen: ${serviceInfo.name} ---\n`;
+                bloqueStr += detalleStr;
+                bloqueStr += `Subtotal ${serviceInfo.name}: $${subtotal.toFixed(2)}\n`;
+                bloqueStr += `--------------------------------\n\n`;
+                return {
+                    bloqueStr,
+                    subtotal
+                };
+            }
+            return {
+                bloqueStr: '',
+                subtotal: 0
+            };
+        }
+        
+        // --- UTILIDADES ---
+        function generatePin(length = 0) {
+            if (!length || length <= 0) return "";
+            let s = "";
+            for (let i = 0; i < length; i++) s += Math.floor(Math.random() * 10);
+            return s;
+        }
+
+        function accountAvailability(account, service) {
+            const limit = effectiveSeatLimit(account, service);
+            const used = account?.seats_used || 0;
+            return Math.max(0, limit - used);
+        }
+
+        function rankMasterAccounts(accounts, service) {
+            return accounts
+                .filter(a => a.status === 'activa' && accountAvailability(a, service) > 0)
+                .sort((a, b) => {
+                    const freeA = accountAvailability(a, service);
+                    const freeB = accountAvailability(b, service);
+                    if (freeB !== freeA) return freeB - freeA;
+                    const occA = a.seats_used || 0,
+                        occB = b.seats_used || 0;
+                    if (occA !== occB) return occA - occB;
+                    return (a.created_at || 0) - (b.created_at || 0);
+                });
+        }
+        
+        function freeSeatsForAccount(acc, service) {
+            const limit = effectiveSeatLimit(acc, service);
+            const used  = acc.seats_used || 0;
+            return Math.max(0, limit - used);
+        }
+
+        function sortAccountsByAvailability(accounts, service) {
+            return accounts
+                .filter(a => a.status === 'activa' && freeSeatsForAccount(a, service) > 0)
+                .sort((a,b) => freeSeatsForAccount(b,service) - freeSeatsForAccount(a,service));
+        }
+
+        function distributeProfiles(accounts, service, count) {
+            const dist = {}; 
+            if (count <= 0) return dist;
+            const pool = accounts.map(a => ({ id:a.id, free: freeSeatsForAccount(a, service), acc:a }))
+                                .filter(x => x.free > 0);
+            if (pool.length === 0) return dist;
+
+            for (let i=0; i<count; i++) {
+                pool.sort((x,y)=> y.free - x.free);
+                if (!pool[0] || pool[0].free <= 0) break;
+                dist[pool[0].id] = (dist[pool[0].id] || 0) + 1;
+                pool[0].free -= 1;
+            }
+            return dist;
+        }
+
+        function renderAccountsAvailability(container, accounts, service) {
+            container.innerHTML = accounts.map(a => {
+                const free = freeSeatsForAccount(a, service);
+                const limit = effectiveSeatLimit(a, service);
+                const pct   = limit? Math.round(((limit - free)/limit)*100) : 0;
+                const bar = pct>80?'bg-red-500':pct>50?'bg-yellow-500':'bg-green-500';
+                return `
+                <div class="flex items-center justify-between p-2 rounded border border-slate-200 dark:border-slate-700 mb-2">
+                    <div class="min-w-0">
+                    <p class="text-sm font-medium truncate">${a.login_email}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="w-28 h-2 bg-slate-300 dark:bg-slate-600 rounded-full">
+                        <div class="${bar} h-2 rounded-full" style="width:${pct}%"></div>
+                        </div>
+                        <p class="text-xs text-slate-500">${limit - free} / ${limit} usadas · libres: ${free}</p>
+                    </div>
+                    </div>
+                    ${free<=1?`<span class="text-xs text-red-600">⚠︎ al límite</span>`:''}
+                </div>`;
+            }).join('');
+        }
+
+        function renderProfileForms(n, accounts, service) {
+            const container = document.getElementById('profiles-dynamic');
+            const ranked = sortAccountsByAvailability(accounts, service);
+            const dist   = distributeProfiles(accounts, service, n);
+
+            const optionsHTML = ranked.map(a => {
+                const free = freeSeatsForAccount(a, service);
+                return `<option value="${a.id}">${a.login_email} — libres: ${free}</option>`;
+            }).join('');
+
+            container.innerHTML = '';
+            let cursor = [];
+            Object.entries(dist).forEach(([accId, k]) => {
+                for (let i=0;i<k;i++) cursor.push(accId);
+            });
+            while (cursor.length < n) cursor.push('');
+
+            for (let i=0;i<n;i++) {
+                const suggested = cursor[i] || '';
+                container.insertAdjacentHTML('beforeend', `
+                <div class="p-3 rounded-md bg-slate-100 dark:bg-slate-700/40">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs mb-1">Nombre del perfil</label>
+                        <input type="text" name="profile_name[]" placeholder="Perfil ${i+1}"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-xs mb-1">PIN</label>
+                        <input type="text" name="profile_pin[]"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" maxlength="10">
+                    </div>
+                    <div>
+                        <label class="block text-xs mb-1">Cuenta maestra</label>
+                        <select name="profile_account[]" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent">
+                        <option value="">(Elegir)</option>
+                        ${optionsHTML}
+                        </select>
+                    </div>
+                    </div>
+                </div>
+                `);
+                const selects = container.querySelectorAll('select[name="profile_account[]"]');
+                const sel = selects[selects.length-1];
+                if (suggested) sel.value = suggested;
+            }
+
+            const availBox = document.getElementById('accounts-availability');
+            const suggBox  = document.getElementById('master-account-suggestion');
+            renderAccountsAvailability(availBox, ranked, service);
+            suggBox.classList.toggle('hidden', ranked.length===0);
+        }
+
+        async function handleRemoveClientProfile(serviceId, profileId) {
+            const client = app.clients.find(cl => cl.id === app.selectedClientId);
+            const serviceInfo = app.services.find(s => s.id === serviceId);
+            if (!client || !serviceInfo) return;
+
+            const svc = (client.services||{})[serviceId];
+            const profiles = Array.isArray(svc?.profiles) ? svc.profiles.slice() : [];
+            const p = profiles.find(x => x.profile_id === profileId);
+            if (!p) return;
+
+            if (!confirm(`¿Quitar el perfil "${p.profile_name}"?`)) return;
+
+            const accRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', p.master_account_id);
+            const clientRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', client.id);
+
+            await runTransaction(app.db, async (tx) => {
+                const [accSnap, clientSnap] = await Promise.all([tx.get(accRef), tx.get(clientRef)]);
+                if (accSnap.exists()) {
+                     const acc = accSnap.data();
+                    const used = acc.seats_used || 0;
+                    let seatsArr = Array.isArray(acc.seats) ? acc.seats.slice() : [];
+                    seatsArr = seatsArr.filter(s => s.seat_uid !== profileId);
+                    tx.update(accRef, { seats_used: Math.max(0, used - 1), seats: seatsArr });
+                }
+
+                const cd = clientSnap.data() || {};
+                const svcNode = { ...(cd.services?.[serviceId] || {}) };
+                const newProfiles = profiles.filter(x => x.profile_id !== profileId);
+                svcNode.profiles = newProfiles;
+                const newServices = { ...(cd.services || {}) };
+                if (newProfiles.length === 0) {
+                delete newServices[serviceId];
+                } else {
+                newServices[serviceId] = svcNode;
+                }
+                tx.update(clientRef, { services: newServices });
+            });
+
+            mostrarNotificacion("Perfil eliminado.");
+        }
+
+        async function handleRemoveServiceById(serviceIdToRemove) {
+            const client = app.clients.find(cl => cl.id === app.selectedClientId);
+            const serviceInfo = app.services.find(s => s.id === serviceIdToRemove);
+            if (!client || !serviceInfo) return;
+
+            if (!confirm(`¿Quitar ${serviceInfo.name} y todos sus perfiles de ${client.name}?`)) return;
+            
+            const currentService = (client.services || {})[serviceIdToRemove];
+            const profiles = Array.isArray(currentService.profiles) ? currentService.profiles : [];
+
+            for (const profile of profiles) {
+                 if (profile.master_account_id) {
+                    const accRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', profile.master_account_id);
+                    await runTransaction(app.db, async (tx) => {
+                        const snap = await tx.get(accRef);
+                        if (!snap.exists()) return;
+                        const acc = snap.data();
+                        const used = acc.seats_used || 0;
+                        let seatsArr = Array.isArray(acc.seats) ? acc.seats.slice() : [];
+                        seatsArr = seatsArr.filter(s => !(s.clientId === client.id && s.seat_uid === profile.profile_id));
+                        tx.update(accRef, { seats_used: Math.max(0, used - 1), seats: seatsArr });
+                    });
+                }
+            }
+
+            const updatedServices = { ...(client.services || {}) };
+            delete updatedServices[serviceIdToRemove];
+
+            await updateDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', client.id), {
+                services: updatedServices
+            });
+
+            mostrarNotificacion("Servicio eliminado.");
+        }
+
+        async function handleDeleteServiceType(serviceDocId) {
+            const inUse = app.clients.some(c => c.services && c.services[serviceDocId]);
+            if (inUse) {
+                return mostrarNotificacion("No puedes eliminar: hay clientes usando este servicio.", true);
+            }
+            if (!confirm("¿Eliminar este servicio del catálogo?")) return;
+            await deleteDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'services', serviceDocId));
+            mostrarNotificacion("Servicio eliminado del catálogo.");
+        }
+
+        async function handleDeleteMasterAccount(masterAccId) {
+            if (!confirm("¿Eliminar esta cuenta maestra?")) return;
+            await deleteDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', masterAccId));
+            mostrarNotificacion("Cuenta maestra eliminada.");
+        }
+        function effectiveSeatLimit(account, service) {
+            return account?.seat_limit_override > 0 ? account.seat_limit_override : (service?.seat_limit || 0);
+        }
+        function formatDate(date) {
+            if (!date || isNaN(date.getTime())) return 'N/A';
+            const d = date.getDate().toString().padStart(2, '0');
+            const m = (date.getMonth() + 1).toString().padStart(2, '0');
+            const y = date.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+        function setupSidebar() {
+            const s = document.getElementById('sidebar');
+            const t = document.getElementById('sidebar-toggle');
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                s.classList.add('collapsed');
+            }
+            t.addEventListener('click', () => {
+                s.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', s.classList.contains('collapsed'));
+            });
+        }
+        function showFirebaseError(e) {
+            console.error("Firebase error:", e);
+            document.getElementById('app-loader').innerHTML = `<div class="text-center p-4"><p class="text-red-500 font-bold mb-2">Error de Conexión</p><p>No se pudo conectar a la base de datos.</p></div>`;
+        }
+        function setupDarkMode() {
+            const t = document.getElementById('dark-mode-toggle');
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                t.checked = true;
+            }
+            t.addEventListener('change', () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.theme = t.checked ? 'dark' : 'light';
+            });
+        }
+        function mostrarNotificacion(m, e = false) {
+            const c = document.getElementById('notificacion');
+            const b = e ? 'bg-red-500' : 'bg-green-600';
+            const el = document.createElement('div');
+            el.className = `${b} text-white px-4 py-2 rounded-lg shadow-lg flex items-center text-sm animate-pulse`;
+            el.innerHTML = `<span>${e ? '❌' : '✅'}</span><span class="ml-2">${m}</span>`;
+            c.appendChild(el);
+            setTimeout(() => {
+                el.classList.remove('animate-pulse');
+                setTimeout(() => el.remove(), 3000);
+            }, 500);
+        }
+        
+        function invoicesColRef(clientId) {
+            return collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId, 'invoices');
+        }
+        async function addInvoice(clientId, invoice) {
+            await addDoc(invoicesColRef(clientId), {
+                ...invoice,
+                created_at: Timestamp.now()
+            });
+        }
+        async function listInvoices(clientId, max=50) {
+            const qRef = query(invoicesColRef(clientId), orderBy('created_at','desc'), limit(max));
+            const snap = await getDocs(qRef);
+            return snap.docs.map(d => ({ id:d.id, ...d.data() }));
+        }
+        async function computeAccountsReceivable() {
+            let total = 0;
+            for (const c of app.clients) {
+                const qRef = query(invoicesColRef(c.id), where('status','==','pendiente'));
+                const snap = await getDocs(qRef);
+                snap.forEach(d => total += Number(d.data().total || 0));
+            }
+            return total;
+        }
+        function computeCreditToReturn() {
+            return app.clients.reduce((total, client) => total + (client.credit || 0), 0);
+        }
+        function computeMRR() {
+            let total = 0;
+            for (const c of app.clients) {
+                const sv = c.services || {};
+                Object.values(sv).forEach(s => total += Number(s.price||0) * (s.profiles?.length || 1));
+            }
+            return total;
+        }
+        function countUpcomingRenewals(days=7){
+            const today = new Date(); today.setHours(0,0,0,0);
+            const horizon = new Date(today); horizon.setDate(horizon.getDate()+days);
+            let count = 0;
+            for (const c of app.clients) {
+                const sv = c.services || {};
+                for (const s of Object.values(sv)) {
+                if(!s.date) continue;
+                let next = new Date(s.date+'T00:00:00');
+                while (next < today) next.setMonth(next.getMonth()+1);
+                if (next <= horizon) { count++; break; }
+                }
+            }
+            return count;
+        }
+
+        function setupGlobalEventListeners() {
+            document.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-role]');
+                if (!btn) return;
+
+                const role = btn.getAttribute('data-role');
+                
+                try {
+                    if (role === 'remove-client-profile') {
+                        e.preventDefault(); e.stopPropagation();
+                        const serviceId = btn.getAttribute('data-service-id');
+                        const profileId = btn.getAttribute('data-profile-id');
+                        await handleRemoveClientProfile(serviceId, profileId);
+                    }
+                    else if (role === 'remove-client-service') {
+                        e.preventDefault(); e.stopPropagation();
+                        const serviceId = btn.getAttribute('data-service-id');
+                        await handleRemoveServiceById(serviceId);
+                    }
+                    else if (role === 'delete-service-type') {
+                        e.preventDefault(); e.stopPropagation();
+                        const id = btn.getAttribute('data-id');
+                        await handleDeleteServiceType(id);
+                    }
+                    else if (role === 'delete-master-account') {
+                        e.preventDefault(); e.stopPropagation();
+                        const id = btn.getAttribute('data-id');
+                        await handleDeleteMasterAccount(id);
+                    }
+                    else if (role === 'edit-master-account') {
+                        e.preventDefault(); e.stopPropagation();
+                        const id = btn.getAttribute('data-id');
+                        const acc = app.masterAccounts.find(a => a.id === id);
+                        openMasterAccountModal(acc);
+                    }
+                    else if (role === 'toggle-acc-group') {
+                        e.preventDefault(); e.stopPropagation();
+                        const target = document.getElementById(btn.getAttribute('data-target'));
+                        if (target) target.classList.toggle('hidden');
+                        btn.querySelector('.chev')?.classList.toggle('rotate-90');
+                    }
+                    else if (role === 'toggle-password') {
+                        e.preventDefault(); e.stopPropagation();
+                        const input = btn.previousElementSibling;
+                        const eyeOpen = btn.querySelector('.eye-open');
+                        const eyeClosed = btn.querySelector('.eye-closed');
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            eyeOpen.classList.add('hidden');
+                            eyeClosed.classList.remove('hidden');
+                        } else {
+                            input.type = 'password';
+                            eyeOpen.classList.remove('hidden');
+                            eyeClosed.classList.add('hidden');
+                        }
+                    }
+                     else if (role === 'copy-email') {
+                        e.preventDefault(); e.stopPropagation();
+                        const input = btn.previousElementSibling;
+                        navigator.clipboard.writeText(input.value).then(() => {
+                           mostrarNotificacion("Email copiado.");
+                        });
+                    } else if (role === 'view-invoice') {
+                        e.preventDefault(); e.stopPropagation();
+                        const client = app.clients.find(c => c.id === app.selectedClientId);
+                        if (!client) return;
+                        const invoiceId = btn.getAttribute('data-invoice-id');
+                        const invoices = await listInvoices(client.id);
+                        const invoice = invoices.find(i => i.id === invoiceId);
+                        if (invoice) {
+                            openInvoiceViewModal(invoice.content);
+                        }
+                    } else if (role === 'quick-wa') {
+                        const c = app.clients.find(x=>x.id===app.selectedClientId);
+                        if(!c?.phone) return mostrarNotificacion("Sin WhatsApp.", true);
+                        const msg = `Hola ${c.name}, ¿en qué puedo ayudarte?`;
+                        window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+                    } else if (role === 'toggle-suspend') {
+                        const c = app.clients.find(x=>x.id===app.selectedClientId);
+                        if(!c) return;
+                        const next = (c.status==='suspendido')?'activo':'suspendido';
+                        await updateDoc(doc(app.db,'artifacts',app.appId,'users',app.userId,'clients',c.id),{ status: next });
+                        mostrarNotificacion(`Cliente ${next}.`);
+                    } else if (role === 'open-fullscreen') {
+                        window.open(window.location.href, '_blank');
+                    }
+                } catch(err) {
+                    console.error(err);
+                    mostrarNotificacion(err.message || 'Acción fallida', true);
+                }
+            });
+        }
+
     </script>
 </body>
 </html>
+
