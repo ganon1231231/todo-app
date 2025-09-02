@@ -67,21 +67,14 @@
             overflow: hidden;
             transition: max-height 0.3s ease-in-out;
         }
-        
-        /* Estilos mejorados para gráficos */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
+        .chart-btn.active {
+            background-color: white;
+            color: #1e293b;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
         }
-        .no-data-message {
-            text-align: center;
-            padding: 2rem;
-            color: #94a3b8;
-            font-style: italic;
-        }
-        .dark .no-data-message {
-            color: #64748b;
+        .dark .chart-btn.active {
+            background-color: #334155;
+            color: #f1f5f9;
         }
     </style>
 </head>
@@ -122,8 +115,8 @@
             </nav>
             <div class="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4 flex-shrink-0">
                  <button id="sidebar-toggle" class="w-full flex items-center px-3 py-2 rounded-md font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
-                     <svg id="sidebar-toggle-icon" class="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
-                     <span class="sidebar-toggle-text">Contraer</span>
+                      <svg id="sidebar-toggle-icon" class="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+                      <span class="sidebar-toggle-text">Contraer</span>
                  </button>
                 <label for="dark-mode-toggle" class="flex items-center cursor-pointer">
                     <div class="relative">
@@ -166,17 +159,18 @@
     import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, deleteDoc, updateDoc, arrayUnion, runTransaction, getDoc, getDocs, query, where, orderBy, limit, Timestamp, collectionGroup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBdIebzMYrtpo2ifcX3xcsqFVB8t4XCLeo",
-      authDomain: "streamservice-pro.firebaseapp.com",
-      projectId: "streamservice-pro",
-      storageBucket: "streamservice-pro.firebasestorage.app",
-      messagingSenderId: "574901627845",
-      appId: "1:574901627845:web:8d104ae5c70aac59c8f9ac"
+     apiKey: "AIzaSyBdIebzMYrtpo2ifcX3xcsqFVB8t4XCLeo",
+     authDomain: "streamservice-pro.firebaseapp.com",
+     projectId: "streamservice-pro",
+     storageBucket: "streamservice-pro.firebasestorage.app",
+     messagingSenderId: "574901627845",
+     appId: "1:574901627845:web:8d104ae5c70aac59c8f9ac"
     };
 
     const app = {
         appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
         currentView: 'dashboard',
+        dashboardChartType: 'income', // 'income', 'services', 'status'
         selectedClientId: null,
         clients: [],
         services: [],
@@ -266,14 +260,6 @@
     }
     
     function renderView(viewName, params = {}) {
-        // Destruir gráficos existentes al cambiar de vista
-        for (const chart in chartInstances) {
-            if (chartInstances[chart]) {
-                chartInstances[chart].destroy();
-            }
-        }
-        chartInstances = {};
-        
         app.currentView = viewName;
         const contentWrapper = `<div class="max-w-7xl mx-auto p-6 lg:p-8"></div>`;
         app.ui.mainContent.innerHTML = contentWrapper;
@@ -348,202 +334,50 @@
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium text-slate-500 dark:text-slate-400">Crédito a Favor</h3> <p id="db-credit-to-return" class="text-4xl font-bold mt-2">$0.00</p> </div>
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700"> <h3 class="text-lg font-medium text-slate-500 dark:text-slate-400">Próximos Vencimientos</h3> <p id="db-upcoming-renewals" class="text-4xl font-bold mt-2">0</p> </div>
             </div>
-            <div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div class="lg:col-span-3 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-medium mb-4">Ingresos por Mes (Últimos 6 meses)</h3>
-                    <div class="chart-container">
-                        <canvas id="income-chart"></canvas>
+            <div class="mt-8 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <h3 id="chart-title" class="text-lg font-medium">Ingresos por Mes</h3>
+                    <div id="chart-selector" class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-md">
+                         <button data-chart="income" class="chart-btn active rounded px-3 py-1 text-sm font-medium">Ingresos</button>
+                         <button data-chart="services" class="chart-btn text-slate-600 dark:text-slate-300 rounded px-3 py-1 text-sm font-medium">Servicios</button>
+                         <button data-chart="status" class="chart-btn text-slate-600 dark:text-slate-300 rounded px-3 py-1 text-sm font-medium">Clientes</button>
                     </div>
-                    <div id="income-no-data" class="no-data-message hidden">No hay datos de ingresos disponibles</div>
                 </div>
-                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-medium mb-4">Distribución de Servicios Activos</h3>
-                    <div class="chart-container">
-                        <canvas id="services-chart"></canvas>
-                    </div>
-                    <div id="services-no-data" class="no-data-message hidden">No hay datos de servicios disponibles</div>
+                <div class="relative h-96">
+                    <canvas id="dashboard-chart"></canvas>
                 </div>
             </div>
         `;
     }
 
     function attachDashboardEventListeners() {
-        const qaNewSale = document.getElementById('qa-new-sale');
-        if (qaNewSale) qaNewSale.onclick = openSaleModal;
+        document.getElementById('qa-new-sale')?.addEventListener('click', openSaleModal);
+        document.getElementById('qa-new-client')?.addEventListener('click', openClientModal);
+        document.getElementById('qa-register-payment')?.addEventListener('click', openQuickPaymentModal);
 
-        const qaNewClient = document.getElementById('qa-new-client');
-        if (qaNewClient) qaNewClient.onclick = openClientModal;
-
-        const qaRegisterPayment = document.getElementById('qa-register-payment');
-        if (qaRegisterPayment) qaRegisterPayment.onclick = openQuickPaymentModal;
+        document.getElementById('chart-selector')?.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const chartType = e.target.dataset.chart;
+                if (chartType && chartType !== app.dashboardChartType) {
+                    app.dashboardChartType = chartType;
+                    document.querySelectorAll('#chart-selector .chart-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderDashboardCharts();
+                }
+            }
+        });
     }
 
     async function updateDashboard() {
         if (app.currentView !== 'dashboard') return;
-        const active = document.getElementById('db-active-clients');
-        if (active) active.textContent = app.clients?.length || 0;
-
-        const arEl = document.getElementById('db-accounts-receivable');
-        if (arEl) arEl.textContent = `$${await computeAccountsReceivable()}`;
-
-        const creditEl = document.getElementById('db-credit-to-return');
-        if(creditEl) creditEl.textContent = `$${computeCreditToReturn()}`;
-
-        const upEl = document.getElementById('db-upcoming-renewals');
-        if (upEl) upEl.textContent = countUpcomingRenewals(7);
+        document.getElementById('db-active-clients').textContent = app.clients?.filter(c => c.status === 'activo').length || 0;
+        document.getElementById('db-accounts-receivable').textContent = `$${await computeAccountsReceivable()}`;
+        document.getElementById('db-credit-to-return').textContent = `$${computeCreditToReturn()}`;
+        document.getElementById('db-upcoming-renewals').textContent = countUpcomingRenewals(7);
         
         await renderDashboardCharts();
     }
     
-    // --- GRÁFICOS DEL DASHBOARD ---
-    async function renderDashboardCharts() {
-        // Destruir gráficos existentes si los hay
-        if (chartInstances.income) {
-            chartInstances.income.destroy();
-        }
-        if (chartInstances.services) {
-            chartInstances.services.destroy();
-        }
-
-        // Obtener contexto de los canvas
-        const incomeCtx = document.getElementById('income-chart');
-        const servicesCtx = document.getElementById('services-chart');
-        
-        // Verificar si los elementos canvas existen
-        if (!incomeCtx || !servicesCtx) {
-            console.error("No se encontraron los elementos canvas para los gráficos");
-            return;
-        }
-        
-        // Ocultar mensajes de no datos inicialmente
-        document.getElementById('income-no-data')?.classList?.add('hidden');
-        document.getElementById('services-no-data')?.classList?.add('hidden');
-
-        // Gráfico de ingresos (datos de ejemplo)
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const textColor = isDarkMode ? '#e2e8f0' : '#334155';
-        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        
-        // Datos para el gráfico de ingresos (ejemplo)
-        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
-        const incomeData = [1200, 1900, 1500, 2100, 1800, 2300];
-        
-        // Verificar si hay datos para mostrar
-        if (incomeData.some(val => val > 0)) {
-            chartInstances.income = new Chart(incomeCtx, {
-                type: 'bar',
-                data: {
-                    labels: months,
-                    datasets: [{
-                        label: 'Ingresos ($)',
-                        data: incomeData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: textColor
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            // Mostrar mensaje de no datos
-            document.getElementById('income-no-data')?.classList?.remove('hidden');
-        }
-
-        // Gráfico de distribución de servicios
-        const serviceCounts = {};
-        app.services.forEach(service => {
-            serviceCounts[service.name] = 0;
-        });
-
-        app.clients.forEach(client => {
-            if (client.services) {
-                Object.keys(client.services).forEach(serviceId => {
-                    const service = app.services.find(s => s.id === serviceId);
-                    if (service) {
-                        serviceCounts[service.name] += 1;
-                    }
-                });
-            }
-        });
-
-        const serviceNames = Object.keys(serviceCounts).filter(name => serviceCounts[name] > 0);
-        const counts = serviceNames.map(name => serviceCounts[name]);
-        
-        if (serviceNames.length > 0) {
-            chartInstances.services = new Chart(servicesCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: serviceNames,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)',
-                            'rgba(153, 102, 255, 0.7)',
-                            'rgba(255, 159, 64, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: textColor,
-                                padding: 15
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            // Mostrar mensaje de no datos
-            document.getElementById('services-no-data')?.classList?.remove('hidden');
-        }
-    }
-
     // --- VISTA: CLIENTES ---
     function renderClientsView(container) {
         if (app.selectedClientId) {
@@ -591,7 +425,7 @@
                 }
             }
             const chips = (client.tags||[]).slice(0,2).map(t=>`<span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">${t}</span>`).join(' ');
-            const statusChip = client.status==='moroso' ? 'bg-red-100 text-red-700' : client.status==='suspendido' ? 'bg-yellow-100 text-yellow-700' : 'bg-emerald-100 text-emerald-700';
+            const statusChip = client.status==='moroso' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' : client.status==='suspendido' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300';
             return `<tr class="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer" data-id="${client.id}"> <td class="p-4 font-medium">${client.name} <span class="ml-2 text-[10px] ${statusChip} px-2 py-0.5 rounded">${client.status||'activo'}</span> <span class="ml-1">${chips}</span></td> <td class="p-4 text-slate-500">${client.phone || 'No registrado'}</td> <td class="p-4 text-slate-500 text-center">${serviceCount}</td> <td class="p-4 text-slate-500 font-mono">${nextDueDate}</td> </tr>`;
         }).join('');
         tableBody.querySelectorAll('tr').forEach(row => row.addEventListener('click', () => renderView('clients', {
@@ -932,10 +766,11 @@
                     <p class="font-medium">${method.name}</p>
                     <p class="text-sm text-slate-500">${method.details}</p>
                 </div>
-                <button type="button" data-role="delete-payment-method" data-id="${method.id}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Eeliminar método de pago" title="Eliminar método de pago">&times;</button>
+                <button type="button" data-role="delete-payment-method" data-id="${method.id}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Eliminar método de pago" title="Eliminar método de pago">&times;</button>
             </div>
         `).join('');
     }
+
 
     // --- MODALES ---
     let selectedMasterAccountId = null;
@@ -1404,37 +1239,37 @@
     }
 
     function processNetflixLogic(serviceData, options){
-      const FECHA_BLOQUEO = new Date('2025-08-17T00:00:00');
-      const precio = serviceData.price || 0;
-      const profiles = Array.isArray(serviceData.profiles)? serviceData.profiles : [];
-      const k = profiles.length;
-      const fechaCiclo = new Date(serviceData.date+'T00:00:00');
-      if(!precio || !k || isNaN(fechaCiclo)) return { bloqueStr:'', deuda:0 };
+     const FECHA_BLOQUEO = new Date('2025-08-17T00:00:00');
+     const precio = serviceData.price || 0;
+     const profiles = Array.isArray(serviceData.profiles)? serviceData.profiles : [];
+     const k = profiles.length;
+     const fechaCiclo = new Date(serviceData.date+'T00:00:00');
+     if(!precio || !k || isNaN(fechaCiclo)) return { bloqueStr:'', deuda:0 };
 
-      const cicloFin = new Date(fechaCiclo); cicloFin.setMonth(cicloFin.getMonth()+1);
-      const periodoInicio = fechaCiclo;
-      const periodoFin = cicloFin < FECHA_BLOQUEO ? cicloFin : FECHA_BLOQUEO;
+     const cicloFin = new Date(fechaCiclo); cicloFin.setMonth(cicloFin.getMonth()+1);
+     const periodoInicio = fechaCiclo;
+     const periodoFin = cicloFin < FECHA_BLOQUEO ? cicloFin : FECHA_BLOQUEO;
 
-      let diasTot = Math.max(1, Math.round((cicloFin - fechaCiclo)/86400000));
-      let diasUsados = Math.max(0, Math.round((periodoFin - periodoInicio)/86400000));
-      diasUsados = Math.min(diasUsados, diasTot);
+     let diasTot = Math.max(1, Math.round((cicloFin - fechaCiclo)/86400000));
+     let diasUsados = Math.max(0, Math.round((periodoFin - periodoInicio)/86400000));
+     diasUsados = Math.min(diasUsados, diasTot);
 
-      let subtotal = toCents(precio * k); // mes completo
-      if(options.prorrateo && diasUsados/diasTot < 0.66){
-        subtotal = Math.round(subtotal * (diasUsados/diasTot));
-      }
+     let subtotal = toCents(precio * k); // mes completo
+     if(options.prorrateo && diasUsados/diasTot < 0.66){
+       subtotal = Math.round(subtotal * (diasUsados/diasTot));
+     }
 
-      let bloqueStr = `--- Resumen: Netflix ---\n`;
-      if(options.cobro){
-        bloqueStr += `▪️ Ciclo ${formatDate(fechaCiclo)} a ${formatDate(cicloFin)} (${diasUsados}/${diasTot} días) — $${precio.toFixed(2)} x ${k} perfiles`;
-        if(options.prorrateo && diasUsados/diasTot < 0.66){ bloqueStr += ` (prorrateado)`; }
-        bloqueStr += ` = $${fromCents(subtotal)}\n`;
-      }
-      if(options.recordatorio){
-        bloqueStr += `▪️ Recordatorio/Devolución pendiente.\n`;
-      }
-      bloqueStr += `Subtotal: $${fromCents(subtotal)}\n--------------------------------\n\n`;
-      return { bloqueStr, deuda: subtotal };
+     let bloqueStr = `--- Resumen: Netflix ---\n`;
+     if(options.cobro){
+       bloqueStr += `▪️ Ciclo ${formatDate(fechaCiclo)} a ${formatDate(cicloFin)} (${diasUsados}/${diasTot} días) — $${precio.toFixed(2)} x ${k} perfiles`;
+       if(options.prorrateo && diasUsados/diasTot < 0.66){ bloqueStr += ` (prorrateado)`; }
+       bloqueStr += ` = $${fromCents(subtotal)}\n`;
+     }
+     if(options.recordatorio){
+       bloqueStr += `▪️ Recordatorio/Devolución pendiente.\n`;
+     }
+     bloqueStr += `Subtotal: $${fromCents(subtotal)}\n--------------------------------\n\n`;
+     return { bloqueStr, deuda: subtotal };
     }
 
     function processOtherServiceLogic(serviceInfo, serviceData) {
@@ -1539,7 +1374,7 @@
                         ${acc.clients.length > 0 ? acc.clients.map(c => `
                             <div class="flex justify-between items-center p-2 border-b border-slate-200 dark:border-slate-700">
                                 <div>
-                                    <a href="#" data-role="go-to-client" data-client-id="${c.clientId}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">${c.clientName</a>
+                                    <a href="#" data-role="go-to-client" data-client-id="${c.clientId}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">${c.clientName}</a>
                                     <p class="text-xs text-slate-500">${c.profileName} (PIN: ${c.pin})</p>
                                 </div>
                             </div>
@@ -1631,7 +1466,7 @@
         const dist = {}; 
         if (count <= 0) return dist;
         const pool = accounts.map(a => ({ id:a.id, free: freeSeatsForAccount(a, service), acc:a }))
-                            .filter(x => x.free > 0);
+                                .filter(x => x.free > 0);
         if (pool.length === 0) return dist;
         for (let i=0; i<count; i++) {
             pool.sort((x,y)=> y.free - x.free);
@@ -1655,25 +1490,37 @@
     function renderProfileForms(n, accounts, service) {
         const container = document.getElementById('profiles-dynamic');
         const ranked = rankMasterAccounts(accounts, service);
-        const dist   = distributeProfiles(accounts, service, n);
+        const dist = distributeProfiles(ranked, service, n);
         const optionsHTML = ranked.map(a => `<option value="${a.id}">${a.login_email} — libres: ${freeSeatsForAccount(a, service)}</option>`).join('');
-        container.innerHTML = '';
+
+        let formsHTML = '';
         let cursor = [];
-        Object.entries(dist).forEach(([accId, k]) => { for (let i=0;i<k;i++) cursor.push(accId); });
+        Object.entries(dist).forEach(([accId, k]) => { for (let i = 0; i < k; i++) cursor.push(accId); });
         while (cursor.length < n) cursor.push('');
-        for (let i=0;i<n;i++) {
+
+        for (let i = 0; i < n; i++) {
             const suggested = cursor[i] || '';
             const suggestedPin = (service.pin_length > 0) ? generatePin(service.pin_length) : '';
-            container.insertAdjacentHTML('beforeend', `<div class="p-3 rounded-md bg-slate-100 dark:bg-slate-700/40"><div class="grid grid-cols-1 md:grid-cols-4 gap-3"><div class="md:col-span-2"><label class="block text-xs mb-1">Nombre del perfil</label><input type="text" name="profile_name[]" placeholder="Perfil ${i+1}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div><label class="block text-xs mb-1">PIN (Sugerido)</label><input type="text" name="profile_pin[]" value="${suggestedPin}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" maxlength="10"></div><div><label class="block text-xs mb-1">Cuenta maestra</label><select name="profile_account[]" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="">(Automático)</option>${optionsHTML}</select></div></div></div>`);
-            const selects = container.querySelectorAll('select[name="profile_account[]"]');
-            const sel = selects[selects.length-1];
-            if (suggested) sel.value = suggested;
+            formsHTML += `<div class="p-3 rounded-md bg-slate-100 dark:bg-slate-700/40">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="md:col-span-2"><label class="block text-xs mb-1">Nombre del perfil</label><input type="text" name="profile_name[]" placeholder="Perfil ${i + 1}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div>
+                    <div><label class="block text-xs mb-1">PIN (Sugerido)</label><input type="text" name="profile_pin[]" value="${suggestedPin}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" maxlength="10"></div>
+                    <div><label class="block text-xs mb-1">Cuenta maestra</label><select name="profile_account[]" data-suggested="${suggested}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="">(Automático)</option>${optionsHTML}</select></div>
+                </div>
+            </div>`;
         }
+        
+        container.innerHTML = formsHTML;
+        container.querySelectorAll('select[name="profile_account[]"]').forEach(sel => {
+            if (sel.dataset.suggested) sel.value = sel.dataset.suggested;
+        });
+
         const availBox = document.getElementById('accounts-availability');
-        const suggBox  = document.getElementById('master-account-suggestion');
+        const suggBox = document.getElementById('master-account-suggestion');
         renderAccountsAvailability(availBox, ranked, service);
-        suggBox.classList.toggle('hidden', ranked.length===0);
+        suggBox.classList.toggle('hidden', ranked.length === 0);
     }
+
 
     async function handleRemoveClientProfile(serviceId, groupId, profileId) {
         const client = app.clients.find(cl => cl.id === app.selectedClientId);
@@ -1807,11 +1654,19 @@
 
     function setupDarkMode() {
         const t = document.getElementById('dark-mode-toggle');
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
             document.documentElement.classList.add('dark');
             t.checked = true;
         }
-        t.addEventListener('change', () => { document.documentElement.classList.toggle('dark'); localStorage.theme = t.checked ? 'dark' : 'light'; });
+        t.addEventListener('change', () => { 
+            document.documentElement.classList.toggle('dark'); 
+            localStorage.theme = t.checked ? 'dark' : 'light';
+            // Re-render chart on theme change to update colors
+            if (app.currentView === 'dashboard') {
+                setTimeout(renderDashboardCharts, 50);
+            }
+        });
     }
     function mostrarNotificacion(m, e = false) {
         const c = document.getElementById('notificacion');
@@ -2363,13 +2218,13 @@
                 else if (role === 'remove-client-service') {
                     e.preventDefault(); e.stopPropagation();
                      openConfirmationModal("¿Quitar este servicio y todos sus perfiles asociados?", () => {
-                        handleRemoveServiceById(btn.dataset.serviceId);
+                         handleRemoveServiceById(btn.dataset.serviceId);
                     });
                 }
                 else if (role === 'delete-service-type') {
                     e.preventDefault(); e.stopPropagation();
                     openConfirmationModal("¿Eliminar este servicio del catálogo? No podrás asignarlo a nuevos clientes.", () => {
-                        handleDeleteServiceType(btn.dataset.id);
+                         handleDeleteServiceType(btn.dataset.id);
                     });
                 }
                 else if (role === 'edit-service-type') {
@@ -2379,13 +2234,13 @@
                 else if (role === 'delete-master-account') {
                     e.preventDefault(); e.stopPropagation();
                      openConfirmationModal("¿Eliminar esta cuenta maestra? Asegúrate de que no tenga perfiles asignados.", () => {
-                        handleDeleteMasterAccount(btn.dataset.id);
+                         handleDeleteMasterAccount(btn.dataset.id);
                     });
                 }
                 else if (role === 'delete-payment-method') {
                     e.preventDefault(); e.stopPropagation();
                     openConfirmationModal("¿Eliminar este método de pago?", () => {
-                        handleDeletePaymentMethod(btn.dataset.id);
+                         handleDeletePaymentMethod(btn.dataset.id);
                     });
                 }
                 else if (role === 'edit-master-account') {
@@ -2439,7 +2294,7 @@
                     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-slate-200', 'dark:bg-slate-700'));
                     document.querySelector('a[href="#clients"]').classList.add('bg-slate-200', 'dark:bg-slate-700');
                 } else if(role === 'register-payment') {
-                    openPaymentModal();
+                    openPaymentModal(app.clients.find(c => c.id === app.selectedClientId));
                 } else if (role === 'delete-invoice') {
                     e.preventDefault(); e.stopPropagation();
                     openConfirmationModal("¿Estás seguro de que quieres eliminar esta factura? Esta acción es irreversible.", () => {
@@ -2473,16 +2328,16 @@
     }
 
     function openSaleModal(){
-      const modal = document.getElementById('sale-modal');
-      const sel = document.getElementById('sale-client-select');
-      sel.innerHTML = '<option value="__new__">+ Nuevo cliente…</option>' + 
-        app.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-      const svcSel = document.getElementById('sale-service');
-      svcSel.innerHTML = app.services.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-      document.getElementById('sale-date').valueAsDate = new Date();
-      document.getElementById('sale-price').value = fromCents(app.services[0]?.cost_per_profile_cents || 0);
-      document.getElementById('sale-new-client').style.display = 'grid';
-      modal.classList.remove('hidden'); modal.classList.add('flex');
+     const modal = document.getElementById('sale-modal');
+     const sel = document.getElementById('sale-client-select');
+     sel.innerHTML = '<option value="__new__">+ Nuevo cliente…</option>' + 
+       app.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+     const svcSel = document.getElementById('sale-service');
+     svcSel.innerHTML = app.services.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+     document.getElementById('sale-date').valueAsDate = new Date();
+     document.getElementById('sale-price').value = fromCents(app.services[0]?.cost_per_profile_cents || 0);
+     document.getElementById('sale-new-client').style.display = 'grid';
+     modal.classList.remove('hidden'); modal.classList.add('flex');
     }
     function closeSaleModal(){ const m=document.getElementById('sale-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
     
@@ -2578,56 +2433,89 @@
     }
 
     // --- Charts ---
-    function renderDashboardCharts() {
-        renderServicesChart();
-        renderIncomeChart();
+    async function renderDashboardCharts() {
+        const chartTitle = document.getElementById('chart-title');
+        if (!chartTitle) return;
+
+        switch(app.dashboardChartType) {
+            case 'income':
+                chartTitle.textContent = "Ingresos por Mes (Últimos 6 meses)";
+                await renderIncomeChart();
+                break;
+            case 'services':
+                chartTitle.textContent = "Distribución de Perfiles por Servicio";
+                renderServicesChart();
+                break;
+            case 'status':
+                chartTitle.textContent = "Estado de Clientes";
+                renderClientStatusChart();
+                break;
+        }
     }
 
     function renderServicesChart() {
-        const ctx = document.getElementById('services-chart')?.getContext('2d');
+        const ctx = document.getElementById('dashboard-chart')?.getContext('2d');
         if (!ctx) return;
         
-        const serviceCounts = app.clients.reduce((acc, client) => {
+        const serviceCounts = {};
+        app.clients.forEach(client => {
             if (client.services) {
-                Object.keys(client.services).forEach(serviceId => {
-                    acc[serviceId] = (acc[serviceId] || 0) + 1;
+                Object.entries(client.services).forEach(([serviceId, serviceData]) => {
+                    const groups = getServiceGroups(serviceData);
+                    const profileCount = groups.reduce((sum, g) => sum + (g.profiles?.length || 0), 0);
+                    serviceCounts[serviceId] = (serviceCounts[serviceId] || 0) + profileCount;
                 });
             }
-            return acc;
-        }, {});
+        });
 
-        const labels = Object.keys(serviceCounts).map(id => app.services.find(s => s.id === id)?.name || 'Desconocido');
-        const data = Object.values(serviceCounts);
+        const sortedServices = Object.entries(serviceCounts).sort(([, a], [, b]) => b - a).filter(([, count]) => count > 0);
         
-        if (chartInstances.services) chartInstances.services.destroy();
-        chartInstances.services = new Chart(ctx, {
+        const labels = sortedServices.map(([id]) => app.services.find(s => s.id === id)?.name || 'Desconocido');
+        const data = sortedServices.map(([, count]) => count);
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const legendColor = isDark ? '#f1f5f9' : '#1e293b';
+        
+        if (chartInstances.main) chartInstances.main.destroy();
+        chartInstances.main = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Clientes por Servicio',
+                    label: 'Perfiles por Servicio',
                     data: data,
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'],
-                    hoverOffset: 4
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1', '#ec4899'],
+                    borderColor: isDark ? '#1e293b' : '#f1f5f9',
+                    borderWidth: 2,
+                    hoverOffset: 8
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: legendColor }
+                    }
+                }
+            }
         });
     }
     
     async function renderIncomeChart() {
-         const ctx = document.getElementById('income-chart')?.getContext('2d');
+        const ctx = document.getElementById('dashboard-chart')?.getContext('2d');
         if (!ctx) return;
 
         const paymentsByMonth = {};
         const months = Array.from({length: 6}, (_, i) => {
             const d = new Date();
             d.setMonth(d.getMonth() - i);
-            return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleString('es-PA', { month: 'short' }) };
+            return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleString('es-PA', { month: 'short', year: 'numeric' }) };
         }).reverse();
 
         months.forEach(m => paymentsByMonth[m.key] = 0);
-
+        
         const allPayments = (await Promise.all(
             app.clients.map(c => getDocs(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', c.id, 'payments')))
         )).flatMap(snap => snap.docs.map(d => d.data()));
@@ -2643,8 +2531,12 @@
         const labels = months.map(m => m.label);
         const data = months.map(m => fromCents(paymentsByMonth[m.key]));
 
-        if (chartInstances.income) chartInstances.income.destroy();
-        chartInstances.income = new Chart(ctx, {
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const tickColor = isDark ? '#cbd5e1' : '#475569';
+        
+        if (chartInstances.main) chartInstances.main.destroy();
+        chartInstances.main = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -2653,16 +2545,80 @@
                     data: data,
                     backgroundColor: 'rgba(59, 130, 246, 0.5)',
                     borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { callback: value => '$' + value } } }
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { callback: value => '$' + value, color: tickColor },
+                        grid: { color: gridColor }
+                    },
+                    x: {
+                        ticks: { color: tickColor },
+                        grid: { display: false }
+                    }
+                }
             }
         });
     }
+
+    function renderClientStatusChart() {
+        const ctx = document.getElementById('dashboard-chart')?.getContext('2d');
+        if (!ctx) return;
+        
+        const statusCounts = app.clients.reduce((acc, client) => {
+            const status = client.status || 'activo';
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, { activo: 0, moroso: 0, suspendido: 0 });
+
+        const labels = ['Activos', 'Morosos', 'Suspendidos'];
+        const data = [statusCounts.activo, statusCounts.moroso, statusCounts.suspendido];
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const tickColor = isDark ? '#cbd5e1' : '#475569';
+        
+        if (chartInstances.main) chartInstances.main.destroy();
+        chartInstances.main = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Número de Clientes',
+                    data: data,
+                    backgroundColor: ['rgba(16, 185, 129, 0.5)', 'rgba(239, 68, 68, 0.5)', 'rgba(245, 158, 11, 0.5)'],
+                    borderColor: ['rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)', 'rgba(245, 158, 11, 1)'],
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { 
+                        beginAtZero: true, 
+                        ticks: { color: tickColor, stepSize: 1 },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        ticks: { color: tickColor },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
     function setupServiceCatalogModal() {
         app.ui.serviceCatalogModal = document.getElementById('service-catalog-modal');
         app.ui.serviceCatalogModal.querySelector('.modal-backdrop').addEventListener('click', closeServiceCatalogModal);
@@ -2719,4 +2675,3 @@
 </script>
 </body>
 </html>
-
