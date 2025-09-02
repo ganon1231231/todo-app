@@ -67,6 +67,22 @@
             overflow: hidden;
             transition: max-height 0.3s ease-in-out;
         }
+        
+        /* Estilos mejorados para gráficos */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .no-data-message {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .dark .no-data-message {
+            color: #64748b;
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
@@ -135,7 +151,7 @@
     <div id="message-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 relative max-h-full flex flex-col"><div class="p-6 border-b border-slate-200 dark:border-slate-700"><h3 id="message-modal-title" class="text-xl font-semibold"></h3></div><div class="p-6 flex-1 overflow-y-auto"><div id="message-modal-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"></div><div id="message-modal-result"><div class="flex justify-between items-center mb-2"><h4 class="font-semibold">Mensaje Generado</h4><div class="flex gap-2"><button id="copy-message-btn" class="bg-blue-500 text-white text-xs font-medium py-1 px-3 rounded hover:bg-blue-600">📋 Copiar</button><a id="whatsapp-message-btn" href="#" target="_blank" class="hidden bg-green-500 text-white text-xs font-medium py-1 px-3 rounded hover:bg-green-600">📱 WhatsApp</a></div></div><textarea id="generated-message-content" readonly class="w-full h-80 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-md text-sm resize-none"></textarea></div></div><div class="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700"><button type="button" id="message-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cerrar</button><button id="message-modal-action-btn" class="bg-amber-500 text-white font-medium py-2 px-4 rounded-md">Generar</button></div></div></div>
     <div id="master-account-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 relative"><form id="master-account-form" class="p-6"><h3 id="master-account-modal-title" class="text-xl font-semibold mb-4"></h3><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Servicio</label><select name="serviceId" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></select></div><div><label class="block text-sm font-medium mb-1">Email de la Cuenta</label><div class="relative"><input type="email" name="login_email" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required><button type="button" data-role="copy-email" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-blue-600" title="Copiar email"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button></div></div><div><label class="block text-sm font-medium mb-1">Contraseña</label><div class="relative"><input type="password" name="password" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><button type="button" data-role="toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-blue-600" title="Mostrar contraseña"><svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg><svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 .847 0 1.673.12 2.468.355M7.125 7.125A3 3 0 009 9m3 3a3 3 0 00-3-3m-3.875 5.25A10.025 10.025 0 0112 15c4.478 0 8.268-2.943 9.542-7a10.025 10.025 0 00-4.03-4.38M1 1l22 22"></path></svg></button></div><p class="text-xs text-slate-500 mt-1">La contraseña se muestra para tu referencia. Edita este campo para actualizarla.</p></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium mb-1">Estado</label><select name="status" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="activa">Activa</option><option value="pausada">Pausada</option><option value="bloqueada">Bloqueada</option></select></div><div><label class="block text-sm font-medium mb-1">Plazas (override)</label><input type="number" name="seat_limit_override" min="0" placeholder="(Opcional)" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="master-account-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-md">Guardar</button></div></form></div></div>
     <div id="invoice-view-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 relative max-h-full flex flex-col"><div class="p-6 border-b border-slate-200 dark:border-slate-700"><h3 class="text-xl font-semibold">Detalle de la Factura</h3></div><div class="p-6 flex-1 overflow-y-auto"><textarea id="invoice-view-content" readonly class="w-full h-96 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-md text-sm resize-none"></textarea></div><div class="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700"><button type="button" id="invoice-view-close-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cerrar</button></div></div></div>
-    <div id="payment-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 relative"><form id="payment-form" class="p-6"><h3 class="text-xl font-semibold mb-4">Registrar Pago</h3><div class="space-y-4"><div><label class="block text-sm font-medium mb-1">Monto ($)</label><input type="number" name="amount" step="0.01" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div><div><label class="block text-sm font-medium mb-1">Método de Pago</label><select name="method" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option>Yappy</option><option>ACH</option><option>Efectivo</option><option>Otro</option></select></div><div><label class="block text-sm font-medium mb-1">Referencia (Opcional)</label><input type="text" name="reference" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="payment-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-emerald-600 text-white font-medium py-2 px-4 rounded-md">Registrar</button></div></form></div></div>
+    <div id="payment-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 relative"><form id="payment-form" class="p-6"><h3 class="text-xl font-semibold mb-4">Registrar Pago</h3><div class="space-y-4"><div id="payment-client-selector-div" class="hidden"><label class="block text-sm font-medium mb-1">Cliente</label><select name="clientId" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></select></div><div><label class="block text-sm font-medium mb-1">Monto ($)</label><input type="number" name="amount" step="0.01" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div><div><label class="block text-sm font-medium mb-1">Método de Pago</label><select name="method" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option>Yappy</option><option>ACH</option><option>Efectivo</option><option>Otro</option></select></div><div><label class="block text-sm font-medium mb-1">Referencia (Opcional)</label><input type="text" name="reference" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="payment-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-emerald-600 text-white font-medium py-2 px-4 rounded-md">Registrar</button></div></form></div></div>
     <div id="confirmation-modal" class="fixed inset-0 z-50 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm m-4 relative"><div class="p-6"><h3 id="confirmation-modal-title" class="text-lg font-semibold mb-2">Confirmar Acción</h3><p id="confirmation-modal-message" class="text-sm text-slate-600 dark:text-slate-300"></p></div><div class="flex justify-end gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-b-lg"><button type="button" id="confirmation-cancel-btn" class="bg-slate-200 dark:bg-slate-600 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="button" id="confirmation-confirm-btn" class="bg-red-600 text-white font-medium py-2 px-4 rounded-md">Confirmar</button></div></div></div>
     
     <!-- Modal Nueva Venta -->
@@ -250,6 +266,14 @@
     }
     
     function renderView(viewName, params = {}) {
+        // Destruir gráficos existentes al cambiar de vista
+        for (const chart in chartInstances) {
+            if (chartInstances[chart]) {
+                chartInstances[chart].destroy();
+            }
+        }
+        chartInstances = {};
+        
         app.currentView = viewName;
         const contentWrapper = `<div class="max-w-7xl mx-auto p-6 lg:p-8"></div>`;
         app.ui.mainContent.innerHTML = contentWrapper;
@@ -327,11 +351,17 @@
             <div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <div class="lg:col-span-3 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <h3 class="text-lg font-medium mb-4">Ingresos por Mes (Últimos 6 meses)</h3>
-                    <canvas id="income-chart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="income-chart"></canvas>
+                    </div>
+                    <div id="income-no-data" class="no-data-message hidden">No hay datos de ingresos disponibles</div>
                 </div>
                 <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                     <h3 class="text-lg font-medium mb-4">Distribución de Servicios Activos</h3>
-                    <canvas id="services-chart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="services-chart"></canvas>
+                    </div>
+                    <div id="services-no-data" class="no-data-message hidden">No hay datos de servicios disponibles</div>
                 </div>
             </div>
         `;
@@ -345,13 +375,7 @@
         if (qaNewClient) qaNewClient.onclick = openClientModal;
 
         const qaRegisterPayment = document.getElementById('qa-register-payment');
-        if (qaRegisterPayment) qaRegisterPayment.onclick = () => {
-            if (!app.clients.length) { 
-                mostrarNotificacion('Primero debes añadir un cliente.', true); 
-                return; 
-            }
-            openQuickPaymentModal();
-        };
+        if (qaRegisterPayment) qaRegisterPayment.onclick = openQuickPaymentModal;
     }
 
     async function updateDashboard() {
@@ -368,9 +392,158 @@
         const upEl = document.getElementById('db-upcoming-renewals');
         if (upEl) upEl.textContent = countUpcomingRenewals(7);
         
-        renderDashboardCharts();
+        await renderDashboardCharts();
     }
     
+    // --- GRÁFICOS DEL DASHBOARD ---
+    async function renderDashboardCharts() {
+        // Destruir gráficos existentes si los hay
+        if (chartInstances.income) {
+            chartInstances.income.destroy();
+        }
+        if (chartInstances.services) {
+            chartInstances.services.destroy();
+        }
+
+        // Obtener contexto de los canvas
+        const incomeCtx = document.getElementById('income-chart');
+        const servicesCtx = document.getElementById('services-chart');
+        
+        // Verificar si los elementos canvas existen
+        if (!incomeCtx || !servicesCtx) {
+            console.error("No se encontraron los elementos canvas para los gráficos");
+            return;
+        }
+        
+        // Ocultar mensajes de no datos inicialmente
+        document.getElementById('income-no-data')?.classList?.add('hidden');
+        document.getElementById('services-no-data')?.classList?.add('hidden');
+
+        // Gráfico de ingresos (datos de ejemplo)
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#e2e8f0' : '#334155';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        
+        // Datos para el gráfico de ingresos (ejemplo)
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+        const incomeData = [1200, 1900, 1500, 2100, 1800, 2300];
+        
+        // Verificar si hay datos para mostrar
+        if (incomeData.some(val => val > 0)) {
+            chartInstances.income = new Chart(incomeCtx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Ingresos ($)',
+                        data: incomeData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // Mostrar mensaje de no datos
+            document.getElementById('income-no-data')?.classList?.remove('hidden');
+        }
+
+        // Gráfico de distribución de servicios
+        const serviceCounts = {};
+        app.services.forEach(service => {
+            serviceCounts[service.name] = 0;
+        });
+
+        app.clients.forEach(client => {
+            if (client.services) {
+                Object.keys(client.services).forEach(serviceId => {
+                    const service = app.services.find(s => s.id === serviceId);
+                    if (service) {
+                        serviceCounts[service.name] += 1;
+                    }
+                });
+            }
+        });
+
+        const serviceNames = Object.keys(serviceCounts).filter(name => serviceCounts[name] > 0);
+        const counts = serviceNames.map(name => serviceCounts[name]);
+        
+        if (serviceNames.length > 0) {
+            chartInstances.services = new Chart(servicesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: serviceNames,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // Mostrar mensaje de no datos
+            document.getElementById('services-no-data')?.classList?.remove('hidden');
+        }
+    }
+
     // --- VISTA: CLIENTES ---
     function renderClientsView(container) {
         if (app.selectedClientId) {
@@ -759,11 +932,10 @@
                     <p class="font-medium">${method.name}</p>
                     <p class="text-sm text-slate-500">${method.details}</p>
                 </div>
-                <button type="button" data-role="delete-payment-method" data-id="${method.id}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Eliminar método de pago" title="Eliminar método de pago">&times;</button>
+                <button type="button" data-role="delete-payment-method" data-id="${method.id}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Eeliminar método de pago" title="Eliminar método de pago">&times;</button>
             </div>
         `).join('');
     }
-
 
     // --- MODALES ---
     let selectedMasterAccountId = null;
@@ -1037,8 +1209,26 @@
         document.getElementById('payment-modal-cancel-btn').addEventListener('click', closePaymentModal);
         document.getElementById('payment-form').addEventListener('submit', handlePaymentFormSubmit);
     }
-    function openPaymentModal() {
-        document.getElementById('payment-form').reset();
+    
+    function openQuickPaymentModal() {
+        openPaymentModal(null);
+    }
+
+    function openPaymentModal(client = null) {
+        app.selectedClientId = client ? client.id : null;
+        const form = document.getElementById('payment-form');
+        form.reset();
+        
+        const clientSelectorDiv = document.getElementById('payment-client-selector-div');
+        const clientSelector = form.elements.clientId;
+
+        if (client) {
+            clientSelectorDiv.classList.add('hidden');
+        } else {
+            clientSelector.innerHTML = app.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            clientSelectorDiv.classList.remove('hidden');
+        }
+        
         app.ui.paymentModal.classList.remove('hidden');
         app.ui.paymentModal.classList.add('flex');
     }
@@ -1048,9 +1238,15 @@
     }
     async function handlePaymentFormSubmit(e) {
         e.preventDefault();
-        const client = app.clients.find(c => c.id === app.selectedClientId);
-        if (!client) return;
         const form = e.target;
+        const clientId = app.selectedClientId || form.elements.clientId.value;
+        const client = app.clients.find(c => c.id === clientId);
+
+        if (!client) {
+            mostrarNotificacion("Debes seleccionar un cliente.", true);
+            return;
+        }
+
         try {
             await addPaymentAndAllocate(client.id, {
                 amount_cents: toCents(form.elements.amount.value),
@@ -1343,7 +1539,7 @@
                         ${acc.clients.length > 0 ? acc.clients.map(c => `
                             <div class="flex justify-between items-center p-2 border-b border-slate-200 dark:border-slate-700">
                                 <div>
-                                    <a href="#" data-role="go-to-client" data-client-id="${c.clientId}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">${c.clientName}</a>
+                                    <a href="#" data-role="go-to-client" data-client-id="${c.clientId}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">${c.clientName</a>
                                     <p class="text-xs text-slate-500">${c.profileName} (PIN: ${c.pin})</p>
                                 </div>
                             </div>
