@@ -6,6 +6,7 @@
     <title>StreamService Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
@@ -76,6 +77,142 @@
             background-color: #334155;
             color: #f1f5f9;
         }
+
+        /* Estilos para las nuevas tarjetas de servicio */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .service-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid #3498db;
+        }
+        .dark .service-card {
+             background: #1e293b;
+             border-left-color: #3b82f6;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .service-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+        .dark .service-header {
+            background: #334155;
+        }
+        .service-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+        .service-details {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+        .service-details.expanded {
+            max-height: 500px; /* Altura suficiente para el contenido */
+            padding-top: 15px;
+            padding-bottom: 15px;
+            border-top: 1px solid #eaeaea;
+        }
+        .dark .service-details.expanded {
+            border-top-color: #334155;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+         .dark .detail-item {
+            border-bottom-color: #334155;
+         }
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        .dark .detail-label {
+            color: #94a3b8;
+        }
+        
+        .service-actions {
+            padding-top: 15px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #eaeaea;
+             flex-wrap: wrap;
+        }
+        .dark .service-actions {
+            border-top-color: #334155;
+        }
+
+        .service-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-credentials {
+            background: #3498db;
+            color: white;
+        }
+        .btn-credentials:hover {
+            background: #2980b9;
+        }
+         .btn-manage {
+            background: transparent;
+            border: 1px solid #bdc3c7;
+            color: #7f8c8d;
+        }
+        .dark .btn-manage {
+            border-color: #4b5563;
+            color: #94a3b8;
+        }
+        .btn-manage:hover {
+            background: #f8f9fa;
+        }
+        .dark .btn-manage:hover {
+            background: #334155;
+        }
+
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            .service-actions {
+                flex-direction: column;
+            }
+            .service-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
@@ -148,7 +285,7 @@
     <div id="confirmation-modal" class="fixed inset-0 z-50 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm m-4 relative"><div class="p-6"><h3 id="confirmation-modal-title" class="text-lg font-semibold mb-2">Confirmar Acción</h3><p id="confirmation-modal-message" class="text-sm text-slate-600 dark:text-slate-300"></p></div><div class="flex justify-end gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-b-lg"><button type="button" id="confirmation-cancel-btn" class="bg-slate-200 dark:bg-slate-600 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="button" id="confirmation-confirm-btn" class="bg-red-600 text-white font-medium py-2 px-4 rounded-md">Confirmar</button></div></div></div>
     
     <!-- Modal Nueva Venta -->
-    <div id="sale-modal" class="fixed inset-0 hidden items-center justify-center z-50"><div class="modal-backdrop absolute inset-0"></div><div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 p-6"><h3 class="text-xl font-semibold mb-4">Nueva venta</h3><form id="sale-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="md:col-span-2"><label class="text-sm font-medium">Cliente</label><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1"><select id="sale-client-select" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="__new__">+ Nuevo cliente…</option></select><input id="sale-phone" placeholder="WhatsApp (opcional)" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div id="sale-new-client" class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2"><input id="sale-new-name" placeholder="Nombre completo" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /><input id="sale-new-tags" placeholder="Etiquetas (coma)" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /><input id="sale-new-credit" type="number" step="0.01" value="0" placeholder="Crédito inicial" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div></div><div><label class="text-sm font-medium">Servicio</label><select id="sale-service" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></select></div><div><label class="text-sm font-medium">Perfiles</label><input id="sale-qty" type="number" min="1" value="1" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div><label class="text-sm font-medium">Precio por perfil ($)</label><input id="sale-price" type="number" step="0.01" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div><label class="text-sm font-medium">Inicio de ciclo</label><input id="sale-date" type="date" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3"><label class="flex items-center gap-2"><input id="sale-generate-msg" type="checkbox" class="h-4 w-4 custom-checkbox" checked> <span>Generar mensaje de bienvenida</span></label><label class="flex items-center gap-2"><input id="sale-create-invoice" type="checkbox" class="h-4 w-4 custom-checkbox" checked> <span>Emitir factura de este ciclo</span></label></div><div class="md:col-span-2"><label class="text-sm font-medium">Link de pago (opcional, sobreescribe métodos guardados)</label><input id="sale-paylink" type="url" placeholder="https://…" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div class="md:col-span-2 flex justify-end gap-2 pt-2"><button type="button" id="sale-cancel" class="px-3 py-2 bg-slate-200 dark:bg-slate-700 rounded-md">Cancelar</button><button class="px-3 py-2 bg-blue-600 text-white rounded-md">Guardar Venta</button></div></form></div></div>
+    <div id="sale-modal" class="fixed inset-0 hidden items-center justify-center z-50"><div class="modal-backdrop absolute inset-0"></div><div class="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 p-6"><h3 class="text-xl font-semibold mb-4">Nueva venta</h3><form id="sale-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="md:col-span-2"><label class="text-sm font-medium">Cliente</label><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1"><select id="sale-client-select" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"><option value="__new__">+ Nuevo cliente…</option></select><input id="sale-phone" placeholder="WhatsApp (opcional)" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div id="sale-new-client" class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2"><input id="sale-new-name" placeholder="Nombre completo" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /><input id="sale-new-tags" placeholder="Etiquetas (coma)" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /><input id="sale-new-credit" type="number" step="0.01" value="0" placeholder="Crédito inicial" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div></div><div><label class="text-sm font-medium">Servicio</label><select id="sale-service" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></select></div><div><label class="text-sm font-medium">Perfiles</label><input id="sale-qty" type="number" min="1" value="1" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div><label class="text-sm font-medium">Precio por perfil ($)</label><input id="sale-price" type="number" step="0.01" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div><label class="text-sm font-medium">Inicio de ciclo</label><input id="sale-date" type="date" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3"><label class="flex items-center gap-2"><input id="sale-generate-msg" type="checkbox" class="h-4 w-4 custom-checkbox" checked> <span>Generar mensaje de bienvenida</span></label><label class="flex items-center gap-2"><input id="sale-create-invoice" type="checkbox" class="h-4 w-4 custom-checkbox" checked> <span>Emitir factura de este ciclo</span></label></div><div class="md:col-span-2"><label class="text-sm font-medium">Link de pago (opcional, sobreescribe métodos guardados)</label><input id="sale-paylink" type="url" placeholder="https://…" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" /></div><div class="md:col-span-2 flex justify-end gap-2 pt-2"><button type="button" id="sale-cancel" class="px-3 py-2 bg-slate-200 dark:bg-slate-700 rounded-md">Cancelar</button><button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-md">Guardar Venta</button></div></form></div></div>
 
     <!-- Modal Editar Servicio del Catálogo -->
     <div id="service-catalog-modal" class="fixed inset-0 z-40 items-center justify-center hidden"><div class="modal-backdrop absolute inset-0"></div><div class="modal-content bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 relative"><form id="service-catalog-form" class="p-6"><h3 id="service-catalog-modal-title" class="text-xl font-semibold mb-4"></h3><div class="space-y-4"><div><label class="text-sm font-medium">Nombre del Servicio</label><input type="text" name="name" placeholder="Ej: Disney+" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent" required></div><div class="grid grid-cols-2 gap-4"><div><label class="text-sm font-medium">Límite de Plazas</label><input type="number" name="seat_limit" value="1" min="1" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div><label class="text-sm font-medium">Longitud del PIN</label><input type="number" name="pin_length" value="4" min="0" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div><label class="text-sm font-medium">Costo por Perfil ($)</label><input type="number" name="cost_per_profile" step="0.01" value="0" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div><div><label class="text-sm font-medium">Ciclo (días)</label><input type="number" name="billing_cycle_days" value="30" class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent"></div></div><div><label class="flex items-center"><input type="checkbox" name="isNetflix" class="custom-checkbox mr-2"><span class="text-sm">Es Netflix (Lógica Especial)</span></label></div></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="service-catalog-modal-cancel-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-md">Guardar Cambios</button></div></form></div></div>
@@ -439,14 +576,13 @@
             renderView('clients');
             return;
         }
-        container.innerHTML = `<div class="mb-6"> <button id="back-to-clients" class="text-sm font-medium text-blue-600 hover:underline">&larr; Volver</button> <div class="flex justify-between items-start mt-2"> <div> <h2 class="text-3xl font-bold">${client.name}</h2> <p class="text-slate-500">${client.phone || 'Sin WhatsApp'}</p> <p class="text-sm text-slate-500 mt-2 whitespace-pre-wrap">${client.notes || 'Sin notas.'}</p> </div><div class="flex items-center gap-2"><button type="button" data-role="quick-wa" class="bg-green-600 text-white font-medium py-2 px-3 rounded-md">WhatsApp</button><button type="button" data-role="toggle-suspend" class="bg-yellow-500 text-white font-medium py-2 px-3 rounded-md">Suspender/Reactivar</button><button id="edit-client-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Editar</button> <button id="delete-client-btn" class="bg-red-600 text-white font-medium py-2 px-4 rounded-md">Eliminar</button></div></div> </div> <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> <div class="lg:col-span-2 space-y-6"> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <div class="flex justify-between items-center mb-4"> <h3 class="text-xl font-semibold">Servicios Contratados</h3> <div class="flex gap-2"><button id="send-all-credentials-btn" class="text-sm bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 font-medium py-1 px-3 rounded-md">Enviar Todas las Credenciales</button><button id="add-service-to-client-btn" class="text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium py-1 px-3 rounded-md">Añadir Servicio</button></div> </div> <div id="client-services-list" class="space-y-3"></div> </div> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <h3 class="text-xl font-semibold mb-4">Facturación y Notificaciones</h3> <div class="flex flex-wrap gap-2"><button id="generate-special-invoice-btn" class="bg-amber-500 text-white font-medium py-2 px-4 rounded-md">Generar Factura</button> <button id="notify-balance-btn" class="bg-sky-500 text-white font-medium py-2 px-4 rounded-md hidden">Notificar Saldo Pendiente</button></div></div> </div> <div class="space-y-6"> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <h3 class="text-xl font-semibold mb-4">Historial de Facturas</h3> <div id="client-invoice-history" class="max-h-96 overflow-y-auto"></div> </div> </div> </div>`;
+        container.innerHTML = `<div class="mb-6"> <button id="back-to-clients" class="text-sm font-medium text-blue-600 hover:underline">&larr; Volver</button> <div class="flex justify-between items-start mt-2"> <div> <h2 class="text-3xl font-bold">${client.name}</h2> <p class="text-slate-500">${client.phone || 'Sin WhatsApp'}</p> <p class="text-sm text-slate-500 mt-2 whitespace-pre-wrap">${client.notes || 'Sin notas.'}</p> </div><div class="flex items-center gap-2"><button type="button" data-role="quick-wa" class="bg-green-600 text-white font-medium py-2 px-3 rounded-md">WhatsApp</button><button type="button" data-role="toggle-suspend" class="bg-yellow-500 text-white font-medium py-2 px-3 rounded-md">Suspender/Reactivar</button><button id="edit-client-btn" class="bg-slate-200 dark:bg-slate-700 font-medium py-2 px-4 rounded-md">Editar</button> <button id="delete-client-btn" class="bg-red-600 text-white font-medium py-2 px-4 rounded-md">Eliminar</button></div></div> </div> <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> <div class="lg:col-span-2 space-y-6"> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <div class="flex justify-between items-center mb-4"> <h3 class="text-xl font-semibold">Servicios Contratados</h3> <div class="flex gap-2"><button id="add-service-to-client-btn" class="text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-medium py-1 px-3 rounded-md">Añadir Servicio</button></div> </div> <div id="client-services-list" class="services-grid"></div> </div> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <h3 class="text-xl font-semibold mb-4">Facturación y Notificaciones</h3> <div class="flex flex-wrap gap-2"><button id="generate-special-invoice-btn" class="bg-amber-500 text-white font-medium py-2 px-4 rounded-md">Generar Factura</button> <button id="notify-balance-btn" class="bg-sky-500 text-white font-medium py-2 px-4 rounded-md hidden">Notificar Saldo Pendiente</button></div></div> </div> <div class="space-y-6"> <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6"> <h3 class="text-xl font-semibold mb-4">Historial de Facturas</h3> <div id="client-invoice-history" class="max-h-96 overflow-y-auto"></div> </div> </div> </div>`;
         document.getElementById('back-to-clients').addEventListener('click', () => renderView('clients'));
         document.getElementById('edit-client-btn').addEventListener('click', () => openClientModal(client));
         document.getElementById('delete-client-btn').addEventListener('click', () => {
             openConfirmationModal(`¿Estás seguro de que quieres eliminar a ${client.name}? Esta acción no se puede deshacer.`, () => handleDeleteClient(client));
         });
         document.getElementById('add-service-to-client-btn').addEventListener('click', () => openServiceModal(client));
-        document.getElementById('send-all-credentials-btn').addEventListener('click', () => handleGenerateCombinedWelcomeMessage(client));
         document.getElementById('generate-special-invoice-btn').addEventListener('click', () => openInvoiceModal(client));
         
         const notifyBtn = document.getElementById('notify-balance-btn');
@@ -471,62 +607,89 @@
     function populateClientServices(client) {
         const container = document.getElementById('client-services-list');
         const clientServices = client.services || {};
+        
         if (Object.keys(clientServices).length === 0) {
-            container.innerHTML = `<p class="text-center text-slate-500 py-4">Sin servicios activos.</p>`;
+            container.innerHTML = '<p class="text-center text-slate-500 py-4">Sin servicios activos.</p>';
             return;
         }
 
         let finalHTML = '';
+        
         for (const [serviceId, serviceData] of Object.entries(clientServices)) {
             const serviceInfo = app.services.find(s => s.id === serviceId);
             if (!serviceInfo) continue;
 
             const groups = getServiceGroups(serviceData);
+            const totalProfiles = groups.reduce((sum, g) => sum + (g.profiles?.length || 0), 0);
             
             finalHTML += `
-            <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                <button data-role="toggle-accordion" class="w-full flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700">
-                    <span class="font-medium">${serviceInfo.name}</span>
-                    <div class="flex items-center gap-2">
-                        <button type="button" data-role="remove-client-service" data-service-id="${serviceId}" class="text-red-500 hover:text-red-700 text-xl font-bold" aria-label="Quitar servicio completo" title="Quitar servicio completo">&times;</button>
-                        <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            <div class="service-card">
+                <div class="service-header" data-role="toggle-accordion" data-target="service-details-${serviceId}">
+                    <div class="service-title">
+                        <span class="font-bold">${serviceInfo.name}</span>
                     </div>
-                </button>
-                <div class="accordion-content p-3 space-y-3">
-                ${groups.map(group => {
-                    const profiles = Array.isArray(group.profiles) ? group.profiles : [];
-                    const profilesHTML = profiles.length ? `
-                    <div class="mt-2 space-y-2">
-                        ${profiles.map(p => `
-                        <div class="flex items-center justify-between p-2 rounded bg-white/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700">
-                            <div class="min-w-0">
-                            <p class="text-sm font-medium truncate">${p.profile_name || 'Perfil'}</p>
-                            <p class="text-xs text-slate-500">Cuenta: ${p.login_email} • PIN: ${p.pin || 'N/A'}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                            <button type="button" data-role="remove-client-profile"
-                                data-service-id="${serviceId}" data-group-id="${group.groupId}" data-profile-id="${p.profile_id}"
-                                class="text-red-500 hover:text-red-700 text-sm font-medium">Quitar</button>
-                            </div>
-                        </div>
-                        `).join('')}
-                    </div>` : `<p class="text-xs text-slate-500 mt-1">Sin perfiles asignados.</p>`;
-
-                    return `<div class="p-2 border-t border-slate-200 dark:border-slate-600">
-                            <div class="flex items-center justify-between">
-                                <p class="text-sm text-slate-500">
-                                Compra del ${group.date || 'N/A'} |
-                                Precio: $${(group.price||0).toFixed(2)} |
-                                Perfiles: ${profiles.length}
-                                </p>
-                                <button type="button" data-role="generate-welcome" data-service-id="${serviceId}" data-group-id="${group.groupId}" class="text-sm bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 font-medium py-1 px-3 rounded-md">Enviar Credenciales</button>
-                            </div>
-                        ${profilesHTML}
-                        </div>`
-                }).join('')}
+                    <div class="flex items-center">
+                       <span class="text-sm text-slate-500 mr-2">${totalProfiles} Perfil(es)</span>
+                       <svg class="w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
                 </div>
-            </div>`;
+                <div class="service-details accordion-content" id="service-details-${serviceId}">
+            `;
+            
+            if (groups.length > 0) {
+                 finalHTML += `<div class="p-4 space-y-3">`;
+                groups.forEach(group => {
+                    finalHTML += `
+                        <div class="detail-item">
+                            <span class="detail-label">Fecha de inicio:</span>
+                            <span class="detail-value">${group.date || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Perfiles:</span>
+                            <span class="detail-value">${group.profiles?.length || 0}</span>
+                        </div>
+                         <div class="detail-item">
+                            <span class="detail-label">Precio:</span>
+                            <span class="detail-value">$${fromCents(group.price * (group.profiles?.length || 0))}</span>
+                        </div>
+                    `;
+                     if(group.profiles && group.profiles.length > 0){
+                        finalHTML += `<div class="space-y-2 mt-2">`
+                        group.profiles.forEach(p => {
+                            finalHTML += `
+                            <div class="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700">
+                                <div class="min-w-0">
+                                <p class="text-sm font-medium truncate">${p.profile_name || 'Perfil'}</p>
+                                <p class="text-xs text-slate-500">Cuenta: ${p.login_email} • PIN: ${p.pin || 'N/A'}</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                <button type="button" data-role="remove-client-profile"
+                                    data-service-id="${serviceId}" data-group-id="${group.groupId}" data-profile-id="${p.profile_id}"
+                                    class="text-red-500 hover:text-red-700 text-sm font-medium">Quitar</button>
+                                </div>
+                            </div>
+                            `
+                        })
+                        finalHTML += `</div>`
+                    }
+                });
+                finalHTML += `</div>`;
+            }
+            
+            finalHTML += `
+                    <div class="service-actions">
+                        <button class="service-btn btn-credentials" data-role="generate-welcome" data-service-id="${serviceId}">
+                            <i class="fas fa-key"></i> Enviar Credenciales
+                        </button>
+                        <button class="service-btn btn-manage" data-role="remove-client-service" data-service-id="${serviceId}">
+                            <i class="fas fa-trash"></i> Eliminar Servicio
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
         }
+        
         container.innerHTML = finalHTML;
     }
     
@@ -781,102 +944,134 @@
     function closeClientModal() { app.ui.clientModal.classList.add('hidden'); app.ui.clientModal.classList.remove('flex');}
 
     function setupServiceModal() { app.ui.serviceModal = document.getElementById('service-modal'); app.ui.serviceModal.querySelector('.modal-backdrop').addEventListener('click', closeServiceModal); document.getElementById('service-modal-cancel-btn').addEventListener('click', closeServiceModal); document.getElementById('service-form').addEventListener('submit', handleServiceFormSubmit); }
+    
+    // --- LÓGICA DE SERVICIOS REFACTORIZADA ---
+    async function addServiceToClient(clientId, serviceDetails) {
+        const { serviceId, price, date, profilesRequested } = serviceDetails;
+
+        const clientRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId);
+        
+        const serviceInfo = app.services.find(s => s.id === serviceId);
+        if (!serviceInfo) throw new Error("Servicio no encontrado en el catálogo.");
+        if (!profilesRequested.length) throw new Error("Debes especificar al menos 1 perfil.");
+
+        const activeAccounts = app.masterAccounts.filter(ma => ma.serviceId === serviceId && ma.status === 'activa');
+        const totalAvailableSeats = activeAccounts.reduce((sum, acc) => sum + freeSeatsForAccount(acc, serviceInfo), 0);
+
+        if (totalAvailableSeats < profilesRequested.length) {
+            throw new Error(`¡Capacidad insuficiente! Solicitaste ${profilesRequested.length} perfiles, pero solo hay ${totalAvailableSeats} plazas libres.`);
+        }
+        
+        const pool = activeAccounts.map(a => ({ id: a.id, free: freeSeatsForAccount(a, serviceInfo) })).filter(x => x.free > 0);
+        for (const p of profilesRequested) { 
+            if (!p.accountId) { 
+                pool.sort((a, b) => a.free - b.free); 
+                const choice = pool.find(acc => acc.free > 0); 
+                if (choice) { 
+                    p.accountId = choice.id; 
+                    choice.free--; 
+                } 
+            } 
+        }
+        if (profilesRequested.some(p => !p.accountId)) { throw new Error("No se pudieron asignar todos los perfiles a una cuenta maestra disponible."); }
+
+        const usedAccountIds = [...new Set(profilesRequested.map(p => p.accountId))];
+        const accRefs = usedAccountIds.map(id => doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', id));
+
+        await runTransaction(app.db, async (tx) => {
+            const clientSnap = await tx.get(clientRef);
+            if (!clientSnap.exists()) throw new Error("El cliente no fue encontrado en la transacción.");
+            const clientData = clientSnap.data();
+            
+            const accSnaps = await Promise.all(accRefs.map(r => tx.get(r)));
+            const accMap = {};
+            accSnaps.forEach(s => { if (!s.exists()) throw new Error("Una cuenta maestra ya no existe."); accMap[s.id] = s.data(); });
+            
+            const needByAcc = {};
+            for (const p of profilesRequested) needByAcc[p.accountId] = (needByAcc[p.accountId] || 0) + 1;
+            for (const [accId, need] of Object.entries(needByAcc)) { 
+                const acc = accMap[accId]; 
+                const limit = effectiveSeatLimit(acc, serviceInfo); 
+                const used = acc.seats_used || 0; 
+                if (used + need > limit) throw new Error(`Capacidad insuficiente en la cuenta ${acc.login_email}.`); 
+            }
+
+            const newProfilesForGroup = [];
+            const newSeatsByAcc = {};
+
+            for (const p of profilesRequested) {
+                const accId = p.accountId;
+                if (!newSeatsByAcc[accId]) newSeatsByAcc[accId] = [];
+                
+                let finalPin = p.pin;
+                if (!finalPin && (serviceInfo.pin_length || 0) > 0) finalPin = generatePin(serviceInfo.pin_length);
+                
+                const allSeatsForAcc = (Array.isArray(accMap[accId].seats) ? accMap[accId].seats : []).concat(newSeatsByAcc[accId]);
+                if (finalPin && allSeatsForAcc.some(s => s.pin === finalPin)) finalPin = generatePin(serviceInfo.pin_length || 4);
+
+                const seat_uid = `${clientId}-${serviceId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                
+                newSeatsByAcc[accId].push({ seat_uid, clientId: clientId, serviceId, assigned_at: new Date().toISOString(), pin: finalPin || null, profile: p.name });
+                newProfilesForGroup.push({ profile_id: seat_uid, profile_name: p.name, master_account_id: accId, login_email: accMap[accId].login_email, pin: finalPin || null, assigned_at: new Date().toISOString() });
+            }
+
+            for (const [accId, newSeats] of Object.entries(newSeatsByAcc)) {
+                const acc = accMap[accId];
+                const existingSeats = Array.isArray(acc.seats) ? acc.seats : [];
+                tx.update(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', accId), {
+                    seats_used: (acc.seats_used || 0) + newSeats.length,
+                    seats: existingSeats.concat(newSeats)
+                });
+            }
+
+            const newServices = { ...(clientData.services || {}) };
+            const serviceNode = newServices[serviceId] || { groups: [] };
+            if (!Array.isArray(serviceNode.groups)) serviceNode.groups = getServiceGroups(serviceNode);
+            
+            serviceNode.groups.push({
+                groupId: `group-${Date.now()}`,
+                price: price,
+                date: date,
+                profiles: newProfilesForGroup
+            });
+            newServices[serviceId] = serviceNode;
+            tx.update(clientRef, { services: newServices });
+        });
+    }
+
     async function handleServiceFormSubmit(e) {
         e.preventDefault();
         const submitter = document.querySelector('#service-modal button[type="submit"]');
         setLoading(submitter, true);
         try {
-            const client = app.clients.find(cl => cl.id === app.selectedClientId);
-            if (!client) throw new Error("Cliente no encontrado.");
             const formData = new FormData(e.target);
-            const serviceId = formData.get('serviceId');
-            const price = parseFloat(formData.get('price'));
-            const date = formData.get('date');
-            const serviceInfo = app.services.find(s => s.id === serviceId);
-            if (!serviceInfo) throw new Error("Servicio no encontrado.");
             const names = formData.getAll('profile_name[]');
             const pins = formData.getAll('profile_pin[]');
             const accs = formData.getAll('profile_account[]');
-            const profilesRequested = names.map((nm, i) => ({ name: (nm || `Perfil ${i + 1}`).trim(), pin: (pins[i] || '').trim(), accountId: accs[i] || null }));
-            if (!profilesRequested.length) throw new Error("Debes crear al menos 1 perfil.");
 
-            const activeAccounts = app.masterAccounts.filter(ma => ma.serviceId === serviceId && ma.status === 'activa');
-            const totalAvailableSeats = activeAccounts.reduce((sum, acc) => sum + freeSeatsForAccount(acc, serviceInfo), 0);
+            const serviceDetails = {
+                serviceId: formData.get('serviceId'),
+                price: parseFloat(formData.get('price')),
+                date: formData.get('date'),
+                profilesRequested: names.map((nm, i) => ({ 
+                    name: (nm || `Perfil ${i + 1}`).trim(), 
+                    pin: (pins[i] || '').trim(), 
+                    accountId: accs[i] || null 
+                }))
+            };
 
-            if (totalAvailableSeats < profilesRequested.length) {
-                throw new Error(`¡Capacidad insuficiente!\n\nSolicitaste ${profilesRequested.length} perfiles, pero solo hay ${totalAvailableSeats} plazas libres.`);
-            }
-            
-            const pool = activeAccounts.map(a => ({ id: a.id, free: freeSeatsForAccount(a, serviceInfo) })).filter(x => x.free > 0);
-            for (const p of profilesRequested) { if (!p.accountId) { pool.sort((a, b) => a.free - b.free); const choice = pool.find(acc => acc.free > 0); if (choice) { p.accountId = choice.id; choice.free--; } } }
-            if (profilesRequested.some(p => !p.accountId)) { throw new Error("No se pudieron asignar todos los perfiles a una cuenta."); }
+            await addServiceToClient(app.selectedClientId, serviceDetails);
 
-            const clientRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', client.id);
-            const usedAccountIds = [...new Set(profilesRequested.map(p => p.accountId))];
-            const accRefs = usedAccountIds.map(id => doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', id));
-
-            await runTransaction(app.db, async (tx) => {
-                const clientSnap = await tx.get(clientRef);
-                const clientData = clientSnap.data() || {};
-                
-                const accSnaps = await Promise.all(accRefs.map(r => tx.get(r)));
-                const accMap = {};
-                accSnaps.forEach(s => { if (!s.exists()) throw new Error("Una cuenta maestra ya no existe."); accMap[s.id] = s.data(); });
-                
-                const needByAcc = {};
-                for (const p of profilesRequested) needByAcc[p.accountId] = (needByAcc[p.accountId] || 0) + 1;
-                for (const [accId, need] of Object.entries(needByAcc)) { const acc = accMap[accId]; const limit = effectiveSeatLimit(acc, serviceInfo); const used = acc.seats_used || 0; if (used + need > limit) throw new Error(`Capacidad insuficiente en ${acc.login_email}.`); }
-
-                const newProfilesForGroup = [];
-                const newSeatsByAcc = {};
-
-                for (const p of profilesRequested) {
-                    const accId = p.accountId;
-                    if (!newSeatsByAcc[accId]) newSeatsByAcc[accId] = [];
-                    
-                    let finalPin = p.pin;
-                    if (!finalPin && (serviceInfo.pin_length || 0) > 0) finalPin = generatePin(serviceInfo.pin_length);
-                    
-                    const allSeatsForAcc = (Array.isArray(accMap[accId].seats) ? accMap[accId].seats : []).concat(newSeatsByAcc[accId]);
-                    if (finalPin && allSeatsForAcc.some(s => s.pin === finalPin)) finalPin = generatePin(serviceInfo.pin_length || 4);
-
-                    const seat_uid = `${client.id}-${serviceId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-                    
-                    newSeatsByAcc[accId].push({ seat_uid, clientId: client.id, serviceId, assigned_at: new Date().toISOString(), pin: finalPin || null, profile: p.name });
-                    newProfilesForGroup.push({ profile_id: seat_uid, profile_name: p.name, master_account_id: accId, login_email: accMap[accId].login_email, pin: finalPin || null, assigned_at: new Date().toISOString() });
-                }
-
-                for (const [accId, newSeats] of Object.entries(newSeatsByAcc)) {
-                    const acc = accMap[accId];
-                    const existingSeats = Array.isArray(acc.seats) ? acc.seats : [];
-                    tx.update(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'master_accounts', accId), {
-                        seats_used: (acc.seats_used || 0) + newSeats.length,
-                        seats: existingSeats.concat(newSeats)
-                    });
-                }
-
-                const newServices = { ...(clientData.services || {}) };
-                const serviceNode = newServices[serviceId] || { groups: [] };
-                if (!Array.isArray(serviceNode.groups)) serviceNode.groups = getServiceGroups(serviceNode);
-                
-                serviceNode.groups.push({
-                    groupId: `group-${Date.now()}`,
-                    price: price,
-                    date: date,
-                    profiles: newProfilesForGroup
-                });
-                newServices[serviceId] = serviceNode;
-                tx.update(clientRef, { services: newServices });
-            });
-
-            mostrarNotificacion("Perfiles asignados correctamente.");
+            mostrarNotificacion("Servicio añadido correctamente.");
             closeServiceModal();
         } catch (err) {
+            console.error("Error al añadir servicio:", err);
             mostrarNotificacion(err.message || "Error al asignar perfiles.", true);
         } finally {
             setLoading(submitter, false);
         }
     }
+
     function openServiceModal(client) {
         app.selectedClientId = client.id;
         const form = document.getElementById('service-form');
@@ -1074,11 +1269,15 @@
     async function handlePaymentFormSubmit(e) {
         e.preventDefault();
         const form = e.target;
+        const submitter = form.querySelector('button[type="submit"]');
+        setLoading(submitter, true, 'Registrar');
+
         const clientId = app.selectedClientId || form.elements.clientId.value;
         const client = app.clients.find(c => c.id === clientId);
 
         if (!client) {
             mostrarNotificacion("Debes seleccionar un cliente.", true);
+            setLoading(submitter, false, 'Registrar');
             return;
         }
 
@@ -1094,6 +1293,8 @@
             closePaymentModal();
         } catch (err) {
             mostrarNotificacion(err.message || 'Error al registrar el pago', true);
+        } finally {
+            setLoading(submitter, false, 'Registrar');
         }
     }
 
@@ -1427,6 +1628,7 @@
     }
 
     function setLoading(button, isLoading, originalText = 'Guardar') {
+        if(!button) return;
         if (isLoading) {
             button.disabled = true;
             button.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Procesando...`;
@@ -1735,68 +1937,63 @@
 
     async function addPaymentAndAllocate(clientId, payload) {
         const clientRef = doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId);
-        const paysCol = collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId, 'payments');
-        const invCol = (cid) => collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', cid, 'invoices');
+        const invCol = collection(clientRef, 'invoices');
+        const paysCol = collection(clientRef, 'payments');
+
+        // 1. Run query for pending invoices OUTSIDE the transaction
+        const pendingInvoicesQuery = query(invCol, where('status', 'in', ['pendiente', 'parcial']), orderBy('due_date', 'asc'));
+        const pendingInvoicesSnap = await getDocs(pendingInvoicesQuery);
+        const invoiceRefsToUpdate = pendingInvoicesSnap.docs.map(d => d.ref);
 
         await runTransaction(app.db, async (tx) => {
+            // 2. READ all documents that will be modified inside the transaction for concurrency control
             const clientSnap = await tx.get(clientRef);
             if (!clientSnap.exists()) throw new Error("Cliente no existe.");
-
-            const q = query(invCol(clientId), where('status', 'in', ['pendiente', 'parcial']));
-            const pendingInvoicesSnap = await getDocs(q); 
-
-            const invoiceRefs = pendingInvoicesSnap.docs.map(d => d.ref);
-            const invoiceSnaps = await Promise.all(invoiceRefs.map(ref => tx.get(ref)));
-            const sortedInvoices = invoiceSnaps
-                .map(snap => ({ id: snap.id, ref: snap.ref, ...snap.data() }))
-                .sort((a, b) => (a.due_date?.toMillis() || 0) - (b.due_date?.toMillis() || 0));
-
-            let remaining = payload.amount_cents;
-            const payRef = doc(paysCol);
-            tx.set(payRef, { ...payload, created_at: Timestamp.now() });
-
-            let pendingTotalCentsAfterPayment = 0;
             
-            const allInvoicesQuery = query(invCol(clientId));
-            const allInvoicesDocs = (await getDocs(allInvoicesQuery)).docs;
-            const otherInvoices = allInvoicesDocs
-                .filter(doc => !sortedInvoices.find(inv => inv.id === doc.id))
-                .map(doc => doc.data());
+            const invoiceSnaps = await Promise.all(invoiceRefsToUpdate.map(ref => tx.get(ref)));
 
-            for (const inv of otherInvoices) {
-                 if (inv.status !== 'pagado') {
-                     pendingTotalCentsAfterPayment += (inv.amount_cents || 0) - (inv.payments_total_cents || 0);
-                 }
-            }
+            // 3. Perform all logic and stage writes
+            let remainingAmount = payload.amount_cents;
+            
+            // Write the new payment document
+            const paymentRef = doc(paysCol);
+            tx.set(paymentRef, { ...payload, created_at: Timestamp.now() });
 
-            for (const inv of sortedInvoices) {
-                if (remaining <= 0) {
-                    pendingTotalCentsAfterPayment += (inv.amount_cents || 0) - (inv.payments_total_cents || 0);
-                    continue;
-                }
+            // Allocate payment to invoices
+            for (const invSnap of invoiceSnaps) {
+                if (remainingAmount <= 0) break;
+                if (!invSnap.exists()) continue; // Invoice might have been deleted since the query ran
 
+                const inv = invSnap.data();
                 const paid = inv.payments_total_cents || 0;
                 const due = (inv.amount_cents || 0) - paid;
-                const applied = Math.min(due, remaining);
-                const newPaid = paid + applied;
-                const newStatus = newPaid >= (inv.amount_cents || 0) ? 'pagado' : 'parcial';
                 
-                tx.update(inv.ref, {
-                    payments_total_cents: newPaid,
-                    status: newStatus,
-                    last_payment_id: payRef.id
-                });
-                remaining -= applied;
-
-                if (newStatus !== 'pagado') {
-                    pendingTotalCentsAfterPayment += (inv.amount_cents || 0) - newPaid;
+                if (due > 0) {
+                    const applied = Math.min(due, remainingAmount);
+                    const newPaid = paid + applied;
+                    const newStatus = newPaid >= (inv.amount_cents || 0) ? 'pagado' : 'parcial';
+                    
+                    tx.update(invSnap.ref, {
+                        payments_total_cents: newPaid,
+                        status: newStatus,
+                        last_payment_id: paymentRef.id
+                    });
+                    remainingAmount -= applied;
                 }
             }
             
-            const currentCredit = clientSnap.data().credit || 0;
+            // Update client's balance
+            const clientData = clientSnap.data();
+            const currentAR = clientData.pending_ar_cents || 0;
+            const paidOffAR = payload.amount_cents - remainingAmount;
+            const newAR = Math.max(0, currentAR - paidOffAR);
+
+            const currentCredit = clientData.credit || 0;
+            const newCredit = currentCredit + remainingAmount;
+
             tx.update(clientRef, { 
-                pending_ar_cents: pendingTotalCentsAfterPayment,
-                credit: currentCredit + remaining
+                pending_ar_cents: newAR,
+                credit: newCredit
             });
         });
     }
@@ -2054,14 +2251,20 @@
         return message;
     }
 
-    async function handleGenerateWelcomeMessage(serviceId, groupId) {
+    async function handleGenerateWelcomeMessage(serviceId, groupId = null) {
         const client = app.clients.find(c => c.id === app.selectedClientId);
         if (!client) return;
 
         const serviceInfo = app.services.find(s => s.id === serviceId);
-        const group = getServiceGroups((client.services || {})[serviceId]).find(g => g.groupId === groupId);
+        let group;
+        if(groupId) {
+             group = getServiceGroups((client.services || {})[serviceId]).find(g => g.groupId === groupId);
+        } else {
+             const groups = getServiceGroups((client.services || {})[serviceId]);
+             if (groups.length > 0) group = groups[0]; // Take the first group if no ID is specified
+        }
 
-        if (!serviceInfo || !group) return mostrarNotificacion("No se encontraron datos del servicio.", true);
+        if (!serviceInfo || !group) return mostrarNotificacion("No se encontraron datos del servicio para generar el mensaje.", true);
         
         // Group profiles by master account
         const profilesByAccount = group.profiles.reduce((acc, profile) => {
@@ -2249,7 +2452,7 @@
                 }
                 else if (role === 'toggle-acc-group' || role === 'toggle-accordion') {
                     e.preventDefault(); e.stopPropagation();
-                    const content = btn.nextElementSibling;
+                    const content = role === 'toggle-accordion' ? btn.nextElementSibling : document.getElementById(btn.dataset.target);
                     const icon = btn.querySelector('svg:last-child, .chev');
                     if (content.style.maxHeight) {
                         content.style.maxHeight = null;
@@ -2345,16 +2548,16 @@
         e.preventDefault();
         const submitter = e.target.querySelector('button[type="submit"]');
         setLoading(submitter, true, 'Guardar Venta');
+        let newClientId = null;
 
         try {
             const sel = document.getElementById('sale-client-select');
             const isNew = sel.value === '__new__';
-            let clientId = sel.value;
-            let clientData;
+            let clientId;
 
             if (isNew) {
                 const name = document.getElementById('sale-new-name').value.trim();
-                if (!name) throw new Error('Ingresa el nombre del nuevo cliente');
+                if (!name) throw new Error('El nombre del nuevo cliente es obligatorio.');
                 
                 const newClientPayload = {
                     name,
@@ -2367,12 +2570,12 @@
                 };
                 const docRef = await addDoc(collection(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients'), newClientPayload);
                 clientId = docRef.id;
-                clientData = { id: clientId, ...newClientPayload };
+                newClientId = clientId;
             } else {
-                clientData = app.clients.find(c => c.id === clientId);
+                clientId = sel.value;
             }
 
-            if (!clientData) throw new Error("Cliente no encontrado.");
+            if (!clientId) throw new Error("Cliente no seleccionado o creado.");
 
             const serviceId = document.getElementById('sale-service').value;
             const qty = Math.max(1, parseInt(document.getElementById('sale-qty').value || '1', 10));
@@ -2383,23 +2586,21 @@
             const paylink = document.getElementById('sale-paylink').value.trim();
             
             if (paylink) {
-                clientData.payment_link = paylink; // Update local object
                 await updateDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId), { payment_link: paylink });
             }
 
-            // A bit of a hack, but re-use the service form logic
-            // This is a simplified version for quick sales
-            const mockServiceForm = new FormData();
-            mockServiceForm.append('serviceId', serviceId);
-            mockServiceForm.append('price', price);
-            mockServiceForm.append('date', date);
-            for(let i=0; i<qty; i++) {
-                mockServiceForm.append('profile_name[]', `Perfil ${i+1}`);
-                mockServiceForm.append('profile_pin[]', '');
-                mockServiceForm.append('profile_account[]', '');
-            }
-            app.selectedClientId = clientId; // Set context for service handler
-            await handleServiceFormSubmit({ preventDefault: () => {}, target: { elements: { serviceId: {value: serviceId}, price: {value: price}, date: {value: date} }, getElementsByTagName:()=>[], querySelectorAll:()=>[], getAttribute:()=>null, dataset:{}, ...Object.fromEntries(mockServiceForm) }});
+            const serviceDetails = {
+                serviceId,
+                price,
+                date,
+                profilesRequested: Array.from({ length: qty }, (_, i) => ({
+                    name: `Perfil ${i + 1}`,
+                    pin: '',
+                    accountId: null // Dejar que la capa de servicio asigne automáticamente
+                }))
+            };
+            
+            await addServiceToClient(clientId, serviceDetails);
             
             if (createInvoice) {
                 const total = price * qty;
@@ -2409,24 +2610,29 @@
                     due_date: Timestamp.fromDate(new Date(date)),
                     status: 'pendiente',
                     payments_total_cents: 0,
-                    content: `Factura por ${qty} perfil(es) de ${app.services.find(s=>s.id===serviceId).name}.`
+                    content: `Factura por ${qty} perfil(es) de ${app.services.find(s=>s.id===serviceId)?.name || 'servicio'}.`
                 };
                 await addInvoice(clientId, invoice);
             }
 
+            mostrarNotificacion('Venta registrada correctamente.');
+            
             if (genMsg) {
-                // We need to refetch the client data to get the newly added service profiles
-                const freshClientDoc = await getDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId));
-                const freshClientData = {id: freshClientDoc.id, ...freshClientDoc.data()};
-                await handleGenerateCombinedWelcomeMessage(freshClientData);
+                // Se necesita un pequeño delay para asegurar que los datos del cliente y servicio se propaguen en el estado local
+                setTimeout(async () => {
+                    const freshClientDoc = await getDoc(doc(app.db, 'artifacts', app.appId, 'users', app.userId, 'clients', clientId));
+                    const freshClientData = {id: freshClientDoc.id, ...freshClientDoc.data()};
+                    await handleGenerateCombinedWelcomeMessage(freshClientData);
+                }, 500);
             }
 
-            mostrarNotificacion('Venta registrada correctamente.');
             closeSaleModal();
             renderView('clients', { clientId: clientId });
         } catch (error) {
             console.error("Error en venta:", error);
             mostrarNotificacion(error.message || "Error al procesar la venta.", true);
+            // Si el cliente fue creado pero el resto falló, se podría considerar eliminarlo,
+            // pero es más seguro dejarlo para revisión manual.
         } finally {
             setLoading(submitter, false, 'Guardar Venta');
         }
@@ -2675,3 +2881,4 @@
 </script>
 </body>
 </html>
+
