@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¿Quién Habla? - Serena vs Michael</title>
+    <title>¿Quién Habla? - Carolina vs Michael</title>
     <style>
         * {
             margin: 0;
@@ -96,6 +96,13 @@
             opacity: 0.8;
         }
 
+        .flipper {
+            margin: 10px 0;
+            font-size: 0.9em;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
         button {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             border: none;
@@ -144,8 +151,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>🪙 ¿Quién Habla?</h1>
-        <p class="instructions">Mejor de 3 lanzamientos decide quién habla</p>
+        <h1>🪙 ¿Quién Habla en otorrino?</h1>
+        <p class="instructions">Mejor de 5 lanzamientos decide quién habla</p>
+        <p class="flipper">Lanzador: Kevin Chavarría</p>
         
         <div class="coin" id="coin">
             ¡Lanza!
@@ -153,8 +161,8 @@
 
         <div class="score">
             <div>
-                <strong>Serena</strong><br>
-                <span id="serenaScore">0</span>
+                <strong>Carolina</strong><br>
+                <span id="carolinaScore">0</span>
             </div>
             <div>
                 <strong>Michael</strong><br>
@@ -163,7 +171,7 @@
         </div>
 
         <div class="throws">
-            Lanzamiento: <span id="currentThrow">0</span> de 3
+            Lanzamiento: <span id="currentThrow">0</span> de 5
         </div>
 
         <div class="result-history" id="history"></div>
@@ -175,14 +183,14 @@
     </div>
 
     <script>
-        let serenaScore = 0;
+        let carolinaScore = 0;
         let michaelScore = 0;
         let currentThrow = 0;
         let gameHistory = [];
         let gameEnded = false;
 
         function flipCoin() {
-            if (gameEnded || currentThrow >= 3) return;
+            if (gameEnded || currentThrow >= 5) return;
 
             const coin = document.getElementById('coin');
             const flipBtn = document.getElementById('flipBtn');
@@ -193,18 +201,18 @@
 
             // Simular el lanzamiento con JavaScript's Math.random() para verdadero azar
             setTimeout(() => {
-                const isSerena = Math.random() < 0.5;
-                const result = isSerena ? 'Serena' : 'Michael';
+                const isCarolina = Math.random() < 0.5;
+                const result = isCarolina ? 'Carolina' : 'Michael';
                 
                 // Actualizar moneda
                 coin.textContent = result;
-                coin.style.background = isSerena ? 
+                coin.style.background = isCarolina ? 
                     'linear-gradient(45deg, #ff7675, #fd79a8)' : 
                     'linear-gradient(45deg, #00b894, #00cec9)';
 
                 // Actualizar puntajes
-                if (isSerena) {
-                    serenaScore++;
+                if (isCarolina) {
+                    carolinaScore++;
                 } else {
                     michaelScore++;
                 }
@@ -213,14 +221,18 @@
                 gameHistory.push(result);
 
                 // Actualizar UI
-                document.getElementById('serenaScore').textContent = serenaScore;
+                document.getElementById('carolinaScore').textContent = carolinaScore;
                 document.getElementById('michaelScore').textContent = michaelScore;
                 document.getElementById('currentThrow').textContent = currentThrow;
                 document.getElementById('history').textContent = 
                     'Resultados: ' + gameHistory.join(' → ');
 
-                // Verificar si el juego terminó
-                if (currentThrow >= 3) {
+                // Verificar si alguien ya ganó (alcanzó 3 puntos)
+                if (carolinaScore >= 3 || michaelScore >= 3) {
+                    endGame();
+                }
+                // Verificar si el juego terminó por límite de lanzamientos
+                else if (currentThrow >= 5) {
                     endGame();
                 }
 
@@ -240,14 +252,14 @@
             resetBtn.style.display = 'inline-block';
 
             let winnerText;
-            if (serenaScore > michaelScore) {
-                winnerText = `🎉 ¡Serena habla! (${serenaScore}-${michaelScore})`;
+            if (carolinaScore > michaelScore) {
+                winnerText = `🎉 ¡Carolina habla! (${carolinaScore}-${michaelScore})`;
                 winner.style.background = 'linear-gradient(45deg, #ff7675, #fd79a8)';
-            } else if (michaelScore > serenaScore) {
-                winnerText = `🎉 ¡Michael habla! (${michaelScore}-${serenaScore})`;
+            } else if (michaelScore > carolinaScore) {
+                winnerText = `🎉 ¡Michael habla! (${michaelScore}-${carolinaScore})`;
                 winner.style.background = 'linear-gradient(45deg, #00b894, #00cec9)';
             } else {
-                winnerText = `🤝 ¡Empate! Hablan los dos (${serenaScore}-${michaelScore})`;
+                winnerText = `🤝 ¡Empate! Hablan los dos (${carolinaScore}-${michaelScore})`;
                 winner.style.background = 'linear-gradient(45deg, #fdcb6e, #e17055)';
             }
 
@@ -256,13 +268,13 @@
         }
 
         function resetGame() {
-            serenaScore = 0;
+            carolinaScore = 0;
             michaelScore = 0;
             currentThrow = 0;
             gameHistory = [];
             gameEnded = false;
 
-            document.getElementById('serenaScore').textContent = '0';
+            document.getElementById('carolinaScore').textContent = '0';
             document.getElementById('michaelScore').textContent = '0';
             document.getElementById('currentThrow').textContent = '0';
             document.getElementById('history').textContent = '';
