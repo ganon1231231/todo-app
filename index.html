@@ -122,20 +122,51 @@
     .player-row {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .player-label {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
+      gap: 10px;
       font-size: 0.78rem;
       color: var(--muted);
+      flex-wrap: wrap;
     }
 
     .player-label strong {
       color: var(--text);
       font-size: 0.9rem;
+      display: block;
+    }
+
+    .player-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .player-controls {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .player-controls input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      padding: 5px 9px;
+      font-size: 0.75rem;
+      outline: none;
+    }
+
+    .player-controls input::placeholder {
+      color: #6b7280;
     }
 
     .player-frame {
@@ -144,6 +175,9 @@
       border: 1px solid rgba(148,163,184,0.5);
       background: black;
       aspect-ratio: 16 / 9;
+      max-width: 640px;       /* Más pequeño que antes */
+      width: 100%;
+      margin: 0 auto;         /* Centrado */
     }
 
     .player-frame iframe {
@@ -508,17 +542,29 @@
     </div>
 
     <div class="main-card">
-      <!-- RADIO EMBEBIDA -->
+      <!-- RADIO / TOCADISCO -->
       <div class="player-row">
         <div class="player-label">
-          <strong>🎧 Lofi navideño</strong>
-          <span>Si algo no reproduce, revisa extensiones tipo adblock.</span>
+          <div class="player-left">
+            <strong>🎧 Lofi navideño</strong>
+            <span>Si algo no reproduce, revisa extensiones tipo adblock.</span>
+          </div>
+          <div class="player-controls">
+            <input
+              type="text"
+              id="videoInput"
+              placeholder="Pega aquí un link de YouTube (o ID del video)"
+            />
+            <button class="btn-secondary btn-small" id="loadVideoBtn">
+              Cambiar pista
+            </button>
+          </div>
         </div>
         <div class="player-frame">
-          <!-- Tu video: https://www.youtube.com/watch?v=GNJE__4ZtvE -->
+          <!-- Iframe sin src fijo: se carga desde JS -->
           <iframe
-            src="https://www.youtube-nocookie.com/embed/GNJE__4ZtvE?autoplay=1&mute=1&loop=1&playlist=GNJE__4ZtvE&controls=1&modestbranding=1"
-            title="Christmas Lofi"
+            id="lofiPlayer"
+            title="Lofi Player"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             referrerpolicy="strict-origin-when-cross-origin"
             allowfullscreen>
@@ -977,6 +1023,92 @@
       const pauseBtn = card.querySelector('button[data-action="pause"]');
       if (pauseBtn) pauseBtn.classList.add("btn-disabled");
     });
+
+    // --- TOCADISCO: cambio dinámico de video YouTube ---
+
+    const DEFAULT_VIDEO_ID = "GNJE__4ZtvE"; // el lofi navideño original
+
+    function extractYouTubeId(input) {
+      const raw = input.trim();
+      if (!raw) return null;
+
+      // Si parece solo un ID (sin espacios ni "http")
+      if (!raw.includes("http") && !raw.includes("www")) {
+        return raw;
+      }
+
+      try {
+        const url = new URL(raw);
+        // youtu.be/VIDEOID
+        if (url.hostname === "youtu.be") {
+          return url.pathname.slice(1);
+        }
+        // youtube.com/watch?v=VIDEOID
+        const v = url.searchParams.get("v");
+        if (v) return v;
+        // youtube.com/embed/VIDEOID
+        const parts = url.pathname.split("/");
+        const idx = parts.indexOf("embed");
+        if (idx !== -1 && parts[idx + 1]) {
+          return parts[idx + 1];
+        }
+        return null;
+      } catch (e) {
+        // Si no es URL válida, devuelvo tal cual a ver si es ID
+        return raw;
+      }
+    }
+
+    function buildEmbedUrl(videoId) {
+      const params = new URLSearchParams({
+        autoplay: "1",
+        mute: "1",
+        loop: "1",
+        playlist: videoId,
+        controls: "1",
+        modestbranding: "1"
+      });
+      return "https://www.youtube-nocookie.com/embed/" +
+        encodeURIComponent(videoId) +
+        "?" + params.toString();
+    }
+
+    function setupVideoPlayer() {
+      const input = document.getElementById("videoInput");
+      const iframe = document.getElementById("lofiPlayer");
+      const btn = document.getElementById("loadVideoBtn");
+      if (!input || !iframe || !btn) return;
+
+      let storedId = null;
+      try {
+        storedId = localStorage.getItem("lofiVideoId");
+      } catch (e) {
+        storedId = null;
+      }
+      const initialId = storedId || DEFAULT_VIDEO_ID;
+
+      // Carga inicial
+      iframe.src = buildEmbedUrl(initialId);
+      input.value = "https://www.youtube.com/watch?v=" + initialId;
+
+      btn.addEventListener("click", () => {
+        const text = input.value.trim();
+        if (!text) return;
+        const id = extractYouTubeId(text);
+        if (!id) {
+          showToast("No pude leer ese link de YouTube 😿");
+          return;
+        }
+        iframe.src = buildEmbedUrl(id);
+        try {
+          localStorage.setItem("lofiVideoId", id);
+        } catch (e) {}
+        showToast("Nueva pista cargada 🎶");
+      });
+    }
+
+    // Inicializar tocadiscos
+    setupVideoPlayer();
   </script>
 </body>
 </html>
