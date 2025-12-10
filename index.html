@@ -35,7 +35,6 @@
       display: flex;
       justify-content: center;
       padding: 18px;
-      /* 👉 Fondo navideño BIEN visible */
       background:
         linear-gradient(120deg, rgba(0,0,0,0.18), rgba(0,0,0,0.35)),
         url("https://t3.ftcdn.net/jpg/06/22/02/64/360_F_622026433_bgSz36305ukZLwGlrBkxB2XEJ7QwD6J3.jpg");
@@ -513,14 +512,15 @@
       <div class="player-row">
         <div class="player-label">
           <strong>🎧 Lofi navideño</strong>
-          <span>Si el visor online marca error 153, abre el HTML directo en tu navegador.</span>
+          <span>Si algo no reproduce, revisa extensiones tipo adblock.</span>
         </div>
         <div class="player-frame">
-          <!-- TU VIDEO: https://www.youtube.com/watch?v=h_a3tqywv3I -->
+          <!-- Tu video: https://www.youtube.com/watch?v=h_a3tqywv3I -->
           <iframe
-            src="https://www.youtube.com/embed/h_a3tqywv3I?autoplay=1&mute=1&loop=1&playlist=h_a3tqywv3I"
+            src="https://www.youtube-nocookie.com/embed/h_a3tqywv3I?autoplay=1&mute=1&loop=1&playlist=h_a3tqywv3I&controls=1&modestbranding=1"
             title="Christmas Lofi"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
             allowfullscreen>
           </iframe>
         </div>
