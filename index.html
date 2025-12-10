@@ -1,295 +1,982 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¿Quién Habla? - Carolina vs Michael</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <title>Estudio en pareja · Cozy Xmas 🎄</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            color: white;
-        }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
-            width: 100%;
-        }
+  <style>
+    :root {
+      --glass: rgba(15, 23, 42, 0.72);
+      --glass-strong: rgba(15, 23, 42, 0.90);
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --accent: #22c55e;
+      --accent2: #38bdf8;
+      --radius-lg: 18px;
+      --radius-xl: 26px;
+      --shadow: 0 20px 50px rgba(0,0,0,0.65);
+    }
 
-        h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        .coin {
-            width: 150px;
-            height: 150px;
-            margin: 30px auto;
-            border-radius: 50%;
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-            border: 5px solid #b8860b;
-        }
+    body {
+      min-height: 100vh;
+      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 18px;
+      /* 👉 Fondo navideño BIEN visible */
+      background:
+        linear-gradient(120deg, rgba(0,0,0,0.18), rgba(0,0,0,0.35)),
+        url("https://t3.ftcdn.net/jpg/06/22/02/64/360_F_622026433_bgSz36305ukZLwGlrBkxB2XEJ7QwD6J3.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
 
-        .coin.flipping {
-            animation: flip 1s ease-in-out;
-        }
+    .app-shell {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-        @keyframes flip {
-            0% { transform: rotateY(0deg); }
-            50% { transform: rotateY(1800deg) scale(1.1); }
-            100% { transform: rotateY(0deg); }
-        }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: var(--radius-xl);
+      background: var(--glass-strong);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148,163,184,0.45);
+    }
 
-        .score {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            font-size: 1.1em;
-        }
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-        .score div {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 15px;
-            border-radius: 10px;
-            min-width: 80px;
-        }
+    .logo-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #facc15, #ea580c 50%, #b91c1c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
 
-        .throws {
-            margin: 20px 0;
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
+    .top-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
 
-        .result-history {
-            margin: 15px 0;
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
+    .top-sub {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
 
-        .flipper {
-            margin: 10px 0;
-            font-size: 0.9em;
-            opacity: 0.8;
-            font-style: italic;
-        }
+    .clock-box {
+      text-align: right;
+      font-size: 0.8rem;
+    }
 
-        button {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            border: none;
-            color: white;
-            padding: 15px 30px;
-            font-size: 1.1em;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            margin: 10px;
-        }
+    .clock-time {
+      font-size: 1rem;
+      font-weight: 600;
+    }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
+    .clock-date {
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
+    .main-card {
+      padding: 14px 16px 16px;
+      border-radius: var(--radius-xl);
+      background: var(--glass);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148,163,184,0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
 
-        .winner {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin: 20px 0;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            animation: pulse 2s infinite;
-        }
+    /* Player */
+    .player-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
+    .player-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
 
-        .instructions {
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin-bottom: 20px;
-        }
-    </style>
+    .player-label strong {
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .player-frame {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: black;
+      aspect-ratio: 16 / 9;
+    }
+
+    .player-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Timers grid */
+    .timers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .user-card {
+      background: rgba(15,23,42,0.92);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148,163,184,0.45);
+      padding: 10px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .user-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .user-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .user-role {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .user-score {
+      font-size: 0.72rem;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(34,197,94,0.6);
+      color: #bbf7d0;
+      background: rgba(15,23,42,0.95);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .focus-block {
+      border-radius: 14px;
+      background: rgba(15,23,42,0.98);
+      border: 1px solid rgba(148,163,184,0.45);
+      padding: 8px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .focus-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .focus-time {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      padding: 2px 0 0;
+    }
+
+    .focus-meta {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.76rem;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.1s ease, opacity 0.15s ease, box-shadow 0.1s ease;
+    }
+
+    button:active {
+      transform: scale(0.96);
+      box-shadow: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #f9fafb;
+      box-shadow: 0 10px 22px rgba(22,163,74,0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(15,23,42,0.96);
+      color: var(--muted);
+      border: 1px solid rgba(148,163,184,0.6);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px dashed rgba(148,163,184,0.6);
+    }
+
+    .btn-small {
+      padding: 4px 9px;
+      font-size: 0.72rem;
+    }
+
+    .btn-disabled {
+      opacity: 0.4;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    /* Goals */
+    .goals-block {
+      border-radius: 14px;
+      background: rgba(15,23,42,0.98);
+      border: 1px solid rgba(148,163,184,0.45);
+      padding: 8px 9px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 0.76rem;
+    }
+
+    .goals-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .goals-header span {
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .goal-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .goal-item {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+      padding: 4px 6px;
+      border-radius: 10px;
+      background: rgba(15,23,42,1);
+      border: 1px solid transparent;
+    }
+
+    .goal-item.completed {
+      background: radial-gradient(circle at left, rgba(34,197,94,0.25), rgba(15,23,42,1));
+      border-color: rgba(34,197,94,0.8);
+      color: #bbf7d0;
+    }
+
+    .goal-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .goal-text {
+      flex: 1;
+      outline: none;
+    }
+
+    .goal-text[contenteditable="true"] {
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.15s ease;
+    }
+
+    .goal-text[contenteditable="true"]:focus {
+      border-color: rgba(148,163,184,0.8);
+    }
+
+    .goal-add {
+      display: flex;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .goal-add input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,1);
+      color: var(--text);
+      padding: 5px 9px;
+      font-size: 0.75rem;
+      outline: none;
+    }
+
+    .goal-add input::placeholder {
+      color: #6b7280;
+    }
+
+    .progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: 3px;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(15,23,42,1);
+      border: 1px solid rgba(148,163,184,0.75);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.25s ease;
+    }
+
+    /* Breaks */
+    .break-section {
+      border-radius: 14px;
+      background: rgba(15,23,42,0.98);
+      border: 1px dashed rgba(148,163,184,0.65);
+      padding: 8px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.74rem;
+    }
+
+    .break-cards {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .break-card {
+      flex: 1 1 130px;
+      padding: 6px 7px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.55);
+      background: rgba(15,23,42,1);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .break-card-title {
+      font-size: 0.76rem;
+    }
+
+    .break-card-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .break-card.locked {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .break-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .break-status {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%) translateY(20px);
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.98);
+      border: 1px solid rgba(250,204,21,0.9);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+      font-size: 0.78rem;
+      color: #fef9c3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .clock-box {
+        text-align: left;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🪙 ¿Quién Habla en otorrino?</h1>
-        <p class="instructions">Mejor de 5 lanzamientos decide quién habla</p>
-        <p class="flipper">Lanzador: Kevin Chavarría</p>
-        
-        <div class="coin" id="coin">
-            ¡Lanza!
+  <div class="app-shell">
+    <div class="top-bar">
+      <div class="top-left">
+        <div class="logo-circle">🎄</div>
+        <div>
+          <div class="top-title">Estudio en pareja · Cozy Xmas</div>
+          <div class="top-sub">Timers pomodoro, objetivos y descansos con premio</div>
         </div>
-
-        <div class="score">
-            <div>
-                <strong>Carolina</strong><br>
-                <span id="carolinaScore">0</span>
-            </div>
-            <div>
-                <strong>Michael</strong><br>
-                <span id="michaelScore">0</span>
-            </div>
-        </div>
-
-        <div class="throws">
-            Lanzamiento: <span id="currentThrow">0</span> de 5
-        </div>
-
-        <div class="result-history" id="history"></div>
-
-        <button id="flipBtn" onclick="flipCoin()">🎯 Lanzar Moneda</button>
-        <button id="resetBtn" onclick="resetGame()" style="display:none; background: linear-gradient(45deg, #74b9ff, #0984e3);">🔄 Nuevo Juego</button>
-
-        <div id="winner" class="winner" style="display:none;"></div>
+      </div>
+      <div class="clock-box">
+        <div class="clock-time" id="clockPanama">--:--:--</div>
+        <div class="clock-date" id="datePanama">Cargando fecha…</div>
+        <div class="clock-date">Zona horaria: Panamá</div>
+      </div>
     </div>
 
-    <script>
-        let carolinaScore = 0;
-        let michaelScore = 0;
-        let currentThrow = 0;
-        let gameHistory = [];
-        let gameEnded = false;
+    <div class="main-card">
+      <!-- RADIO EMBEBIDA -->
+      <div class="player-row">
+        <div class="player-label">
+          <strong>🎧 Lofi navideño</strong>
+          <span>Si el visor online marca error 153, abre el HTML directo en tu navegador.</span>
+        </div>
+        <div class="player-frame">
+          <!-- TU VIDEO: https://www.youtube.com/watch?v=h_a3tqywv3I -->
+          <iframe
+            src="https://www.youtube.com/embed/h_a3tqywv3I?autoplay=1&mute=1&loop=1&playlist=h_a3tqywv3I"
+            title="Christmas Lofi"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
 
-        function flipCoin() {
-            if (gameEnded || currentThrow >= 5) return;
+      <div class="timers-grid">
+        <!-- JORDAN -->
+        <section class="user-card" data-user="jordan">
+          <div class="user-top">
+            <div>
+              <div class="user-name">Jordan · Ginecología</div>
+              <div class="user-role">Bloques profundos y resúmenes</div>
+            </div>
+            <div class="user-score">
+              <span>Puntos:</span>
+              <span class="focus-score">0</span>⭐
+            </div>
+          </div>
 
-            const coin = document.getElementById('coin');
-            const flipBtn = document.getElementById('flipBtn');
-            
-            // Deshabilitar botón durante animación
-            flipBtn.disabled = true;
-            coin.classList.add('flipping');
+          <div class="focus-block">
+            <div class="focus-row">
+              <span>Timer de enfoque</span>
+              <span>Pomodoro flexible</span>
+            </div>
+            <div class="focus-time" id="timer-jordan">00:00:00</div>
+            <div class="focus-meta" data-total-for="jordan">Total hoy: 0 min</div>
+            <div class="btn-row">
+              <button class="btn-primary" data-action="start" data-user="jordan">Iniciar</button>
+              <button class="btn-secondary" data-action="pause" data-user="jordan">Pausar</button>
+              <button class="btn-ghost" data-action="reset" data-user="jordan">Reiniciar</button>
+            </div>
+          </div>
 
-            // Simular el lanzamiento con JavaScript's Math.random() para verdadero azar
-            setTimeout(() => {
-                const isCarolina = Math.random() < 0.5;
-                const result = isCarolina ? 'Carolina' : 'Michael';
-                
-                // Actualizar moneda
-                coin.textContent = result;
-                coin.style.background = isCarolina ? 
-                    'linear-gradient(45deg, #ff7675, #fd79a8)' : 
-                    'linear-gradient(45deg, #00b894, #00cec9)';
+          <div class="goals-block">
+            <div class="goals-header">
+              <strong>Objetivos de hoy</strong>
+              <span>Tú escribes la lista ✏️</span>
+            </div>
+            <ul class="goal-list"></ul>
+            <div class="goal-add">
+              <input type="text" class="goal-input" placeholder="Añade un objetivo y presiona ➕" />
+              <button class="btn-secondary btn-small" data-action="add-goal" data-user="jordan">➕</button>
+            </div>
+            <div class="progress-row">
+              <div class="progress-bar">
+                <div class="progress-bar-fill"></div>
+              </div>
+              <span class="progress-label">0 objetivos</span>
+            </div>
+          </div>
 
-                // Actualizar puntajes
-                if (isCarolina) {
-                    carolinaScore++;
-                } else {
-                    michaelScore++;
-                }
+          <div class="break-section">
+            <div class="break-cards">
+              <div class="break-card break-short locked" data-user="jordan" data-type="short">
+                <div class="break-card-title">Descanso corto · 5 min</div>
+                <div class="break-card-sub">Se desbloquea con ≥25 min de estudio o al completar un objetivo.</div>
+                <button class="btn-secondary btn-small" data-action="start-break" data-user="jordan" data-type="short">
+                  Iniciar 5 min
+                </button>
+              </div>
+              <div class="break-card break-long locked" data-user="jordan" data-type="long">
+                <div class="break-card-title">Descanso largo · 15 min</div>
+                <div class="break-card-sub">Solo cuando terminas al menos un objetivo.</div>
+                <button class="btn-secondary btn-small" data-action="start-break" data-user="jordan" data-type="long">
+                  Iniciar 15 min
+                </button>
+              </div>
+            </div>
+            <div class="break-status-row">
+              <div class="break-status" data-break-status-for="jordan">Sin descanso activo</div>
+              <button class="btn-ghost btn-small" data-action="end-break" data-user="jordan">
+                Terminar descanso
+              </button>
+            </div>
+          </div>
+        </section>
 
-                currentThrow++;
-                gameHistory.push(result);
+        <!-- CAROLINA -->
+        <section class="user-card" data-user="carolina">
+          <div class="user-top">
+            <div>
+              <div class="user-name">Carolina · Obstetricia</div>
+              <div class="user-role">Protocolos, guías y riesgos</div>
+            </div>
+            <div class="user-score">
+              <span>Puntos:</span>
+              <span class="focus-score">0</span>⭐
+            </div>
+          </div>
 
-                // Actualizar UI
-                document.getElementById('carolinaScore').textContent = carolinaScore;
-                document.getElementById('michaelScore').textContent = michaelScore;
-                document.getElementById('currentThrow').textContent = currentThrow;
-                document.getElementById('history').textContent = 
-                    'Resultados: ' + gameHistory.join(' → ');
+          <div class="focus-block">
+            <div class="focus-row">
+              <span>Timer de enfoque</span>
+              <span>Bloques de estudio</span>
+            </div>
+            <div class="focus-time" id="timer-carolina">00:00:00</div>
+            <div class="focus-meta" data-total-for="carolina">Total hoy: 0 min</div>
+            <div class="btn-row">
+              <button class="btn-primary" data-action="start" data-user="carolina">Iniciar</button>
+              <button class="btn-secondary" data-action="pause" data-user="carolina">Pausar</button>
+              <button class="btn-ghost" data-action="reset" data-user="carolina">Reiniciar</button>
+            </div>
+          </div>
 
-                // Verificar si alguien ya ganó (alcanzó 3 puntos)
-                if (carolinaScore >= 3 || michaelScore >= 3) {
-                    endGame();
-                }
-                // Verificar si el juego terminó por límite de lanzamientos
-                else if (currentThrow >= 5) {
-                    endGame();
-                }
+          <div class="goals-block">
+            <div class="goals-header">
+              <strong>Objetivos de hoy</strong>
+              <span>Carolina decide los goals ✏️</span>
+            </div>
+            <ul class="goal-list"></ul>
+            <div class="goal-add">
+              <input type="text" class="goal-input" placeholder="Añade un objetivo y presiona ➕" />
+              <button class="btn-secondary btn-small" data-action="add-goal" data-user="carolina">➕</button>
+            </div>
+            <div class="progress-row">
+              <div class="progress-bar">
+                <div class="progress-bar-fill"></div>
+              </div>
+              <span class="progress-label">0 objetivos</span>
+            </div>
+          </div>
 
-                coin.classList.remove('flipping');
-                flipBtn.disabled = false;
+          <div class="break-section">
+            <div class="break-cards">
+              <div class="break-card break-short locked" data-user="carolina" data-type="short">
+                <div class="break-card-title">Descanso corto · 5 min</div>
+                <div class="break-card-sub">Se desbloquea con ≥25 min de estudio o al completar un objetivo.</div>
+                <button class="btn-secondary btn-small" data-action="start-break" data-user="carolina" data-type="short">
+                  Iniciar 5 min
+                </button>
+              </div>
+              <div class="break-card break-long locked" data-user="carolina" data-type="long">
+                <div class="break-card-title">Descanso largo · 15 min</div>
+                <div class="break-card-sub">Solo cuando terminas al menos un objetivo.</div>
+                <button class="btn-secondary btn-small" data-action="start-break" data-user="carolina" data-type="long">
+                  Iniciar 15 min
+                </button>
+              </div>
+            </div>
+            <div class="break-status-row">
+              <div class="break-status" data-break-status-for="carolina">Sin descanso activo</div>
+              <button class="btn-ghost btn-small" data-action="end-break" data-user="carolina">
+                Terminar descanso
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 
-            }, 1000);
+  <div class="toast" id="toast">
+    <span>🎉</span>
+    <span id="toastText">Mensaje</span>
+  </div>
+
+  <script>
+    // Reloj Panamá
+    function actualizarRelojPanama() {
+      const ahora = new Date();
+      const opcionesHora = {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZone: "America/Panama"
+      };
+      const opcionesFecha = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "2-digit",
+        timeZone: "America/Panama"
+      };
+      document.getElementById("clockPanama").textContent =
+        ahora.toLocaleTimeString("es-PA", opcionesHora);
+      document.getElementById("datePanama").textContent =
+        ahora.toLocaleDateString("es-PA", opcionesFecha);
+    }
+    actualizarRelojPanama();
+    setInterval(actualizarRelojPanama, 1000);
+
+    // Estado timers
+    const state = {
+      jordan: {
+        focusSeconds: 0,
+        totalSeconds: 0,
+        blockSeconds: 0,
+        interval: null,
+        shortUnlocked: false,
+        longUnlocked: false,
+        breakInterval: null,
+        breakRemaining: null,
+        breakType: null
+      },
+      carolina: {
+        focusSeconds: 0,
+        totalSeconds: 0,
+        blockSeconds: 0,
+        interval: null,
+        shortUnlocked: false,
+        longUnlocked: false,
+        breakInterval: null,
+        breakRemaining: null,
+        breakType: null
+      }
+    };
+
+    const POMODORO_MIN = 25;
+    const SHORT_BREAK_SEC = 5 * 60;
+    const LONG_BREAK_SEC = 15 * 60;
+
+    function formatTime(sec) {
+      const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return h + ":" + m + ":" + s;
+    }
+
+    function getCard(user) {
+      return document.querySelector('.user-card[data-user="' + user + '"]');
+    }
+
+    function updateFocusUI(user) {
+      const card = getCard(user);
+      const timerEl = card.querySelector('.focus-time');
+      const totalEl = card.querySelector('[data-total-for="' + user + '"]');
+      timerEl.textContent = formatTime(state[user].focusSeconds);
+      const totalMin = Math.floor(state[user].totalSeconds / 60);
+      totalEl.textContent = "Total hoy: " + totalMin + " min";
+    }
+
+    function tickFocus(user) {
+      state[user].focusSeconds++;
+      state[user].totalSeconds++;
+      state[user].blockSeconds++;
+      updateFocusUI(user);
+
+      if (!state[user].shortUnlocked && state[user].blockSeconds >= POMODORO_MIN * 60) {
+        state[user].shortUnlocked = true;
+        updateBreakLocks(user);
+        showToast("Descanso corto desbloqueado para " + user + " (≥" + POMODORO_MIN + " min) ☕");
+      }
+    }
+
+    function startFocus(user) {
+      if (state[user].interval) return;
+      state[user].interval = setInterval(() => tickFocus(user), 1000);
+      const card = getCard(user);
+      const startBtn = card.querySelector('button[data-action="start"]');
+      const pauseBtn = card.querySelector('button[data-action="pause"]');
+      startBtn.classList.add("btn-disabled");
+      pauseBtn.classList.remove("btn-disabled");
+    }
+
+    function pauseFocus(user) {
+      const s = state[user];
+      if (s.interval) {
+        clearInterval(s.interval);
+        s.interval = null;
+      }
+      const card = getCard(user);
+      const startBtn = card.querySelector('button[data-action="start"]');
+      const pauseBtn = card.querySelector('button[data-action="pause"]');
+      startBtn.classList.remove("btn-disabled");
+      pauseBtn.classList.add("btn-disabled");
+    }
+
+    function resetFocus(user) {
+      const s = state[user];
+      if (s.interval) {
+        clearInterval(s.interval);
+        s.interval = null;
+      }
+      s.focusSeconds = 0;
+      s.blockSeconds = 0;
+      updateFocusUI(user);
+      const card = getCard(user);
+      const startBtn = card.querySelector('button[data-action="start"]');
+      const pauseBtn = card.querySelector('button[data-action="pause"]');
+      startBtn.classList.remove("btn-disabled");
+      pauseBtn.classList.add("btn-disabled");
+    }
+
+    // Descansos
+    function updateBreakStatus(user) {
+      const card = getCard(user);
+      const statusEl = card.querySelector('[data-break-status-for="' + user + '"]');
+      const s = state[user];
+      if (!statusEl) return;
+
+      if (!s.breakInterval || s.breakRemaining == null) {
+        statusEl.textContent = "Sin descanso activo";
+        return;
+      }
+      const label = s.breakType === "long" ? "Descanso largo" : "Descanso corto";
+      const m = String(Math.floor(s.breakRemaining / 60)).padStart(2, "0");
+      const sec = String(s.breakRemaining % 60).padStart(2, "0");
+      statusEl.textContent = label + ": " + m + ":" + sec;
+    }
+
+    function updateBreakLocks(user) {
+      const card = getCard(user);
+      const s = state[user];
+      const shortCard = card.querySelector('.break-card.break-short');
+      const longCard  = card.querySelector('.break-card.break-long');
+
+      if (shortCard) {
+        if (s.shortUnlocked) shortCard.classList.remove("locked");
+        else shortCard.classList.add("locked");
+      }
+      if (longCard) {
+        if (s.longUnlocked) longCard.classList.remove("locked");
+        else longCard.classList.add("locked");
+      }
+    }
+
+    function startBreak(user, type) {
+      const s = state[user];
+      if (s.breakInterval) return;
+
+      if (type === "short" && !s.shortUnlocked) return;
+      if (type === "long" && !s.longUnlocked) return;
+
+      pauseFocus(user);
+
+      s.breakType = type;
+      s.breakRemaining = type === "long" ? LONG_BREAK_SEC : SHORT_BREAK_SEC;
+      updateBreakStatus(user);
+
+      s.breakInterval = setInterval(() => {
+        s.breakRemaining--;
+        updateBreakStatus(user);
+        if (s.breakRemaining <= 0) {
+          endBreak(user, true);
         }
+      }, 1000);
+    }
 
-        function endGame() {
-            gameEnded = true;
-            const flipBtn = document.getElementById('flipBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const winner = document.getElementById('winner');
+    function endBreak(user, auto) {
+      const s = state[user];
+      if (s.breakInterval) {
+        clearInterval(s.breakInterval);
+        s.breakInterval = null;
+      }
+      s.breakRemaining = null;
+      s.breakType = null;
+      s.blockSeconds = 0;
+      updateBreakStatus(user);
+      if (auto) {
+        showToast("Fin del descanso para " + user + " · ¡nuevo bloque! 💪");
+      }
+    }
 
-            flipBtn.style.display = 'none';
-            resetBtn.style.display = 'inline-block';
+    // Objetivos
+    function updateProgress(user) {
+      const card = getCard(user);
+      const checks = card.querySelectorAll(".goal-checkbox");
+      const total = checks.length;
+      const done = Array.from(checks).filter(cb => cb.checked).length;
+      const bar = card.querySelector(".progress-bar-fill");
+      const label = card.querySelector(".progress-label");
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      if (bar) bar.style.width = pct + "%";
+      if (label) {
+        label.textContent = total === 0 ? "0 objetivos" : done + "/" + total + " objetivos";
+      }
+      return { total, done };
+    }
 
-            let winnerText;
-            if (carolinaScore > michaelScore) {
-                winnerText = `🎉 ¡Carolina habla! (${carolinaScore}-${michaelScore})`;
-                winner.style.background = 'linear-gradient(45deg, #ff7675, #fd79a8)';
-            } else if (michaelScore > carolinaScore) {
-                winnerText = `🎉 ¡Michael habla! (${michaelScore}-${carolinaScore})`;
-                winner.style.background = 'linear-gradient(45deg, #00b894, #00cec9)';
-            } else {
-                winnerText = `🤝 ¡Empate! Hablan los dos (${carolinaScore}-${michaelScore})`;
-                winner.style.background = 'linear-gradient(45deg, #fdcb6e, #e17055)';
-            }
+    function addPoints(user, amount) {
+      const card = getCard(user);
+      const scoreEl = card.querySelector(".focus-score");
+      const current = parseInt(scoreEl.textContent || "0", 10);
+      scoreEl.textContent = String(current + amount);
+    }
 
-            winner.textContent = winnerText;
-            winner.style.display = 'block';
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const text = document.getElementById("toastText");
+      text.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    document.addEventListener("click", (ev) => {
+      const t = ev.target;
+      if (!(t instanceof HTMLElement)) return;
+      const action = t.getAttribute("data-action");
+      const user = t.getAttribute("data-user");
+      if (!action || (user && !state[user])) return;
+
+      if (action === "start") {
+        startFocus(user);
+      } else if (action === "pause") {
+        pauseFocus(user);
+      } else if (action === "reset") {
+        resetFocus(user);
+      } else if (action === "add-goal") {
+        const card = getCard(user);
+        const input = card.querySelector(".goal-input");
+        const list = card.querySelector(".goal-list");
+        if (!input || !list) return;
+        const text = input.value.trim();
+        if (!text) return;
+        const li = document.createElement("li");
+        li.className = "goal-item";
+        li.innerHTML =
+          '<input type="checkbox" class="goal-checkbox" data-user="' + user + '">' +
+          '<span class="goal-text" contenteditable="true"></span>';
+        li.querySelector(".goal-text").textContent = text;
+        list.appendChild(li);
+        input.value = "";
+        updateProgress(user);
+      } else if (action === "start-break") {
+        const type = t.getAttribute("data-type");
+        startBreak(user, type);
+      } else if (action === "end-break") {
+        endBreak(user, false);
+      }
+    });
+
+    document.addEventListener("change", (ev) => {
+      const t = ev.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (!t.classList.contains("goal-checkbox")) return;
+      const user = t.getAttribute("data-user");
+      if (!user || !state[user]) return;
+
+      const item = t.closest(".goal-item");
+      if (t.checked) {
+        item.classList.add("completed");
+        addPoints(user, 10);
+        resetFocus(user);
+        state[user].shortUnlocked = true;
+        state[user].longUnlocked = true;
+        updateBreakLocks(user);
+        const { total, done } = updateProgress(user);
+        if (total > 0 && done === total) {
+          showToast("¡" + user + " completó todos sus objetivos! 🎁");
+        } else {
+          showToast("Objetivo completado para " + user + " · descansos desbloqueados ☕");
         }
+      } else {
+        item.classList.remove("completed");
+        updateProgress(user);
+      }
+    });
 
-        function resetGame() {
-            carolinaScore = 0;
-            michaelScore = 0;
-            currentThrow = 0;
-            gameHistory = [];
-            gameEnded = false;
-
-            document.getElementById('carolinaScore').textContent = '0';
-            document.getElementById('michaelScore').textContent = '0';
-            document.getElementById('currentThrow').textContent = '0';
-            document.getElementById('history').textContent = '';
-            
-            const coin = document.getElementById('coin');
-            coin.textContent = '¡Lanza!';
-            coin.style.background = 'linear-gradient(45deg, #ffd700, #ffed4e)';
-
-            document.getElementById('flipBtn').style.display = 'inline-block';
-            document.getElementById('resetBtn').style.display = 'none';
-            document.getElementById('winner').style.display = 'none';
-        }
-
-        // Permitir lanzar tocando la moneda (útil en móvil)
-        document.getElementById('coin').addEventListener('click', flipCoin);
-    </script>
+    ["jordan","carolina"].forEach(user => {
+      updateFocusUI(user);
+      updateBreakLocks(user);
+      const card = getCard(user);
+      const pauseBtn = card.querySelector('button[data-action="pause"]');
+      if (pauseBtn) pauseBtn.classList.add("btn-disabled");
+    });
+  </script>
 </body>
 </html>
