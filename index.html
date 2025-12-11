@@ -150,7 +150,8 @@
     .player-controls {
       display: flex;
       gap: 6px;
-      flex: 1;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       min-width: 220px;
     }
 
@@ -175,15 +176,75 @@
       border: 1px solid rgba(148,163,184,0.5);
       background: black;
       aspect-ratio: 16 / 9;
-      max-width: 640px;       /* Más pequeño que antes */
+      max-width: 640px;   /* un poco más pequeño */
       width: 100%;
-      margin: 0 auto;         /* Centrado */
+      margin: 0 auto;     /* centrado */
     }
 
     .player-frame iframe {
       width: 100%;
       height: 100%;
       border: none;
+    }
+
+    /* Playlist */
+    .playlist-bar {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.72rem;
+    }
+
+    .playlist-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .playlist-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .playlist-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .playlist-item:hover {
+      background: rgba(30,64,175,0.45);
+    }
+
+    .playlist-item.active {
+      border-color: rgba(56,189,248,0.9);
+      background: radial-gradient(circle at left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
+    }
+
+    .playlist-index {
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .playlist-text {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Timers grid */
@@ -542,26 +603,24 @@
     </div>
 
     <div class="main-card">
-      <!-- RADIO / TOCADISCO -->
+      <!-- RADIO / TOCADISCOS CON PLAYLIST -->
       <div class="player-row">
         <div class="player-label">
           <div class="player-left">
-            <strong>🎧 Lofi navideño</strong>
-            <span>Si algo no reproduce, revisa extensiones tipo adblock.</span>
+            <strong>🎧 Toca-discos Lofi</strong>
+            <span>Usa cualquier link de YouTube. El video solo carga cuando tú lo eliges.</span>
           </div>
           <div class="player-controls">
             <input
               type="text"
               id="videoInput"
-              placeholder="Pega aquí un link de YouTube (o ID del video)"
+              placeholder="Pega un link de YouTube o ID de video"
             />
-            <button class="btn-secondary btn-small" id="loadVideoBtn">
-              Cambiar pista
-            </button>
+            <button class="btn-secondary btn-small" id="addToPlaylistBtn">➕ Añadir</button>
+            <button class="btn-primary btn-small" id="playPlaylistBtn">▶️</button>
           </div>
         </div>
         <div class="player-frame">
-          <!-- Iframe sin src fijo: se carga desde JS -->
           <iframe
             id="lofiPlayer"
             title="Lofi Player"
@@ -569,6 +628,14 @@
             referrerpolicy="strict-origin-when-cross-origin"
             allowfullscreen>
           </iframe>
+        </div>
+        <div class="playlist-bar">
+          <div class="playlist-buttons">
+            <button class="btn-secondary btn-small" id="prevTrackBtn">⏮️</button>
+            <button class="btn-secondary btn-small" id="nextTrackBtn">⏭️</button>
+            <button class="btn-ghost btn-small" id="clearPlaylistBtn">🗑️ Limpiar</button>
+          </div>
+          <ul class="playlist-list" id="playlistList"></ul>
         </div>
       </div>
 
@@ -1024,23 +1091,26 @@
       if (pauseBtn) pauseBtn.classList.add("btn-disabled");
     });
 
-    // --- TOCADISCO: cambio dinámico de video YouTube ---
+    // --- TOCADISCOS & PLAYLIST ---
 
-    const DEFAULT_VIDEO_ID = "GNJE__4ZtvE"; // el lofi navideño original
+    const playerState = {
+      playlist: [],
+      currentIndex: -1
+    };
 
     function extractYouTubeId(input) {
       const raw = input.trim();
       if (!raw) return null;
 
-      // Si parece solo un ID (sin espacios ni "http")
+      // Si parece solo un ID (sin http / www)
       if (!raw.includes("http") && !raw.includes("www")) {
         return raw;
       }
 
       try {
         const url = new URL(raw);
-        // youtu.be/VIDEOID
         if (url.hostname === "youtu.be") {
+          // youtu.be/VIDEOID
           return url.pathname.slice(1);
         }
         // youtube.com/watch?v=VIDEOID
@@ -1054,7 +1124,7 @@
         }
         return null;
       } catch (e) {
-        // Si no es URL válida, devuelvo tal cual a ver si es ID
+        // Si no es URL válida, devolvemos tal cual (podría ser un ID)
         return raw;
       }
     }
@@ -1073,25 +1143,83 @@
         "?" + params.toString();
     }
 
+    function loadPlaylistFromStorage() {
+      try {
+        const raw = localStorage.getItem("lofiPlaylist");
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (Array.isArray(saved.playlist)) {
+          playerState.playlist = saved.playlist;
+        }
+        if (typeof saved.currentIndex === "number") {
+          playerState.currentIndex = saved.currentIndex;
+        } else if (playerState.playlist.length > 0) {
+          playerState.currentIndex = 0;
+        }
+      } catch (e) {
+        // ignorar errores
+      }
+    }
+
+    function savePlaylistToStorage() {
+      try {
+        localStorage.setItem("lofiPlaylist", JSON.stringify({
+          playlist: playerState.playlist,
+          currentIndex: playerState.currentIndex
+        }));
+      } catch (e) {
+        // ignorar
+      }
+    }
+
+    function renderPlaylistUI() {
+      const list = document.getElementById("playlistList");
+      if (!list) return;
+      list.innerHTML = "";
+      playerState.playlist.forEach((item, idx) => {
+        const li = document.createElement("li");
+        li.className = "playlist-item";
+        if (idx === playerState.currentIndex) {
+          li.classList.add("active");
+        }
+        li.dataset.index = String(idx);
+        li.innerHTML =
+          '<span class="playlist-index">' + (idx + 1) + '.</span>' +
+          '<span class="playlist-text">' + item.label + '</span>';
+        list.appendChild(li);
+      });
+    }
+
+    function playCurrentVideo() {
+      const iframe = document.getElementById("lofiPlayer");
+      if (!iframe) return;
+      if (
+        playerState.currentIndex < 0 ||
+        playerState.currentIndex >= playerState.playlist.length
+      ) return;
+      const id = playerState.playlist[playerState.currentIndex].id;
+      iframe.src = buildEmbedUrl(id);
+    }
+
     function setupVideoPlayer() {
       const input = document.getElementById("videoInput");
+      const btnAdd = document.getElementById("addToPlaylistBtn");
+      const btnPlay = document.getElementById("playPlaylistBtn");
+      const btnNext = document.getElementById("nextTrackBtn");
+      const btnPrev = document.getElementById("prevTrackBtn");
+      const btnClear = document.getElementById("clearPlaylistBtn");
+      const list = document.getElementById("playlistList");
       const iframe = document.getElementById("lofiPlayer");
-      const btn = document.getElementById("loadVideoBtn");
-      if (!input || !iframe || !btn) return;
 
-      let storedId = null;
-      try {
-        storedId = localStorage.getItem("lofiVideoId");
-      } catch (e) {
-        storedId = null;
-      }
-      const initialId = storedId || DEFAULT_VIDEO_ID;
+      if (!input || !btnAdd || !btnPlay || !btnNext || !btnPrev || !btnClear || !list || !iframe) return;
 
-      // Carga inicial
-      iframe.src = buildEmbedUrl(initialId);
-      input.value = "https://www.youtube.com/watch?v=" + initialId;
+      // Arrancar con frame vacío para que no haya video hasta que tú lo decidas
+      iframe.src = "about:blank";
 
-      btn.addEventListener("click", () => {
+      loadPlaylistFromStorage();
+      renderPlaylistUI();
+
+      btnAdd.addEventListener("click", () => {
         const text = input.value.trim();
         if (!text) return;
         const id = extractYouTubeId(text);
@@ -1099,16 +1227,84 @@
           showToast("No pude leer ese link de YouTube 😿");
           return;
         }
-        iframe.src = buildEmbedUrl(id);
-        try {
-          localStorage.setItem("lofiVideoId", id);
-        } catch (e) {}
-        showToast("Nueva pista cargada 🎶");
+        playerState.playlist.push({ id, label: text });
+        if (playerState.currentIndex === -1) {
+          playerState.currentIndex = 0;
+        }
+        savePlaylistToStorage();
+        renderPlaylistUI();
+
+        if (playerState.playlist.length === 1) {
+          playCurrentVideo();
+          showToast("Primera pista añadida y reproduciendo 🎧");
+        } else {
+          showToast("Pista añadida a la playlist 🎶");
+        }
+
+        input.value = "";
+      });
+
+      btnPlay.addEventListener("click", () => {
+        if (playerState.playlist.length === 0) {
+          showToast("No hay pistas en la playlist todavía 🐱");
+          return;
+        }
+        if (playerState.currentIndex === -1) {
+          playerState.currentIndex = 0;
+        }
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        playCurrentVideo();
+      });
+
+      btnNext.addEventListener("click", () => {
+        const len = playerState.playlist.length;
+        if (!len) return;
+        if (playerState.currentIndex === -1) {
+          playerState.currentIndex = 0;
+        } else {
+          playerState.currentIndex = (playerState.currentIndex + 1) % len;
+        }
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        playCurrentVideo();
+      });
+
+      btnPrev.addEventListener("click", () => {
+        const len = playerState.playlist.length;
+        if (!len) return;
+        if (playerState.currentIndex === -1) {
+          playerState.currentIndex = 0;
+        } else {
+          playerState.currentIndex = (playerState.currentIndex - 1 + len) % len;
+        }
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        playCurrentVideo();
+      });
+
+      btnClear.addEventListener("click", () => {
+        playerState.playlist = [];
+        playerState.currentIndex = -1;
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        iframe.src = "about:blank";
+        showToast("Playlist limpiada 🧹");
+      });
+
+      list.addEventListener("click", (ev) => {
+        const li = ev.target.closest(".playlist-item");
+        if (!li) return;
+        const idx = parseInt(li.dataset.index, 10);
+        if (Number.isNaN(idx)) return;
+        playerState.currentIndex = idx;
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        playCurrentVideo();
       });
     }
 
-    // Inicializar tocadiscos
-    setupVideoPlayer();
+    document.addEventListener("DOMContentLoaded", setupVideoPlayer);
   </script>
 </body>
 </html>
