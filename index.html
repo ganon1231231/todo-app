@@ -187,7 +187,7 @@
       border: none;
     }
 
-    /* Playlist */
+    /* Playlist + búsqueda */
     .playlist-bar {
       margin-top: 6px;
       display: flex;
@@ -222,8 +222,14 @@
       border-radius: 999px;
       background: rgba(15,23,42,0.9);
       border: 1px solid transparent;
-      cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      cursor: grab;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .playlist-item.dragging {
+      opacity: 0.7;
+      transform: scale(0.98);
+      cursor: grabbing;
     }
 
     .playlist-item:hover {
@@ -245,6 +251,75 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .playlist-delete {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: transparent;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .playlist-delete:hover {
+      background: rgba(127,29,29,0.6);
+      color: #fecaca;
+      border-color: rgba(248,113,113,0.8);
+    }
+
+    .search-results {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .search-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.5);
+    }
+
+    .search-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .search-title {
+      font-size: 0.74rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    .search-add-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,1);
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    .search-add-btn:hover {
+      background: rgba(22,163,74,0.8);
+      color: #f9fafb;
+      border-color: rgba(22,163,74,1);
     }
 
     /* Timers grid */
@@ -603,21 +678,22 @@
     </div>
 
     <div class="main-card">
-      <!-- RADIO / TOCADISCOS CON PLAYLIST -->
+      <!-- RADIO / TOCADISCOS CON PLAYLIST Y BÚSQUEDA -->
       <div class="player-row">
         <div class="player-label">
           <div class="player-left">
             <strong>🎧 Toca-discos Lofi</strong>
-            <span>Usa cualquier link de YouTube. El video solo carga cuando tú lo eliges.</span>
+            <span>Busca en YouTube, añade a la playlist y controla todo desde aquí.</span>
           </div>
           <div class="player-controls">
             <input
               type="text"
               id="videoInput"
-              placeholder="Pega un link de YouTube o ID de video"
+              placeholder="Pega un link o escribe para buscar en YouTube"
             />
             <button class="btn-secondary btn-small" id="addToPlaylistBtn">➕ Añadir</button>
             <button class="btn-primary btn-small" id="playPlaylistBtn">▶️</button>
+            <button class="btn-secondary btn-small" id="searchBtn">🔍 Buscar</button>
           </div>
         </div>
         <div class="player-frame">
@@ -633,9 +709,10 @@
           <div class="playlist-buttons">
             <button class="btn-secondary btn-small" id="prevTrackBtn">⏮️</button>
             <button class="btn-secondary btn-small" id="nextTrackBtn">⏭️</button>
-            <button class="btn-ghost btn-small" id="clearPlaylistBtn">🗑️ Limpiar</button>
+            <button class="btn-ghost btn-small" id="clearPlaylistBtn">🗑️ Limpiar todo</button>
           </div>
           <ul class="playlist-list" id="playlistList"></ul>
+          <ul class="search-results" id="searchResults"></ul>
         </div>
       </div>
 
@@ -791,7 +868,7 @@
   </div>
 
   <script>
-    // Reloj Panamá
+    // ================== RELOJ PANAMÁ ==================
     function actualizarRelojPanama() {
       const ahora = new Date();
       const opcionesHora = {
@@ -816,7 +893,7 @@
     actualizarRelojPanama();
     setInterval(actualizarRelojPanama, 1000);
 
-    // Estado timers
+    // ================== TIMERS ==================
     const state = {
       jordan: {
         focusSeconds: 0,
@@ -1091,18 +1168,20 @@
       if (pauseBtn) pauseBtn.classList.add("btn-disabled");
     });
 
-    // --- TOCADISCOS & PLAYLIST ---
-
+    // ================== TOCADISCOS & PLAYLIST ==================
     const playerState = {
       playlist: [],
       currentIndex: -1
     };
 
+    // PON TU API KEY AQUÍ SI QUIERES BÚSQUEDA DIRECTA DENTRO DE LA APP
+    const YT_API_KEY = ""; // si lo dejas vacío, abre la búsqueda en una pestaña nueva
+
     function extractYouTubeId(input) {
       const raw = input.trim();
       if (!raw) return null;
 
-      // Si parece solo un ID (sin http / www)
+      // Solo ID
       if (!raw.includes("http") && !raw.includes("www")) {
         return raw;
       }
@@ -1110,13 +1189,10 @@
       try {
         const url = new URL(raw);
         if (url.hostname === "youtu.be") {
-          // youtu.be/VIDEOID
           return url.pathname.slice(1);
         }
-        // youtube.com/watch?v=VIDEOID
         const v = url.searchParams.get("v");
         if (v) return v;
-        // youtube.com/embed/VIDEOID
         const parts = url.pathname.split("/");
         const idx = parts.indexOf("embed");
         if (idx !== -1 && parts[idx + 1]) {
@@ -1124,7 +1200,6 @@
         }
         return null;
       } catch (e) {
-        // Si no es URL válida, devolvemos tal cual (podría ser un ID)
         return raw;
       }
     }
@@ -1156,9 +1231,7 @@
         } else if (playerState.playlist.length > 0) {
           playerState.currentIndex = 0;
         }
-      } catch (e) {
-        // ignorar errores
-      }
+      } catch (e) {}
     }
 
     function savePlaylistToStorage() {
@@ -1167,9 +1240,7 @@
           playlist: playerState.playlist,
           currentIndex: playerState.currentIndex
         }));
-      } catch (e) {
-        // ignorar
-      }
+      } catch (e) {}
     }
 
     function renderPlaylistUI() {
@@ -1183,9 +1254,13 @@
           li.classList.add("active");
         }
         li.dataset.index = String(idx);
+        li.dataset.id = item.id;
+        li.dataset.label = item.label;
+        li.draggable = true;
         li.innerHTML =
           '<span class="playlist-index">' + (idx + 1) + '.</span>' +
-          '<span class="playlist-text">' + item.label + '</span>';
+          '<span class="playlist-text">' + item.label + '</span>' +
+          '<button type="button" class="playlist-delete" data-index="' + idx + '">✖</button>';
         list.appendChild(li);
       });
     }
@@ -1196,9 +1271,91 @@
       if (
         playerState.currentIndex < 0 ||
         playerState.currentIndex >= playerState.playlist.length
-      ) return;
+      ) {
+        iframe.src = "about:blank";
+        return;
+      }
       const id = playerState.playlist[playerState.currentIndex].id;
       iframe.src = buildEmbedUrl(id);
+    }
+
+    function addTrackToPlaylist(id, label) {
+      if (!id) return;
+      // evitar duplicados exactos por ID
+      const exists = playerState.playlist.some(t => t.id === id);
+      if (exists) {
+        showToast("Esa pista ya está en la playlist 😉");
+        return;
+      }
+      playerState.playlist.push({ id, label: label || id });
+      if (playerState.currentIndex === -1) {
+        playerState.currentIndex = 0;
+      }
+      savePlaylistToStorage();
+      renderPlaylistUI();
+    }
+
+    async function searchYouTube(query) {
+      const resultsEl = document.getElementById("searchResults");
+      if (!resultsEl) return;
+      resultsEl.innerHTML = "";
+
+      if (!query) return;
+
+      // Sin API key: abrir búsqueda externa
+      if (!YT_API_KEY) {
+        window.open(
+          "https://www.youtube.com/results?search_query=" + encodeURIComponent(query),
+          "_blank"
+        );
+        showToast("Búsqueda abierta en otra pestaña. Configura tu API key para ver resultados aquí 🔑");
+        return;
+      }
+
+      try {
+        const url = "https://www.googleapis.com/youtube/v3/search?" +
+          new URLSearchParams({
+            key: YT_API_KEY,
+            part: "snippet",
+            type: "video",
+            maxResults: "8",
+            q: query
+          }).toString();
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          showToast("Error al buscar en YouTube 😿");
+          return;
+        }
+        const data = await res.json();
+        if (!Array.isArray(data.items)) {
+          showToast("No encontré resultados");
+          return;
+        }
+
+        data.items.forEach(item => {
+          const videoId = item.id.videoId;
+          const title = item.snippet.title;
+          const channel = item.snippet.channelTitle;
+
+          const li = document.createElement("li");
+          li.className = "search-item";
+          li.innerHTML = `
+            <div class="search-main">
+              <div class="search-title">${title}</div>
+              <div class="search-meta">${channel}</div>
+            </div>
+            <button type="button" class="search-add-btn"
+              data-video-id="${videoId}"
+              data-label="${title}">
+              ➕
+            </button>
+          `;
+          resultsEl.appendChild(li);
+        });
+      } catch (e) {
+        showToast("No se pudo completar la búsqueda 😿");
+      }
     }
 
     function setupVideoPlayer() {
@@ -1208,12 +1365,14 @@
       const btnNext = document.getElementById("nextTrackBtn");
       const btnPrev = document.getElementById("prevTrackBtn");
       const btnClear = document.getElementById("clearPlaylistBtn");
+      const btnSearch = document.getElementById("searchBtn");
       const list = document.getElementById("playlistList");
+      const searchResults = document.getElementById("searchResults");
       const iframe = document.getElementById("lofiPlayer");
 
-      if (!input || !btnAdd || !btnPlay || !btnNext || !btnPrev || !btnClear || !list || !iframe) return;
+      if (!input || !btnAdd || !btnPlay || !btnNext || !btnPrev || !btnClear || !btnSearch || !list || !searchResults || !iframe) return;
 
-      // Arrancar con frame vacío para que no haya video hasta que tú lo decidas
+      // Arranca vacío (nada de mensajes raros de contenido bloqueado)
       iframe.src = "about:blank";
 
       loadPlaylistFromStorage();
@@ -1227,20 +1386,13 @@
           showToast("No pude leer ese link de YouTube 😿");
           return;
         }
-        playerState.playlist.push({ id, label: text });
-        if (playerState.currentIndex === -1) {
-          playerState.currentIndex = 0;
-        }
-        savePlaylistToStorage();
-        renderPlaylistUI();
-
+        addTrackToPlaylist(id, text);
         if (playerState.playlist.length === 1) {
           playCurrentVideo();
           showToast("Primera pista añadida y reproduciendo 🎧");
         } else {
           showToast("Pista añadida a la playlist 🎶");
         }
-
         input.value = "";
       });
 
@@ -1292,8 +1444,71 @@
         showToast("Playlist limpiada 🧹");
       });
 
-      list.addEventListener("click", (ev) => {
-        const li = ev.target.closest(".playlist-item");
+      btnSearch.addEventListener("click", () => {
+        const q = input.value.trim();
+        if (!q) return;
+        searchYouTube(q);
+      });
+
+      // Enter para buscar (y Ctrl+Enter para añadir, por si quieres)
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          btnAdd.click();
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          btnSearch.click();
+        }
+      });
+
+      // Añadir desde resultados de búsqueda
+      searchResults.addEventListener("click", (e) => {
+        const btn = e.target.closest(".search-add-btn");
+        if (!btn) return;
+        const id = btn.getAttribute("data-video-id");
+        const label = btn.getAttribute("data-label");
+        addTrackToPlaylist(id, label);
+        showToast("Añadido desde la búsqueda 🎶");
+        savePlaylistToStorage();
+        renderPlaylistUI();
+      });
+
+      // Click en playlist + eliminar individual
+      list.addEventListener("click", (e) => {
+        const del = e.target.closest(".playlist-delete");
+        const iframeInner = document.getElementById("lofiPlayer");
+        if (del) {
+          const idx = parseInt(del.getAttribute("data-index"), 10);
+          if (Number.isNaN(idx)) return;
+          const len = playerState.playlist.length;
+          if (!len) return;
+
+          const removingCurrent = idx === playerState.currentIndex;
+          const currentId = playerState.playlist[playerState.currentIndex]?.id || null;
+
+          playerState.playlist.splice(idx, 1);
+
+          if (playerState.playlist.length === 0) {
+            playerState.currentIndex = -1;
+            if (iframeInner) iframeInner.src = "about:blank";
+          } else {
+            if (removingCurrent) {
+              playerState.currentIndex = Math.min(idx, playerState.playlist.length - 1);
+              playCurrentVideo();
+            } else if (idx < playerState.currentIndex) {
+              playerState.currentIndex--;
+            } else {
+              // idx > currentIndex: no cambia
+            }
+          }
+
+          savePlaylistToStorage();
+          renderPlaylistUI();
+          showToast("Pista eliminada ✂️");
+          return;
+        }
+
+        const li = e.target.closest(".playlist-item");
         if (!li) return;
         const idx = parseInt(li.dataset.index, 10);
         if (Number.isNaN(idx)) return;
@@ -1302,9 +1517,67 @@
         renderPlaylistUI();
         playCurrentVideo();
       });
+
+      // Drag & drop para reordenar playlist
+      let draggingItem = null;
+
+      list.addEventListener("dragstart", (e) => {
+        const li = e.target.closest(".playlist-item");
+        if (!li) return;
+        draggingItem = li;
+        li.classList.add("dragging");
+      });
+
+      list.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const afterElement = (() => {
+          const items = [...list.querySelectorAll(".playlist-item:not(.dragging)")];
+          const y = e.clientY;
+          let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+
+          items.forEach(item => {
+            const box = item.getBoundingClientRect();
+            const offset = y - (box.top + box.height / 2);
+            if (offset < 0 && offset > closest.offset) {
+              closest = { offset, element: item };
+            }
+          });
+          return closest.element;
+        })();
+
+        if (!draggingItem) return;
+        if (afterElement == null) {
+          list.appendChild(draggingItem);
+        } else {
+          list.insertBefore(draggingItem, afterElement);
+        }
+      });
+
+      list.addEventListener("dragend", () => {
+        if (!draggingItem) return;
+        draggingItem.classList.remove("dragging");
+        draggingItem = null;
+
+        const items = Array.from(list.querySelectorAll(".playlist-item"));
+        const currentId = playerState.playlist[playerState.currentIndex]?.id || null;
+
+        playerState.playlist = items.map(li => ({
+          id: li.dataset.id,
+          label: li.dataset.label
+        }));
+
+        playerState.currentIndex = playerState.playlist.findIndex(t => t.id === currentId);
+        if (playerState.currentIndex === -1 && playerState.playlist.length > 0) {
+          playerState.currentIndex = 0;
+        }
+
+        savePlaylistToStorage();
+        renderPlaylistUI();
+      });
     }
 
-    document.addEventListener("DOMContentLoaded", setupVideoPlayer);
+    // Inicializar tocadiscos
+    setupVideoPlayer();
   </script>
 </body>
 </html>
