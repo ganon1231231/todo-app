@@ -1,1583 +1,1641 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Estudio en pareja · Cozy Xmas 🎄</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --glass: rgba(15, 23, 42, 0.72);
-      --glass-strong: rgba(15, 23, 42, 0.90);
-      --muted: #9ca3af;
-      --text: #e5e7eb;
-      --accent: #22c55e;
-      --accent2: #38bdf8;
-      --radius-lg: 18px;
-      --radius-xl: 26px;
-      --shadow: 0 20px 50px rgba(0,0,0,0.65);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      min-height: 100vh;
-      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      padding: 18px;
-      background:
-        linear-gradient(120deg, rgba(0,0,0,0.18), rgba(0,0,0,0.35)),
-        url("https://t3.ftcdn.net/jpg/06/22/02/64/360_F_622026433_bgSz36305ukZLwGlrBkxB2XEJ7QwD6J3.jpg");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-    }
-
-    .app-shell {
-      width: 100%;
-      max-width: 1100px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      border-radius: var(--radius-xl);
-      background: var(--glass-strong);
-      backdrop-filter: blur(14px);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(148,163,184,0.45);
-    }
-
-    .top-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo-circle {
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 20%, #facc15, #ea580c 50%, #b91c1c);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-    }
-
-    .top-title {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .top-sub {
-      font-size: 0.76rem;
-      color: var(--muted);
-    }
-
-    .clock-box {
-      text-align: right;
-      font-size: 0.8rem;
-    }
-
-    .clock-time {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .clock-date {
-      color: var(--muted);
-      font-size: 0.76rem;
-    }
-
-    .main-card {
-      padding: 14px 16px 16px;
-      border-radius: var(--radius-xl);
-      background: var(--glass);
-      backdrop-filter: blur(18px);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(148,163,184,0.45);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    /* Player */
-    .player-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .player-label {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.78rem;
-      color: var(--muted);
-      flex-wrap: wrap;
-    }
-
-    .player-label strong {
-      color: var(--text);
-      font-size: 0.9rem;
-      display: block;
-    }
-
-    .player-left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .player-controls {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      min-width: 220px;
-    }
-
-    .player-controls input {
-      flex: 1;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,0.9);
-      color: var(--text);
-      padding: 5px 9px;
-      font-size: 0.75rem;
-      outline: none;
-    }
-
-    .player-controls input::placeholder {
-      color: #6b7280;
-    }
-
-    .player-frame {
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      border: 1px solid rgba(148,163,184,0.5);
-      background: black;
-      aspect-ratio: 16 / 9;
-      max-width: 640px;   /* un poco más pequeño */
-      width: 100%;
-      margin: 0 auto;     /* centrado */
-    }
-
-    .player-frame iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
-    /* Playlist + búsqueda */
-    .playlist-bar {
-      margin-top: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 0.72rem;
-    }
-
-    .playlist-buttons {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .playlist-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      max-height: 120px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .playlist-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(15,23,42,0.9);
-      border: 1px solid transparent;
-      cursor: grab;
-      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-    }
-
-    .playlist-item.dragging {
-      opacity: 0.7;
-      transform: scale(0.98);
-      cursor: grabbing;
-    }
-
-    .playlist-item:hover {
-      background: rgba(30,64,175,0.45);
-    }
-
-    .playlist-item.active {
-      border-color: rgba(56,189,248,0.9);
-      background: radial-gradient(circle at left, rgba(56,189,248,0.22), rgba(15,23,42,0.95));
-    }
-
-    .playlist-index {
-      color: var(--muted);
-      font-size: 0.7rem;
-    }
-
-    .playlist-text {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .playlist-delete {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.6);
-      background: transparent;
-      padding: 2px 6px;
-      font-size: 0.7rem;
-      color: var(--muted);
-      cursor: pointer;
-    }
-
-    .playlist-delete:hover {
-      background: rgba(127,29,29,0.6);
-      color: #fecaca;
-      border-color: rgba(248,113,113,0.8);
-    }
-
-    .search-results {
-      list-style: none;
-      margin: 4px 0 0;
-      padding: 0;
-      max-height: 160px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .search-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 10px;
-      background: rgba(15,23,42,0.9);
-      border: 1px solid rgba(148,163,184,0.5);
-    }
-
-    .search-main {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .search-title {
-      font-size: 0.74rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .search-meta {
-      font-size: 0.68rem;
-      color: var(--muted);
-    }
-
-    .search-add-btn {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.6);
-      background: rgba(15,23,42,1);
-      padding: 3px 8px;
-      font-size: 0.7rem;
-      cursor: pointer;
-    }
-
-    .search-add-btn:hover {
-      background: rgba(22,163,74,0.8);
-      color: #f9fafb;
-      border-color: rgba(22,163,74,1);
-    }
-
-    /* Timers grid */
-    .timers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 14px;
-    }
-
-    .user-card {
-      background: rgba(15,23,42,0.92);
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(148,163,184,0.45);
-      padding: 10px 12px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .user-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .user-name {
-      font-size: 0.95rem;
-      font-weight: 600;
-    }
-
-    .user-role {
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-
-    .user-score {
-      font-size: 0.72rem;
-      padding: 4px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(34,197,94,0.6);
-      color: #bbf7d0;
-      background: rgba(15,23,42,0.95);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .focus-block {
-      border-radius: 14px;
-      background: rgba(15,23,42,0.98);
-      border: 1px solid rgba(148,163,184,0.45);
-      padding: 8px 9px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .focus-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.76rem;
-      color: var(--muted);
-    }
-
-    .focus-time {
-      text-align: center;
-      font-size: 1.6rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      padding: 2px 0 0;
-    }
-
-    .focus-meta {
-      text-align: center;
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-
-    .btn-row {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: none;
-      border-radius: 999px;
-      font-family: inherit;
-      font-size: 0.76rem;
-      padding: 6px 12px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: transform 0.1s ease, opacity 0.15s ease, box-shadow 0.1s ease;
-    }
-
-    button:active {
-      transform: scale(0.96);
-      box-shadow: none;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #f9fafb;
-      box-shadow: 0 10px 22px rgba(22,163,74,0.45);
-    }
-
-    .btn-secondary {
-      background: rgba(15,23,42,0.96);
-      color: var(--muted);
-      border: 1px solid rgba(148,163,184,0.6);
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 1px dashed rgba(148,163,184,0.6);
-    }
-
-    .btn-small {
-      padding: 4px 9px;
-      font-size: 0.72rem;
-    }
-
-    .btn-disabled {
-      opacity: 0.4;
-      cursor: default;
-      box-shadow: none;
-    }
-
-    /* Goals */
-    .goals-block {
-      border-radius: 14px;
-      background: rgba(15,23,42,0.98);
-      border: 1px solid rgba(148,163,184,0.45);
-      padding: 8px 9px 9px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-size: 0.76rem;
-    }
-
-    .goals-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .goals-header span {
-      color: var(--muted);
-      font-size: 0.7rem;
-    }
-
-    .goal-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-top: 2px;
-    }
-
-    .goal-item {
-      display: flex;
-      gap: 6px;
-      align-items: flex-start;
-      padding: 4px 6px;
-      border-radius: 10px;
-      background: rgba(15,23,42,1);
-      border: 1px solid transparent;
-    }
-
-    .goal-item.completed {
-      background: radial-gradient(circle at left, rgba(34,197,94,0.25), rgba(15,23,42,1));
-      border-color: rgba(34,197,94,0.8);
-      color: #bbf7d0;
-    }
-
-    .goal-item input[type="checkbox"] {
-      margin-top: 2px;
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-
-    .goal-text {
-      flex: 1;
-      outline: none;
-    }
-
-    .goal-text[contenteditable="true"] {
-      border-bottom: 1px dashed transparent;
-      transition: border-color 0.15s ease;
-    }
-
-    .goal-text[contenteditable="true"]:focus {
-      border-color: rgba(148,163,184,0.8);
-    }
-
-    .goal-add {
-      display: flex;
-      gap: 6px;
-      margin-top: 2px;
-    }
-
-    .goal-add input {
-      flex: 1;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,1);
-      color: var(--text);
-      padding: 5px 9px;
-      font-size: 0.75rem;
-      outline: none;
-    }
-
-    .goal-add input::placeholder {
-      color: #6b7280;
-    }
-
-    .progress-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      margin-top: 3px;
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(15,23,42,1);
-      border: 1px solid rgba(148,163,184,0.75);
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      transition: width 0.25s ease;
-    }
-
-    /* Breaks */
-    .break-section {
-      border-radius: 14px;
-      background: rgba(15,23,42,0.98);
-      border: 1px dashed rgba(148,163,184,0.65);
-      padding: 8px 9px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 0.74rem;
-    }
-
-    .break-cards {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .break-card {
-      flex: 1 1 130px;
-      padding: 6px 7px;
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,0.55);
-      background: rgba(15,23,42,1);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .break-card-title {
-      font-size: 0.76rem;
-    }
-
-    .break-card-sub {
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-
-    .break-card.locked {
-      opacity: 0.45;
-      cursor: default;
-    }
-
-    .break-status-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .break-status {
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 16px;
-      transform: translateX(-50%) translateY(20px);
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: rgba(15,23,42,0.98);
-      border: 1px solid rgba(250,204,21,0.9);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.7);
-      font-size: 0.78rem;
-      color: #fef9c3;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      z-index: 20;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    @media (max-width: 768px) {
-      .top-bar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .clock-box {
-        text-align: left;
-      }
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>EXPEDIENTE CLÍNICO FAMILIAR</title>
+<style>
+    :root{
+      --bg0:#f7f7fb; --bg1:#eef3fb;
+      --card:#ffffff;
+      --text:#1f2430;
+      --muted:#5d677a;
+      --accent:#7b1532;
+      --accent2:#2b5c8a;
+      --ok:#176e3b;
+      --warn:#8a5a00;
+      --border:rgba(20,25,35,.10);
+      --shadow:0 12px 30px rgba(20,25,35,.10);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background: radial-gradient(1200px 600px at 10% 0%, rgba(123,21,50,.10), transparent 60%),
+                  radial-gradient(900px 500px at 95% 10%, rgba(43,92,138,.12), transparent 55%),
+                  linear-gradient(180deg, var(--bg1), var(--bg0));
+      line-height:1.45;
+    }
+    a{color:var(--accent2); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      background:rgba(255,255,255,.82);
+      backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--border);
+    }
+    .topbar-inner{
+      max-width:1100px; margin:0 auto; padding:10px 16px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+    }
+    .brand{display:flex; gap:10px; align-items:center}
+    .dot{width:12px;height:12px;border-radius:50%; background:var(--accent)}
+    .brand-title{font-weight:800; letter-spacing:.2px}
+    .actions{display:flex; gap:8px; flex-wrap:wrap}
+    .btn{
+      border:1px solid var(--border); background:var(--card); color:var(--text);
+      padding:8px 10px; border-radius:12px; box-shadow:0 6px 16px rgba(20,25,35,.06);
+      font-weight:650; cursor:pointer; user-select:none;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(135deg, rgba(123,21,50,.10), rgba(43,92,138,.10)); border-color:rgba(123,21,50,.20)}
+    .container{max-width:1100px; margin:0 auto; padding:18px 16px 60px}
+    .hero{
+      padding:22px 18px; border:1px solid var(--border); background:rgba(255,255,255,.72);
+      border-radius:24px; box-shadow:var(--shadow);
+    }
+    h1{margin:0 0 6px; font-size:32px; letter-spacing:.3px}
+    .meta{display:flex; flex-wrap:wrap; gap:10px; color:var(--muted)}
+    .meta .pill{background:rgba(31,36,48,.06); border:1px solid var(--border); padding:6px 10px; border-radius:999px}
+    .intro{margin:10px 0 0; color:var(--muted)}
+    .toc{
+      margin:14px 0 24px;
+      border:1px solid var(--border); background:rgba(255,255,255,.75);
+      border-radius:20px; padding:14px; box-shadow:0 10px 25px rgba(20,25,35,.08);
+    }
+    .toc h2{margin:0 0 10px; font-size:16px; letter-spacing:.2px}
+    .toc-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+    .toc-link{
+      display:block; padding:10px 12px; border-radius:14px;
+      border:1px solid var(--border); background:var(--card);
+      font-weight:650;
+    }
+    .toc-link:hover{border-color:rgba(43,92,138,.35)}
+    @media (max-width: 820px){.toc-grid{grid-template-columns:1fr}}
+    section.card{
+      border:1px solid var(--border); background:rgba(255,255,255,.82);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px 16px 14px; margin:0 0 14px;
+    }
+    section.card h2{
+      margin:0 0 10px; font-size:20px; letter-spacing:.2px
+    }
+    .muted{color:var(--muted)}
+    .note{color:var(--muted); font-size:13px}
+    .grid3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px}
+    @media (max-width: 980px){.grid3{grid-template-columns:1fr}}
+    .panel{
+      border:1px solid var(--border); background:var(--card);
+      border-radius:16px; padding:12px 12px 10px;
+    }
+    .panel h3{margin:0 0 8px; font-size:14px; letter-spacing:.2px}
+    .table-wrap{overflow:auto; border-radius:14px; border:1px solid var(--border); background:rgba(255,255,255,.9)}
+    table.tbl{border-collapse:collapse; width:100%; font-size:14px}
+    .tbl th,.tbl td{padding:10px 10px; border-bottom:1px solid var(--border); vertical-align:top}
+    .tbl th{position:sticky; top:0; background:rgba(247,247,251,.95); text-align:left; font-size:13px; color:var(--muted); letter-spacing:.2px}
+    .tbl tr:last-child td{border-bottom:none}
+    .num{text-align:right; font-variant-numeric:tabular-nums}
+    code{font-family:var(--mono); font-size:13px}
+    .badge{
+      display:inline-block; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border); background:rgba(31,36,48,.06);
+      font-weight:700; font-size:12px;
+    }
+    .badge.ok{background:rgba(23,110,59,.10); border-color:rgba(23,110,59,.18); color:var(--ok)}
+    .badge.warn{background:rgba(138,90,0,.10); border-color:rgba(138,90,0,.18); color:var(--warn)}
+    .chip{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border); background:var(--card);
+      font-size:13px; color:var(--muted)
+    }
+    .chips{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 0}
+    .row3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+    @media (max-width: 900px){.row3{grid-template-columns:1fr}}
+    .mini{border:1px solid var(--border); background:var(--card); border-radius:16px; padding:10px}
+    .mini .k{color:var(--muted); font-size:12px; letter-spacing:.2px}
+    .mini .v{font-weight:900; font-size:18px; margin-top:4px}
+    .mini .s{font-size:12px; margin-top:2px}
+    .timeline{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px}
+    @media (max-width: 900px){.timeline{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width: 520px){.timeline{grid-template-columns:1fr}}
+    .tl-item{border:1px solid var(--border); background:var(--card); border-radius:16px; padding:10px}
+    .tl-item.active{border-color:rgba(123,21,50,.28); background:linear-gradient(135deg, rgba(123,21,50,.08), rgba(43,92,138,.08))}
+    .tl-badge{font-weight:900; color:var(--accent); font-size:12px}
+    .tl-title{margin-top:4px; font-weight:750}
+    .hl{background:rgba(123,21,50,.06)}
+    .svg-wrap{display:flex; justify-content:center}
+    .svg-card{width:100%; max-width:900px; height:auto; border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.92)}
+    details.exp{
+      border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.88);
+      padding:10px 12px; margin:10px 0;
+    }
+    details.exp summary{cursor:pointer; font-weight:850}
+    .exp-content{margin-top:10px}
+    .exp-h3{margin:0 0 8px; font-size:18px}
+    .exp-h4{margin:14px 0 8px; font-size:15px; color:var(--accent)}
+    .exp-h5{margin:10px 0 6px; font-size:14px}
+    .plan{margin:0; padding-left:18px}
+    .plan li{margin:6px 0}
+    .footer{
+      margin-top:14px; color:var(--muted); font-size:12px; text-align:center
+    }
+    @media print{
+      .topbar,.toc,.actions,.footer{display:none!important}
+      body{background:#fff}
+      section.card{box-shadow:none}
+      .hero{box-shadow:none}
+      .tbl th{position:static}
+      a{text-decoration:none; color:inherit}
+    }
+    </style>
 </head>
 <body>
-  <div class="app-shell">
-    <div class="top-bar">
-      <div class="top-left">
-        <div class="logo-circle">🎄</div>
-        <div>
-          <div class="top-title">Estudio en pareja · Cozy Xmas</div>
-          <div class="top-sub">Timers pomodoro, objetivos y descansos con premio</div>
-        </div>
-      </div>
-      <div class="clock-box">
-        <div class="clock-time" id="clockPanama">--:--:--</div>
-        <div class="clock-date" id="datePanama">Cargando fecha…</div>
-        <div class="clock-date">Zona horaria: Panamá</div>
-      </div>
-    </div>
+<div class="topbar">
+<div class="topbar-inner">
+<div class="brand">
+<div class="dot"></div>
+<div>
+<div class="brand-title">EXPEDIENTE CLÍNICO FAMILIAR</div>
+<div class="muted" style="font-size:12px">Familia (convivientes): Herminio, Baudelina, Iliana e INFORMANTE • David, Quintas de La Riviera</div>
+</div>
+</div>
+<div class="actions">
+<button class="btn primary" id="btnPrint">Imprimir / Guardar PDF</button>
+<button class="btn" id="btnExpand">Expandir todo</button>
+<button class="btn" id="btnCollapse">Colapsar todo</button>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="hero" id="inicio">
+<h1>EXPEDIENTE CLÍNICO FAMILIAR</h1>
+<div class="meta">
+<span class="pill"><strong>Creador:</strong> MICHAEL ANDREWS JORDAN GUERRA</span>
+<span class="pill"><strong>Cédula:</strong> 4-807-461</span>
+<span class="pill"><strong>Fecha:</strong> 2025-12-18</span>
+</div>
+<p class="intro">Este expediente integra herramientas de evaluación familiar en el marco de Medicina Familiar para describir estructura, etapa del ciclo vital, funcionalidad y determinantes sociales del hogar. Se documentan resultados e interpretación clínica, junto con los expedientes clínicos de los convivientes, para orientar un plan de intervención en Atención Primaria de Salud (APS).</p>
+</div>
+<nav aria-label="Índice" class="toc">
+<h2>Índice interactivo</h2>
+<div class="toc-grid">
+<a class="toc-link" href="#A-tipologia">A) Tipología familiar</a><a class="toc-link" href="#B-duvall">B) Ciclo vital familiar (Duvall)</a><a class="toc-link" href="#C-hacinamiento">C) Índice de hacinamiento</a><a class="toc-link" href="#D-pobreza">D) Índice simplificado de pobreza familiar</a><a class="toc-link" href="#E-apgar">E) APGAR familiar</a><a class="toc-link" href="#F-faces">F) FACES III</a><a class="toc-link" href="#G-maslow">G) Pirámide de Maslow</a><a class="toc-link" href="#H-ambito">H) Ámbito social familiar</a><a class="toc-link" href="#I-circulo">I) Círculo familiar</a><a class="toc-link" href="#J-funciones">J) Funciones familiares</a><a class="toc-link" href="#K-plan">K) Karnofsky + riesgos + plan APS</a><a class="toc-link" href="#genograma">Genograma</a><a class="toc-link" href="#psicofigura">Psicofigura</a><a class="toc-link" href="#expedientes">Entrevistas / Expedientes clínicos</a><a class="toc-link" href="#conclusion">Conclusión final</a>
+</div>
+</nav>
 
-    <div class="main-card">
-      <!-- RADIO / TOCADISCOS CON PLAYLIST Y BÚSQUEDA -->
-      <div class="player-row">
-        <div class="player-label">
-          <div class="player-left">
-            <strong>🎧 Toca-discos Lofi</strong>
-            <span>Busca en YouTube, añade a la playlist y controla todo desde aquí.</span>
-          </div>
-          <div class="player-controls">
-            <input
-              type="text"
-              id="videoInput"
-              placeholder="Pega un link o escribe para buscar en YouTube"
-            />
-            <button class="btn-secondary btn-small" id="addToPlaylistBtn">➕ Añadir</button>
-            <button class="btn-primary btn-small" id="playPlaylistBtn">▶️</button>
-            <button class="btn-secondary btn-small" id="searchBtn">🔍 Buscar</button>
-          </div>
-        </div>
-        <div class="player-frame">
-          <iframe
-            id="lofiPlayer"
-            title="Lofi Player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerpolicy="strict-origin-when-cross-origin"
-            allowfullscreen>
-          </iframe>
-        </div>
-        <div class="playlist-bar">
-          <div class="playlist-buttons">
-            <button class="btn-secondary btn-small" id="prevTrackBtn">⏮️</button>
-            <button class="btn-secondary btn-small" id="nextTrackBtn">⏭️</button>
-            <button class="btn-ghost btn-small" id="clearPlaylistBtn">🗑️ Limpiar todo</button>
-          </div>
-          <ul class="playlist-list" id="playlistList"></ul>
-          <ul class="search-results" id="searchResults"></ul>
-        </div>
-      </div>
+<section class="card" id="A-tipologia">
+<h2>A) Tipología familiar</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla / modelo</h3>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Dimensión</th><th>Opciones (plantilla)</th><th>Resultado</th></tr></thead><tbody><tr><td><strong>Composición</strong></td><td class="muted">Nuclear; Extensa; Monoparental; Reconstituida; Unipersonal; Otro</td><td><span class="badge ok">Extensa / multigeneracional (abuelos + tía + nieto)</span></td></tr><tr><td><strong>Desarrollo (Duvall)</strong></td><td class="muted">I–VIII</td><td><span class="badge ok">Familia en etapa de envejecimiento (Duvall VIII)</span></td></tr><tr><td><strong>Integración</strong></td><td class="muted">Integrada; Semiintegrada; Desintegrada</td><td><span class="badge ok">Integrada</span></td></tr><tr><td><strong>Demografía</strong></td><td class="muted">Urbana; Rural</td><td><span class="badge ok">Urbana</span></td></tr></tbody></table></div>
+<p class="note">Modelo de clasificación por dimensiones (estructura, integración y demografía).</p>
+</div>
+<div class="panel">
+<h3>(2) Resultado aplicado</h3>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Dimensión</th><th>Resultado</th></tr></thead><tbody><tr><td>Composición</td><td>Extensa / multigeneracional (abuelos + tía + nieto)</td></tr><tr><td>Desarrollo</td><td>Familia en etapa de envejecimiento (Duvall VIII)</td></tr><tr><td>Integración</td><td>Integrada</td></tr><tr><td>Demografía</td><td>Urbana</td></tr><tr><td>Entorno/vivienda</td><td>Propia; material Cemento; agua potable: Sí; basura: Recolección municipal; mascotas: Sí (1 perro); baños: Higiénicos (aprox. 2).</td></tr></tbody></table></div>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Ítem</th><th>Dato</th></tr></thead><tbody><tr><td>Entorno/vivienda (según entrevistas)</td><td>Propia; material Cemento; agua potable: Sí; basura: Recolección municipal; mascotas: Sí (1 perro); baños: Higiénicos (aprox. 2).</td></tr></tbody></table></div>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>El hogar corresponde a una <strong>familia extensa y multigeneracional</strong> con convivencia estable. La integración se considera <strong>alta</strong> por la presencia de apoyo intergeneracional y un entorno doméstico organizado (servicios básicos disponibles y red de apoyo intrafamiliar).</p>
+<p class="note">La tipología se utiliza para orientar intervenciones en APS y anticipar necesidades propias del envejecimiento familiar.</p>
+</div>
+</div>
+</section>
 
-      <div class="timers-grid">
-        <!-- JORDAN -->
-        <section class="user-card" data-user="jordan">
-          <div class="user-top">
-            <div>
-              <div class="user-name">Jordan · Ginecología</div>
-              <div class="user-role">Bloques profundos y resúmenes</div>
-            </div>
-            <div class="user-score">
-              <span>Puntos:</span>
-              <span class="focus-score">0</span>⭐
-            </div>
-          </div>
+<section class="card" id="B-duvall">
+<h2>B) Ciclo vital familiar (Duvall)</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla / tabla de etapas</h3>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Etapa</th><th>Nombre</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr class=""><td><strong>I</strong></td><td>Pareja sin hijos</td><td class="muted">Inicio de convivencia/matrimonio</td></tr><tr class=""><td><strong>II</strong></td><td>Familia con hijos pequeños</td><td class="muted">0–30 meses</td></tr><tr class=""><td><strong>III</strong></td><td>Familia con preescolares</td><td class="muted">2.5–6 años</td></tr><tr class=""><td><strong>IV</strong></td><td>Familia con escolares</td><td class="muted">6–13 años</td></tr><tr class=""><td><strong>V</strong></td><td>Familia con adolescentes</td><td class="muted">13–20 años</td></tr><tr class=""><td><strong>VI</strong></td><td>Lanzamiento de los hijos</td><td class="muted">Primer hijo fuera del hogar → último</td></tr><tr class=""><td><strong>VII</strong></td><td>Padres de mediana edad</td><td class="muted">Nido vacío / consolidación</td></tr><tr class="hl"><td><strong>VIII</strong></td><td>Familia en etapa de envejecimiento</td><td class="muted">Jubilación, pérdidas, adaptación al envejecimiento</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<h3>(2) Resultado</h3>
+<p><span class="badge ok">Etapa VIII</span> <strong>Familia en etapa de envejecimiento</strong>.</p>
+<p class="muted">Criterio: presencia de adultos mayores convivientes y reorganización del hogar alrededor de salud, seguridad y apoyo.</p>
+<h3 style="margin-top:10px">Gráfico (timeline)</h3>
+<ol class="timeline"><li class="tl-item"><div class="tl-badge">I</div><div class="tl-title">Pareja sin hijos</div></li><li class="tl-item"><div class="tl-badge">II</div><div class="tl-title">Familia con hijos pequeños</div></li><li class="tl-item"><div class="tl-badge">III</div><div class="tl-title">Familia con preescolares</div></li><li class="tl-item"><div class="tl-badge">IV</div><div class="tl-title">Familia con escolares</div></li><li class="tl-item"><div class="tl-badge">V</div><div class="tl-title">Familia con adolescentes</div></li><li class="tl-item"><div class="tl-badge">VI</div><div class="tl-title">Lanzamiento de los hijos</div></li><li class="tl-item"><div class="tl-badge">VII</div><div class="tl-title">Padres de mediana edad</div></li><li class="tl-item active"><div class="tl-badge">VIII</div><div class="tl-title">Familia en etapa de envejecimiento</div></li></ol>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>En la etapa VIII se priorizan: adaptación al envejecimiento, prevención de caídas, seguimiento de comorbilidades crónicas, y planificación de cuidados. La convivencia multigeneracional puede ser protectora, pero requiere vigilar <strong>sobrecarga del cuidador</strong> y mantener roles claros.</p>
+</div>
+</div>
+</section>
 
-          <div class="focus-block">
-            <div class="focus-row">
-              <span>Timer de enfoque</span>
-              <span>Pomodoro flexible</span>
-            </div>
-            <div class="focus-time" id="timer-jordan">00:00:00</div>
-            <div class="focus-meta" data-total-for="jordan">Total hoy: 0 min</div>
-            <div class="btn-row">
-              <button class="btn-primary" data-action="start" data-user="jordan">Iniciar</button>
-              <button class="btn-secondary" data-action="pause" data-user="jordan">Pausar</button>
-              <button class="btn-ghost" data-action="reset" data-user="jordan">Reiniciar</button>
-            </div>
-          </div>
+<section class="card" id="C-hacinamiento">
+<h2>C) Índice de hacinamiento</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla / fórmula</h3>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Elemento</th><th>Plantilla</th></tr></thead>
+<tbody>
+<tr><td>Fórmula</td><td class="muted"><code>Índice = # personas convivientes ÷ # dormitorios</code></td></tr>
+<tr><td>Clasificación</td><td class="muted">≤ 2.0 = <strong>Sin hacinamiento</strong> • &gt; 2.0 = <strong>Hacinamiento</strong></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<h3>(2) Cálculo y resultado</h3>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Dato</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td># personas convivientes</td><td class="num"><strong>4</strong></td></tr>
+<tr><td># dormitorios (dato aplicado para el cálculo del instrumento)</td><td class="num"><strong>3</strong></td></tr>
+<tr><td>Índice</td><td class="num"><strong>1.33</strong></td></tr>
+<tr><td>Clasificación</td><td><span class="badge ok">Sin hacinamiento</span></td></tr>
+</tbody>
+</table>
+</div>
+<p class="note"><strong>Nota:</strong> el número de dormitorios es un dato operativo requerido por el instrumento (no constituye diagnóstico clínico).</p>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>El índice calculado es compatible con <strong>sin hacinamiento</strong>, lo que sugiere un espacio habitacional suficiente para la convivencia y reduce el riesgo de estrés doméstico asociado a sobreocupación.</p>
+</div>
+</div>
+</section>
 
-          <div class="goals-block">
-            <div class="goals-header">
-              <strong>Objetivos de hoy</strong>
-              <span>Tú escribes la lista ✏️</span>
-            </div>
-            <ul class="goal-list"></ul>
-            <div class="goal-add">
-              <input type="text" class="goal-input" placeholder="Añade un objetivo y presiona ➕" />
-              <button class="btn-secondary btn-small" data-action="add-goal" data-user="jordan">➕</button>
-            </div>
-            <div class="progress-row">
-              <div class="progress-bar">
-                <div class="progress-bar-fill"></div>
-              </div>
-              <span class="progress-label">0 objetivos</span>
-            </div>
-          </div>
+<section class="card" id="D-pobreza">
+<h2>D) Índice simplificado de pobreza familiar</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla del instrumento</h3>
+<p class="muted">Índice (0–12). A mayor puntaje, mayor evidencia de pobreza familiar según el instrumento.</p>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Componente</th><th>Plantilla (opciones/puntaje)</th><th>Resultado</th><th>Puntos</th></tr></thead>
+<tbody><tr><td><strong>Ingreso familiar mensual</strong></td><td class="muted">&amp;lt; salario mínimo (3)<br/>1–2 salarios mínimos (2)<br/>2–4 salarios mínimos (1)<br/>&amp;gt; 5 salarios mínimos (0)</td><td>1–2 salarios mínimos (2)</td><td class="num"><strong>2</strong></td></tr><tr><td><strong># hijos dependientes</strong></td><td class="muted">&amp;gt; 3 hijos (3)<br/>2 hijos (2)<br/>1 hijo (1)<br/>Ninguno (0)</td><td>Ninguno (0)</td><td class="num"><strong>0</strong></td></tr><tr><td><strong>Escolaridad del referente del hogar</strong></td><td class="muted">Sin instrucción (3)<br/>Primaria incompleta (2)<br/>Primaria completa (1)<br/>Posprimaria (0)</td><td>Primaria completa (1)</td><td class="num"><strong>1</strong></td></tr><tr><td><strong>Personas por dormitorio</strong></td><td class="muted">&amp;gt; 5 personas (3)<br/>4 personas (2)<br/>3 personas (1)<br/>1–2 personas (0)</td><td>1–2 personas (0)</td><td class="num"><strong>0</strong></td></tr></tbody>
+<tfoot><tr><td colspan="3"><strong>Total</strong></td><td class="num"><strong>3/12</strong></td></tr></tfoot>
+</table>
+</div>
+<p class="note">Categorías sugeridas: 0–4 <strong>sin evidencia</strong> • 5–8 evidencia moderada • 9–12 evidencia alta.</p>
+</div>
+<div class="panel">
+<h3>(2) Resultado</h3>
+<p><strong>Puntaje total:</strong> <span class="badge ok">3/12</span></p>
+<p><strong>Categoría:</strong> <span class="badge ok">Sin evidencia</span></p>
+<p class="note">Los valores consignados se sustentan en la información aportada por la informante y la observación del entorno, y se registran para orientar decisiones de intervención en APS.</p>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>El resultado se ubica en <strong>sin evidencia</strong>, lo cual es compatible con un entorno doméstico organizado y acceso a servicios básicos. En APS, este hallazgo orienta a priorizar prevención y control de crónicos más que intervenciones por privación severa.</p>
+</div>
+</div>
+</section>
 
-          <div class="break-section">
-            <div class="break-cards">
-              <div class="break-card break-short locked" data-user="jordan" data-type="short">
-                <div class="break-card-title">Descanso corto · 5 min</div>
-                <div class="break-card-sub">Se desbloquea con ≥25 min de estudio o al completar un objetivo.</div>
-                <button class="btn-secondary btn-small" data-action="start-break" data-user="jordan" data-type="short">
-                  Iniciar 5 min
-                </button>
-              </div>
-              <div class="break-card break-long locked" data-user="jordan" data-type="long">
-                <div class="break-card-title">Descanso largo · 15 min</div>
-                <div class="break-card-sub">Solo cuando terminas al menos un objetivo.</div>
-                <button class="btn-secondary btn-small" data-action="start-break" data-user="jordan" data-type="long">
-                  Iniciar 15 min
-                </button>
-              </div>
-            </div>
-            <div class="break-status-row">
-              <div class="break-status" data-break-status-for="jordan">Sin descanso activo</div>
-              <button class="btn-ghost btn-small" data-action="end-break" data-user="jordan">
-                Terminar descanso
-              </button>
-            </div>
-          </div>
-        </section>
+<section class="card" id="E-apgar">
+<h2>E) APGAR familiar</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla del instrumento</h3>
+<p class="muted">Instrumento APGAR familiar (5 ítems). Cada ítem se califica de 0 a 4.</p>
+<div class="chips"><span class="chip"><strong>0</strong> Nunca</span><span class="chip"><strong>1</strong> Casi nunca</span><span class="chip"><strong>2</strong> A veces</span><span class="chip"><strong>3</strong> Casi siempre</span><span class="chip"><strong>4</strong> Siempre</span></div>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Ítem</th><th>Rango</th></tr></thead>
+<tbody><tr><td>Adaptación</td><td class="muted">0–4</td></tr><tr><td>Participación</td><td class="muted">0–4</td></tr><tr><td>Ganancia (crecimiento)</td><td class="muted">0–4</td></tr><tr><td>Afecto</td><td class="muted">0–4</td></tr><tr><td>Recursos</td><td class="muted">0–4</td></tr></tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<h3>(2) Resultados por miembro</h3>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Miembro</th><th>Adaptación</th><th>Participación</th><th>Ganancia (crecimiento)</th><th>Afecto</th><th>Recursos</th><th>Total</th><th>Interpretación</th></tr></thead><tbody><tr><td><strong>INFORMANTE</strong></td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num"><strong>20/20</strong></td><td><span class="badge ok">Buena función</span></td></tr><tr><td><strong>Iliana</strong></td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num"><strong>19/20</strong></td><td><span class="badge ok">Buena función</span></td></tr><tr><td><strong>Herminio</strong></td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num"><strong>19/20</strong></td><td><span class="badge ok">Buena función</span></td></tr><tr><td><strong>Baudelina</strong></td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num"><strong>19/20</strong></td><td><span class="badge ok">Buena función</span></td></tr></tbody></table></div>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>Los cuatro miembros presentan puntajes en rango de <strong>buena función familiar</strong>. Esto sugiere disponibilidad de apoyo, comunicación y resolución de problemas en el hogar, lo que favorece adherencia a controles y medidas preventivas.</p>
+<p class="note">Valores consignados según datos proporcionados.</p>
+</div>
+</div>
+</section>
 
-        <!-- CAROLINA -->
-        <section class="user-card" data-user="carolina">
-          <div class="user-top">
-            <div>
-              <div class="user-name">Carolina · Obstetricia</div>
-              <div class="user-role">Protocolos, guías y riesgos</div>
-            </div>
-            <div class="user-score">
-              <span>Puntos:</span>
-              <span class="focus-score">0</span>⭐
-            </div>
-          </div>
+<section class="card" id="F-faces">
+<h2>F) FACES III</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla del instrumento</h3>
+<p class="muted">Escala Likert 1–5. Ítems impares: <strong>cohesión</strong>; ítems pares: <strong>adaptabilidad</strong> (según el modelo aplicado).</p>
+<div class="chips">
+<span class="chip"><strong>1</strong> Casi nunca</span>
+<span class="chip"><strong>2</strong> Pocas veces</span>
+<span class="chip"><strong>3</strong> A veces</span>
+<span class="chip"><strong>4</strong> Frecuentemente</span>
+<span class="chip"><strong>5</strong> Casi siempre</span>
+</div>
+</div>
+<div class="panel">
+<h3>(2) Resultado aplicado</h3>
+<div class="row3">
+<div class="mini">
+<div class="k">Cohesión</div>
+<div class="v">42/50</div>
+<div class="s muted">Clasificación: <strong>Relacionada</strong> (41–45)</div>
+</div>
+<div class="mini">
+<div class="k">Adaptabilidad</div>
+<div class="v">26/50</div>
+<div class="s muted">Clasificación: <strong>Flexible</strong> (25–28)</div>
+</div>
+<div class="mini">
+<div class="k">Tipo global</div>
+<div class="v">FLEXIBLE–RELACIONADA (balanceada)</div>
+<div class="s muted">Enfoque balanceado</div>
+</div>
+</div>
+<div style="margin-top:10px"><div class="table-wrap"><table class="tbl"><thead><tr><th>#</th><th>Ítem (plantilla)</th><th>Dominio</th><th>Respuesta</th><th>Valor</th></tr></thead><tbody><tr><td class="num">1</td><td>Los miembros de nuestra familia se dan apoyo entre sí</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">2</td><td>En nuestra familia se toman en cuenta las sugerencias de los hijos para resolver los problemas</td><td><span class="badge">Adaptabilidad</span></td><td>Pocas veces</td><td class="num"><strong>2</strong></td></tr><tr><td class="num">3</td><td>Aceptamos las amistades de los demás miembros de la familia</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">4</td><td>Los hijos pueden opinar en cuanto a su disciplina</td><td><span class="badge">Adaptabilidad</span></td><td>Pocas veces</td><td class="num"><strong>2</strong></td></tr><tr><td class="num">5</td><td>Nos gusta convivir solamente con los familiares más cercanos</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">6</td><td>Cualquier miembro de la familia puede tomar la autoridad</td><td><span class="badge">Adaptabilidad</span></td><td>A veces</td><td class="num"><strong>3</strong></td></tr><tr><td class="num">7</td><td>Nos sentimos más unidos entre nosotros que con personas que no son de nuestra familia</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">8</td><td>Nuestra familia cambia el modo de hacer sus cosas</td><td><span class="badge">Adaptabilidad</span></td><td>A veces</td><td class="num"><strong>3</strong></td></tr><tr><td class="num">9</td><td>Nos gusta pasar tiempo libre en familia</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">10</td><td>Padres e hijos se ponen de acuerdo en relación con los castigos</td><td><span class="badge">Adaptabilidad</span></td><td>Pocas veces</td><td class="num"><strong>2</strong></td></tr><tr><td class="num">11</td><td>Nos sentimos muy unidos</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">12</td><td>En nuestra familia los hijos toman las decisiones</td><td><span class="badge">Adaptabilidad</span></td><td>A veces</td><td class="num"><strong>3</strong></td></tr><tr><td class="num">13</td><td>Cuando se toma una decisión importante, toda la familia está presente</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">14</td><td>En nuestra familia las reglas cambian</td><td><span class="badge">Adaptabilidad</span></td><td>Pocas veces</td><td class="num"><strong>2</strong></td></tr><tr><td class="num">15</td><td>Con facilidad podemos planear actividades en familia</td><td><span class="badge">Cohesión</span></td><td>Frecuentemente</td><td class="num"><strong>4</strong></td></tr><tr><td class="num">16</td><td>Intercambiamos los quehaceres del hogar entre nosotros</td><td><span class="badge">Adaptabilidad</span></td><td>A veces</td><td class="num"><strong>3</strong></td></tr><tr><td class="num">17</td><td>Consultamos unos con otros para tomar decisiones</td><td><span class="badge">Cohesión</span></td><td>Casi siempre</td><td class="num"><strong>5</strong></td></tr><tr><td class="num">18</td><td>En nuestra familia es difícil identificar quién tiene la autoridad</td><td><span class="badge">Adaptabilidad</span></td><td>A veces</td><td class="num"><strong>3</strong></td></tr><tr><td class="num">19</td><td>La familia es de muy importante</td><td><span class="badge">Cohesión</span></td><td>Casi siempre</td><td class="num"><strong>5</strong></td></tr><tr><td class="num">20</td><td>Es difícil decir quién hace las labores del hogar</td><td><span class="badge">Adaptabilidad</span></td><td>A veces</td><td class="num"><strong>3</strong></td></tr></tbody></table></div></div>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>La familia se clasifica como <strong>FLEXIBLE–RELACIONADA (balanceada)</strong>, compatible con un sistema con buena cercanía afectiva y flexibilidad funcional. En APS, este perfil suele asociarse a mayor capacidad para acordar planes de cuidado y distribuir tareas.</p>
+<p class="note">.</p>
+</div>
+</div>
+</section>
 
-          <div class="focus-block">
-            <div class="focus-row">
-              <span>Timer de enfoque</span>
-              <span>Bloques de estudio</span>
-            </div>
-            <div class="focus-time" id="timer-carolina">00:00:00</div>
-            <div class="focus-meta" data-total-for="carolina">Total hoy: 0 min</div>
-            <div class="btn-row">
-              <button class="btn-primary" data-action="start" data-user="carolina">Iniciar</button>
-              <button class="btn-secondary" data-action="pause" data-user="carolina">Pausar</button>
-              <button class="btn-ghost" data-action="reset" data-user="carolina">Reiniciar</button>
-            </div>
-          </div>
+<section class="card" id="G-maslow">
+<h2>G) Pirámide de Maslow (por miembro)</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla (pirámide)</h3>
+<div class="svg-wrap">
+<svg aria-label="Pirámide de Maslow" class="svg-card" role="img" viewbox="0 0 420 320">
+<g font-family="var(--sans)">
+<polygon fill="rgba(43,92,138,.08)" points="210,20 340,80 80,80" stroke="rgba(20,25,35,.18)"></polygon>
+<polygon fill="rgba(43,92,138,.06)" points="340,80 370,140 50,140 80,80" stroke="rgba(20,25,35,.18)"></polygon>
+<polygon fill="rgba(43,92,138,.05)" points="370,140 400,205 20,205 50,140" stroke="rgba(20,25,35,.18)"></polygon>
+<polygon fill="rgba(43,92,138,.04)" points="400,205 420,265 0,265 20,205" stroke="rgba(20,25,35,.18)"></polygon>
+<polygon fill="rgba(43,92,138,.03)" points="420,265 420,310 0,310 0,265" stroke="rgba(20,25,35,.18)"></polygon>
+<text font-size="12" font-weight="900" text-anchor="middle" x="210" y="55">Autorrealización</text>
+<text font-size="12" font-weight="900" text-anchor="middle" x="210" y="115">Reconocimiento</text>
+<text font-size="12" font-weight="900" text-anchor="middle" x="210" y="178">Afiliación</text>
+<text font-size="12" font-weight="900" text-anchor="middle" x="210" y="242">Seguridad</text>
+<text font-size="12" font-weight="900" text-anchor="middle" x="210" y="295">Fisiológicas</text>
+</g>
+</svg>
+</div>
+<p class="note">Pirámide clásica: Fisiología → Autorrealización. La priorización es una lectura clínica-psicosocial.</p>
+</div>
+<div class="panel">
+<h3>(2) Prioridades por miembro</h3>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Miembro</th><th>Prioridades</th></tr></thead><tbody><tr><td>Herminio</td><td>Fisiológicas → Seguridad → Afiliación</td></tr><tr><td>Baudelina</td><td>Seguridad → Afiliación → Reconocimiento</td></tr><tr><td>Iliana</td><td>Reconocimiento → Autorrealización → Seguridad (salud)</td></tr><tr><td>INFORMANTE</td><td>Autorrealización → Reconocimiento → Fisiológicas (sueño/actividad)</td></tr></tbody></table></div>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>En un hogar con adultos mayores, suele aumentar el peso de la <strong>seguridad</strong> (caídas, visión, movilidad) y de necesidades <strong>fisiológicas</strong> (sueño/energía). En miembros más jóvenes, predominan metas de <strong>reconocimiento</strong> y <strong>autorrealización</strong>, manteniendo apoyo hacia el núcleo familiar.</p>
+</div>
+</div>
+</section>
 
-          <div class="goals-block">
-            <div class="goals-header">
-              <strong>Objetivos de hoy</strong>
-              <span>Carolina decide los goals ✏️</span>
-            </div>
-            <ul class="goal-list"></ul>
-            <div class="goal-add">
-              <input type="text" class="goal-input" placeholder="Añade un objetivo y presiona ➕" />
-              <button class="btn-secondary btn-small" data-action="add-goal" data-user="carolina">➕</button>
-            </div>
-            <div class="progress-row">
-              <div class="progress-bar">
-                <div class="progress-bar-fill"></div>
-              </div>
-              <span class="progress-label">0 objetivos</span>
-            </div>
-          </div>
+<section class="card" id="H-ambito">
+<h2>H) Ámbito social familiar</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla del instrumento</h3>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Ítem</th><th>Enunciado</th><th>Opciones</th><th>Puntaje</th></tr></thead><tbody><tr><td class="num">1a</td><td>El trabajo del proveedor es acorde con su preparación</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">1b</td><td>Los ingresos cubren las necesidades básicas (alimentación, vestido, vivienda, recreación y salud)</td><td class="muted">Sí / No</td><td class="muted">Sí=20 • No=0</td></tr><tr><td class="num">2a</td><td>La escolaridad de los hijos es acorde con la edad (No aplica permitido)</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">2b</td><td>El rendimiento escolar de los hijos es, en promedio (No aplica permitido)</td><td class="muted">Bajo / Medio / Alto</td><td class="muted">Bajo=0 • Medio=5 • Alto=10</td></tr><tr><td class="num">2c</td><td>La escolaridad promedio del hogar es superior a los 9 años escolares</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">3a</td><td>Vivienda adecuada en relación a dormitorios y personas</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">3b</td><td>Se dispone de agua potable y luz eléctrica</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">3c</td><td>La basura se almacena y elimina adecuadamente</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">3d</td><td>Las excretas se eliminan de manera adecuada</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">3e</td><td>La fauna doméstica no afecta la salud familiar</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">4a</td><td>La alimentación es suficiente en cantidad</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">4b</td><td>La alimentación es suficiente en calidad (balanceada)</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">4c</td><td>Los hábitos alimenticios son adecuados a las necesidades</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">5a</td><td>La familia tiene actividades recreativas en forma regular</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">5b</td><td>Las actividades recreativas fomentan la salud</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">5c</td><td>Los integrantes realizan algún deporte</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">6a</td><td>La familia forma parte de algún comité comunitario o social</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">6b</td><td>La familia coopera con los proyectos comunitarios</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">6c</td><td>La familia tiene reconocimiento social por su labor comunitaria</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">7a</td><td>La familia participa activamente en la conservación de la salud comunitaria</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">7b</td><td>La familia favorece la organización de la comunidad para mantener la salud</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr><tr><td class="num">7c</td><td>La familia promueve la participación de otras familias en el fomento de la salud</td><td class="muted">Sí / No</td><td class="muted">Sí=10 • No=0</td></tr></tbody></table></div>
+<p class="note">Ítems relacionados con “hijos” se marcan como <em>No aplica</em> cuando corresponda, sin penalizar el puntaje.</p>
+</div>
+<div class="panel">
+<h3>(2) Resultado aplicado</h3>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Ítem</th><th>Enunciado</th><th>Respuesta</th><th>Puntos</th></tr></thead>
+<tbody><tr><td class="num">1a</td><td>El trabajo del proveedor es acorde con su preparación</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">1b</td><td>Los ingresos cubren las necesidades básicas (alimentación, vestido, vivienda, recreación y salud)</td><td>Sí</td><td class="num"><strong>20</strong></td></tr><tr><td class="num">2a</td><td>La escolaridad de los hijos es acorde con la edad</td><td>No aplica</td><td class="num"><strong>—</strong></td></tr><tr><td class="num">2b</td><td>El rendimiento escolar de los hijos es, en promedio</td><td>No aplica</td><td class="num"><strong>—</strong></td></tr><tr><td class="num">2c</td><td>La escolaridad promedio del hogar es superior a los 9 años escolares</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">3a</td><td>Vivienda adecuada en relación a dormitorios y personas</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">3b</td><td>Se dispone de agua potable y luz eléctrica</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">3c</td><td>La basura se almacena y elimina adecuadamente</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">3d</td><td>Las excretas se eliminan de manera adecuada</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">3e</td><td>La fauna doméstica no afecta la salud familiar</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">4a</td><td>La alimentación es suficiente en cantidad</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">4b</td><td>La alimentación es suficiente en calidad (balanceada)</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">4c</td><td>Los hábitos alimenticios son adecuados a las necesidades</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">5a</td><td>La familia tiene actividades recreativas en forma regular</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">5b</td><td>Las actividades recreativas fomentan la salud</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">5c</td><td>Los integrantes realizan algún deporte</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">6a</td><td>La familia forma parte de algún comité comunitario o social</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">6b</td><td>La familia coopera con los proyectos comunitarios</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">6c</td><td>La familia tiene reconocimiento social por su labor comunitaria</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">7a</td><td>La familia participa activamente en la conservación de la salud comunitaria</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">7b</td><td>La familia favorece la organización de la comunidad para mantener la salud</td><td>Sí</td><td class="num"><strong>10</strong></td></tr><tr><td class="num">7c</td><td>La familia promueve la participación de otras familias en el fomento de la salud</td><td>Sí</td><td class="num"><strong>10</strong></td></tr></tbody>
+<tfoot>
+<tr><td colspan="3"><strong>Total (ítems aplicables)</strong></td><td class="num"><strong>210/210</strong></td></tr>
+<tr><td colspan="3"><strong>Puntaje normalizado</strong></td><td class="num"><strong>290/290</strong></td></tr>
+</tfoot>
+</table>
+</div>
+<p><span class="badge ok">Familia socialmente integrada</span></p>
+</div>
+<div class="panel">
+<h3>(3) Interpretación clínica</h3>
+<p>El puntaje normalizado se ubica en la categoría de <strong>familia socialmente integrada</strong>, coherente con acceso a servicios básicos y dinámica familiar funcional. Esto favorece continuidad del cuidado en APS y adherencia a intervenciones preventivas.</p>
+</div>
+</div>
+</section>
 
-          <div class="break-section">
-            <div class="break-cards">
-              <div class="break-card break-short locked" data-user="carolina" data-type="short">
-                <div class="break-card-title">Descanso corto · 5 min</div>
-                <div class="break-card-sub">Se desbloquea con ≥25 min de estudio o al completar un objetivo.</div>
-                <button class="btn-secondary btn-small" data-action="start-break" data-user="carolina" data-type="short">
-                  Iniciar 5 min
-                </button>
-              </div>
-              <div class="break-card break-long locked" data-user="carolina" data-type="long">
-                <div class="break-card-title">Descanso largo · 15 min</div>
-                <div class="break-card-sub">Solo cuando terminas al menos un objetivo.</div>
-                <button class="btn-secondary btn-small" data-action="start-break" data-user="carolina" data-type="long">
-                  Iniciar 15 min
-                </button>
-              </div>
-            </div>
-            <div class="break-status-row">
-              <div class="break-status" data-break-status-for="carolina">Sin descanso activo</div>
-              <button class="btn-ghost btn-small" data-action="end-break" data-user="carolina">
-                Terminar descanso
-              </button>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  </div>
+<section class="card" id="I-circulo">
+<h2>I) Círculo familiar</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla</h3>
+<div class="svg-wrap">
+<svg aria-label="Plantilla círculo familiar" class="svg-card" role="img" viewbox="0 0 320 240">
+<circle cx="160" cy="120" fill="none" opacity="0.25" r="90" stroke="currentColor" stroke-width="2"></circle>
+<circle cx="160" cy="120" fill="none" opacity="0.25" r="60" stroke="currentColor" stroke-width="2"></circle>
+<circle cx="160" cy="120" fill="none" opacity="0.25" r="30" stroke="currentColor" stroke-width="2"></circle>
+<text fill="currentColor" font-size="12" opacity="0.7" text-anchor="middle" x="160" y="125">YO</text>
+<text fill="currentColor" font-size="11" opacity="0.6" text-anchor="middle" x="160" y="24">Círculo externo</text>
+<text fill="currentColor" font-size="11" opacity="0.6" text-anchor="middle" x="160" y="54">Círculo medio</text>
+<text fill="currentColor" font-size="11" opacity="0.6" text-anchor="middle" x="160" y="84">Círculo interno</text>
+</svg>
+</div>
+<p class="note">Se coloca “YO” al centro; los demás se distribuyen según cercanía percibida (interno/medio/externo).</p>
+</div>
+<div class="panel" style="grid-column: span 2">
+<h3>(2) Resultados (4 círculos)</h3>
+<div class="grid3" id="circles-grid" style="grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px"></div>
+<p class="note">Se muestra una comparación visual entre percepciones de cercanía dentro del hogar.</p>
+</div>
+<div class="panel">
+<h3>(3) Interpretación comparativa</h3>
+<p>Los círculos reflejan una <strong>alta proximidad intrafamiliar</strong>, con variaciones esperables según roles (conyugal, cuidado, apoyo). La distribución apoya los hallazgos de APGAR alto y FACES balanceado.</p>
+</div>
+</div>
+</section>
 
-  <div class="toast" id="toast">
-    <span>🎉</span>
-    <span id="toastText">Mensaje</span>
-  </div>
+<section class="card" id="J-funciones">
+<h2>J) Funciones familiares</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla</h3>
+<p class="muted">Se describen funciones clásicas del sistema familiar: socialización, cuidado/afecto y reproducción.</p>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Función</th><th>Qué observar</th></tr></thead>
+<tbody>
+<tr><td>Socialización</td><td class="muted">Normas, apoyo, red comunitaria, roles, adherencia.</td></tr>
+<tr><td>Cuidado y afecto</td><td class="muted">Apoyo emocional, acompañamiento en enfermedad, seguridad.</td></tr>
+<tr><td>Reproducción</td><td class="muted">Planificación familiar / etapa (puede ser no aplicable).</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<h3>(2) Resultado</h3>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Función</th><th>Descripción (resultado)</th><th>Interpretación</th></tr></thead>
+<tbody>
+<tr><td><strong>Socialización</strong></td><td>Normas y apoyo intergeneracional; convivencia estable.</td><td class="muted">Favorece adhesión a conductas preventivas y redes de apoyo.</td></tr>
+<tr><td><strong>Cuidado y afecto</strong></td><td>Apoyo emocional alto; acompañamiento ante enfermedad crónica.</td><td class="muted">Consistente con APGAR alto y FACES balanceado.</td></tr>
+<tr><td><strong>Reproducción</strong></td><td>No relevante actualmente para el hogar conviviente.</td><td class="muted">Se consigna como no aplicable en el contexto actual.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<h3>(3) Interpretación</h3>
+<p>El hogar presenta funciones de socialización y cuidado-afecto conservadas, lo cual disminuye vulnerabilidad ante enfermedad crónica. En etapa VIII, el énfasis se centra en continuidad de cuidados, autonomía y prevención.</p>
+</div>
+</div>
+</section>
 
-  <script>
-    // ================== RELOJ PANAMÁ ==================
-    function actualizarRelojPanama() {
-      const ahora = new Date();
-      const opcionesHora = {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-        timeZone: "America/Panama"
-      };
-      const opcionesFecha = {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "2-digit",
-        timeZone: "America/Panama"
-      };
-      document.getElementById("clockPanama").textContent =
-        ahora.toLocaleTimeString("es-PA", opcionesHora);
-      document.getElementById("datePanama").textContent =
-        ahora.toLocaleDateString("es-PA", opcionesFecha);
-    }
-    actualizarRelojPanama();
-    setInterval(actualizarRelojPanama, 1000);
+<section class="card" id="K-plan">
+<h2>K) Karnofsky + riesgos + plan de intervención familiar (APS)</h2>
+<div class="grid3">
+<div class="panel">
+<h3>(1) Plantilla</h3>
+<p class="muted">Escala de Karnofsky (0–100%): mayor puntaje = mayor funcionalidad.</p>
+<div class="table-wrap">
+<table class="tbl">
+<thead><tr><th>Rango</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr><td>100%</td><td class="muted">Actividad normal, sin quejas significativas.</td></tr>
+<tr><td>80–90%</td><td class="muted">Actividad casi normal; signos/síntomas leves.</td></tr>
+<tr><td>50–70%</td><td class="muted">Requiere ayuda ocasional; no puede trabajar.</td></tr>
+<tr><td>&lt; 50%</td><td class="muted">Dependencia significativa / cuidados médicos frecuentes.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="panel">
+<h3>(2) Resultado (4 miembros)</h3>
+<div class="table-wrap"><table class="tbl"><thead><tr><th>Miembro</th><th>Karnofsky</th><th>Interpretación</th></tr></thead><tbody><tr><td><strong>Herminio</strong></td><td class="num"><strong>100%</strong></td><td><span class="badge ok">Capaz de actividad normal</span></td></tr><tr><td><strong>Baudelina</strong></td><td class="num"><strong>100%</strong></td><td><span class="badge ok">Capaz de actividad normal</span></td></tr><tr><td><strong>Iliana</strong></td><td class="num"><strong>100%</strong></td><td><span class="badge ok">Capaz de actividad normal</span></td></tr><tr><td><strong>INFORMANTE</strong></td><td class="num"><strong>100%</strong></td><td><span class="badge ok">Capaz de actividad normal</span></td></tr></tbody></table></div>
+<h3 style="margin-top:10px">Riesgos prioritarios</h3>
+<ul>
+<li><strong>Caídas:</strong> edad avanzada, Parkinson, alteraciones visuales.</li>
+<li><strong>Comorbilidades:</strong> diverticulosis (con/sin sangrado), anemia secundaria, osteoporosis, IVC MMII.</li>
+<li><strong>Sobrecarga del cuidador:</strong> potencial en etapa VIII; vigilar distribución de tareas.</li>
+<li><strong>Prevención:</strong> vacunas, tamizajes, educación en signos de alarma y adherencia.</li>
+</ul>
+</div>
+<div class="panel">
+<h3>(3) Plan APS (4–6 puntos)</h3>
+<ol class="plan">
+<li><strong>Prevención de caídas:</strong> evaluación del hogar (iluminación, alfombras, barandas), calzado adecuado; educación a convivientes (Parkinson/alteraciones visuales).</li>
+<li><strong>Seguimiento de comorbilidades:</strong> control periódico de síntomas gastrointestinales y anemia (diverticulosis con sangrado), vigilancia oftalmológica (glaucoma/amaurosis), control de osteoporosis y riesgo de fractura.</li>
+<li><strong>Rehabilitación y actividad física segura:</strong> ejercicios de fuerza y equilibrio adaptados; pausas activas; recomendaciones de marcha asistida si aparece inestabilidad.</li>
+<li><strong>Apoyo al cuidador y dinámica familiar:</strong> identificar sobrecarga, distribuir tareas y programar descansos; reforzar comunicación y participación en decisiones.</li>
+<li><strong>Prevención primaria y tamizajes:</strong> vacunación según edad (influenza, neumococo, COVID-19 si aplica), control de PA, glicemia y perfil lipídico, y educación en señales de alarma.</li>
+<li><strong>Plan de seguridad y acceso:</strong> rutas de referencia/contrarreferencia, lista de medicamentos y contactos; promover uso de controles regulares en APS.</li>
+</ol>
+</div>
+</div>
+</section>
 
-    // ================== TIMERS ==================
-    const state = {
-      jordan: {
-        focusSeconds: 0,
-        totalSeconds: 0,
-        blockSeconds: 0,
-        interval: null,
-        shortUnlocked: false,
-        longUnlocked: false,
-        breakInterval: null,
-        breakRemaining: null,
-        breakType: null
-      },
-      carolina: {
-        focusSeconds: 0,
-        totalSeconds: 0,
-        blockSeconds: 0,
-        interval: null,
-        shortUnlocked: false,
-        longUnlocked: false,
-        breakInterval: null,
-        breakRemaining: null,
-        breakType: null
-      }
-    };
+<section class="card" id="genograma">
+<h2>Genograma</h2>
+<div class="grid3">
+<div class="panel">
+<h3>Requisitos</h3>
+<ul>
+<li>Sin sobreposición (auto-layout + ajuste por colisión).</li>
+<li>Encerramiento de convivientes: <strong>Herminio, Baudelina, Iliana, INFORMANTE</strong>.</li>
+<li>INFORMANTE señalado con marcador claro.</li>
+</ul>
+</div>
+<div class="panel" style="grid-column: span 2">
+<h3>Genograma (publicable)</h3>
+<div class="svg-wrap" id="genogram-mount"></div>
+<p class="note">Se omiten familiares secundarios no convivientes para priorizar legibilidad. Se incluye un nodo “Hijo/a (no conviviente)” únicamente como conector genealógico.</p>
+</div>
+</div>
+</section>
 
-    const POMODORO_MIN = 25;
-    const SHORT_BREAK_SEC = 5 * 60;
-    const LONG_BREAK_SEC = 15 * 60;
+<section class="card" id="psicofigura">
+<h2>Psicofigura</h2>
+<div class="grid3">
+<div class="panel">
+<h3>Plantilla / lectura</h3>
+<p class="muted">Representación gráfica de vínculos percibidos (intensidad relativa), útil para discutir roles, apoyo y posibles tensiones.</p>
+<p class="note">No es un diagnóstico psiquiátrico; es un instrumento cualitativo para comprensión del sistema familiar.</p>
+</div>
+<div class="panel" style="grid-column: span 2">
+<h3>Resultado (convivientes)</h3>
+<div class="svg-wrap" id="psy-mount"></div>
+</div>
+</div>
+</section>
 
-    function formatTime(sec) {
-      const h = String(Math.floor(sec / 3600)).padStart(2, "0");
-      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
-      const s = String(sec % 60).padStart(2, "0");
-      return h + ":" + m + ":" + s;
-    }
+<section class="card" id="expedientes">
+<h2>Entrevistas / Expedientes clínicos</h2>
+<p class="muted">Se presentan los 4 expedientes clínicos con la información consignada en las entrevistas, en formato limpio y consultable.</p>
+<details class="exp" open="">
+<summary>Iliana Guerra Arajona — 51 años — Femenino</summary>
+<div class="exp-content"><h3 class="exp-h3">EXPEDIENTE 1 — Iliana Guerra Arajona</h3>
+<h4 class="exp-h4">I. Datos de identificación</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Nombre</td><td>Iliana Guerra Arajona</td></tr>
+<tr><td>Edad</td><td>51 años</td></tr>
+<tr><td>Sexo</td><td>Femenino</td></tr>
+<tr><td>Lugar de nacimiento</td><td>David</td></tr>
+<tr><td>Residencia/Procedencia</td><td>David, Quintas de La Riviera</td></tr>
+<tr><td>Estado civil</td><td>Soltera</td></tr>
+<tr><td>Ocupación</td><td>Ingeniera / Docente</td></tr>
+<tr><td>Escolaridad</td><td>Universitaria</td></tr>
+<tr><td>Raza/etnia</td><td>Mestiza</td></tr>
+<tr><td>Religión</td><td>Católica</td></tr>
+<tr><td>Aseguramiento</td><td>CSS</td></tr>
+<tr><td>Informante</td><td>Paciente</td></tr>
+<tr><td>Cédula/ID</td><td>No consignado</td></tr>
+<tr><td>Relación con el núcleo familiar</td><td>Tía</td></tr>
+<tr><td>Fecha de entrevista</td><td>15/12/2025</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">II. Motivo de consulta</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Motivo de consulta</td><td>Cefalea frontal opresiva recurrente asociada a fatiga visual</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">III. Enfermedad actual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Inicio</td><td>Hace ~1 semana (con empeoramiento referido en semanas recientes)</td></tr>
+<tr><td>Localización</td><td>Región frontal</td></tr>
+<tr><td>Carácter</td><td>Opresiva, bilateral</td></tr>
+<tr><td>Intensidad</td><td>Leve a moderada</td></tr>
+<tr><td>Frecuencia</td><td>~3 días/semana</td></tr>
+<tr><td>Duración por episodio</td><td>~5 horas</td></tr>
+<tr><td>Curso</td><td>Intermitente; predomina desde la mañana hasta final de jornada</td></tr>
+<tr><td>Desencadenantes</td><td>Uso prolongado de pantalla</td></tr>
+<tr><td>Atenuantes</td><td>Mejora parcial con acetaminofén; recurre sin resolución completa</td></tr>
+<tr><td>Síntomas asociados</td><td>Visión borrosa; tensión cervical leve</td></tr>
+<tr><td>Signos de alarma</td><td>Niega fiebre, náuseas, vómitos, fotofobia y focalidad neurológica</td></tr>
+<tr><td>Factor contribuyente</td><td>Lentes correctivos con &gt;2 años sin recambio</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IV. Antecedentes personales no patológicos (vivienda y entorno)</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Vivienda</td><td>Propia</td></tr>
+<tr><td>Material predominante</td><td>Cemento</td></tr>
+<tr><td>Baños</td><td>Higiénicos (aprox. 2)</td></tr>
+<tr><td>Agua potable</td><td>Sí</td></tr>
+<tr><td>Eliminación de basura</td><td>Recolección municipal</td></tr>
+<tr><td>Mascotas</td><td>Sí (1 perro)</td></tr>
+<tr><td>Convivientes</td><td>4 personas</td></tr>
+<tr><td>Viajes últimos 3 meses</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">V. Antecedentes personales patológicos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Insuficiencia venosa crónica</td><td>Sí (ambos miembros inferiores)</td></tr>
+<tr><td>Otros crónicos mayores (HTA/DM/dislipidemia/cardiopatía/ACV/EPOC/ERC/cáncer)</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VI. Medicación habitual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Daflon® 1000 mg</td><td>Sí (por insuficiencia venosa)</td></tr>
+<tr><td>Medias de compresión</td><td>Sí</td></tr>
+<tr><td>Citragel (vitaminas)</td><td>Sí (dosis: No consignado)</td></tr>
+<tr><td>Acetaminofén</td><td>1 g cada 8 horas (por cefalea)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VII. Alergias</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Medicamentos</td><td>Niega</td></tr>
+<tr><td>Alimentos</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VIII. Hábitos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Tabaco</td><td>Niega</td></tr>
+<tr><td>Alcohol</td><td>Niega</td></tr>
+<tr><td>Otras sustancias</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IX. Historia laboral y exposiciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Exposición a químicos/polvos/humos</td><td>Niega</td></tr>
+<tr><td>Observaciones ergonómicas</td><td>No consignado</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">X. Antecedentes familiares</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Cáncer de mama</td><td>Sí (hermana)</td></tr>
+<tr><td>Diabetes mellitus</td><td>Sí (hermano)</td></tr>
+<tr><td>Otros</td><td>No consignado</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XI. Revisión por sistemas</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Sistema</th><th>Hallazgos</th></tr></thead>
+<tbody>
+<tr><td>General</td><td>Niega fiebre, pérdida de peso, fatiga marcada</td></tr>
+<tr><td>Respiratorio</td><td>Niega tos, disnea, sibilancias, hemoptisis</td></tr>
+<tr><td>Cardiovascular</td><td>Pesadez en MMII con edema vespertino intermitente (MI izq predominante) por IVC; niega dolor torácico/palpitaciones/síncope</td></tr>
+<tr><td>Gastrointestinal</td><td>Niega</td></tr>
+<tr><td>Genitourinario</td><td>Niega</td></tr>
+<tr><td>Neurológico</td><td>Cefalea tensional + fatiga visual; niega focalidad/convulsiones</td></tr>
+<tr><td>Músculo-esquelético</td><td>Tensión cervical leve</td></tr>
+<tr><td>Piel</td><td>Niega lesiones nuevas/prurito/úlceras</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XII. Antecedentes gineco-obstétricos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Menarquia</td><td>14 años</td></tr>
+<tr><td>Menopausia</td><td>48 años</td></tr>
+<tr><td>FUM</td><td>15/10/2022</td></tr>
+<tr><td>G/P/A/C</td><td>0/0/0/0</td></tr>
+<tr><td>Método anticonceptivo</td><td>No aplica</td></tr>
+<tr><td>PAP</td><td>No consignado</td></tr>
+<tr><td>Mamografía</td><td>Hace ~3 meses</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIII. Inmunizaciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>COVID-19</td><td>3 dosis</td></tr>
+<tr><td>Influenza</td><td>Refuerzo anual</td></tr>
+<tr><td>Otras (tétanos/SRP- MMR/BCG/Hepatitis B)</td><td>Sí (fechas: No consignado)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIV. Evaluación funcional</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Karnofsky</td><td>100%</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XV. Examen físico</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Signos vitales</td><td>PA 118/76; FC 74; FR 16; T° 36.6; SatO₂ 98% AA</td></tr>
+<tr><td>Peso / talla</td><td>70.3 kg / 1.73 m</td></tr>
+<tr><td>Estado general</td><td>Bueno; alerta, orientada, cooperadora</td></tr>
+<tr><td>Cuello</td><td>Dolor leve a palpación en musculatura cervical posterior; sin rigidez nucal</td></tr>
+<tr><td>Cardiovascular</td><td>Ruidos rítmicos; sin soplos; pulsos simétricos</td></tr>
+<tr><td>Respiratorio</td><td>MV conservado; sin ruidos agregados</td></tr>
+<tr><td>Abdomen</td><td>Blando, depresible, no doloroso</td></tr>
+<tr><td>Extremidades</td><td>Edema MMII ++ (MI izq predominante), blando/depresible; sin signos de trombosis</td></tr>
+<tr><td>Neurológico</td><td>Pares craneales íntegros; fuerza 5/5; ROT ++ simétricos; marcha normal</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XVI. Impresión diagnóstica</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Diagnóstico principal</td><td>Cefalea tipo tensional asociada a fatiga visual (sin datos de alarma)</td></tr>
+<tr><td>Comorbilidad</td><td>Insuficiencia venosa crónica</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XVII. Plan</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Conducta</td><td>Reevaluación visual (recambio/ajuste de lentes); higiene visual y ergonomía</td></tr>
+<tr><td>Manejo sintomático</td><td>Analgesia simple PRN evitando sobreuso; medidas para tensión cervical</td></tr>
+<tr><td>Seguimiento</td><td>Control en APS; continuar medidas para IVC (medias/medidas posturales)</td></tr>
+</tbody></table></div>
+<hr/></div>
+</details>
+<details class="exp" open="">
+<summary>Herminio Guerra — 85 años — Masculino</summary>
+<div class="exp-content"><h3 class="exp-h3">EXPEDIENTE 2 — Herminio Guerra</h3>
+<h4 class="exp-h4">I. Datos de identificación</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Nombre</td><td>Herminio Guerra</td></tr>
+<tr><td>Edad</td><td>85 años</td></tr>
+<tr><td>Sexo</td><td>Masculino</td></tr>
+<tr><td>Lugar de nacimiento</td><td>Tolé</td></tr>
+<tr><td>Residencia/Procedencia</td><td>Quintas de La Riviera</td></tr>
+<tr><td>Estado civil</td><td>Casado</td></tr>
+<tr><td>Ocupación</td><td>Jubilado</td></tr>
+<tr><td>Escolaridad</td><td>Primaria (hasta 6.º grado)</td></tr>
+<tr><td>Raza/etnia</td><td>Mestizo</td></tr>
+<tr><td>Religión</td><td>Católica</td></tr>
+<tr><td>Aseguramiento</td><td>CSS</td></tr>
+<tr><td>Informante</td><td>Paciente</td></tr>
+<tr><td>Cédula/ID</td><td>Omitida</td></tr>
+<tr><td>Relación con el núcleo familiar</td><td>Abuelo</td></tr>
+<tr><td>Fecha de entrevista</td><td>16/12/2025</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">II. Motivo de consulta</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Motivo de consulta</td><td>Control preventivo del adulto mayor</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">III. Enfermedad actual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Consulta actual</td><td>Evaluación preventiva; sin sintomatología aguda</td></tr>
+<tr><td>Evento relevante</td><td>Hospitalización 16/10/2025–20/10/2025 por sangrado digestivo bajo por diverticulosis/divertículos</td></tr>
+<tr><td>Recurrencia</td><td>5 episodios en ~10 años (referido)</td></tr>
+<tr><td>Manejo recibido</td><td>Transfusión 1 unidad O+; hierro carboximaltosa IV (4 ampollas) post-egreso</td></tr>
+<tr><td>Seguimiento</td><td>Gastroenterología</td></tr>
+<tr><td>Síntomas actuales</td><td>Niega dolor torácico/palpitaciones/síncope; niega melena/hematochezia actuales</td></tr>
+<tr><td>GU</td><td>IVU hace 6 meses, tratada con ciprofloxacina 14 días, resuelta</td></tr>
+<tr><td>Cognición</td><td>Conservada</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IV. Antecedentes personales no patológicos (vivienda y entorno)</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Vivienda</td><td>Propia</td></tr>
+<tr><td>Material predominante</td><td>Cemento</td></tr>
+<tr><td>Baños</td><td>Higiénicos (aprox. 2)</td></tr>
+<tr><td>Agua potable</td><td>Sí</td></tr>
+<tr><td>Eliminación de basura</td><td>Recolección municipal</td></tr>
+<tr><td>Mascotas</td><td>Sí (1 perro)</td></tr>
+<tr><td>Convivientes</td><td>4 personas</td></tr>
+<tr><td>Viajes últimos 3 meses</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">V. Antecedentes personales patológicos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Diverticulosis con sangrado</td><td>Sí (recurrente)</td></tr>
+<tr><td>Trombofilia hereditaria</td><td>Déficit de antitrombina III (referido)</td></tr>
+<tr><td>Evento vascular ocular</td><td>Isquemia de vena central de la retina a repetición (referido)</td></tr>
+<tr><td>Glaucoma</td><td>Ángulo estrecho</td></tr>
+<tr><td>Amaurosis</td><td>Ojo izquierdo</td></tr>
+<tr><td>Anemia</td><td>Secundaria a sangrado digestivo (grado: No consignado)</td></tr>
+<tr><td>HTA/DM/dislipidemia/cardiopatía/ACV/EPOC/ERC/cáncer</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VI. Medicación habitual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Krytantek Ofteno®</td><td>Dorzolamida + timolol + brimonidina (frecuencia: No consignado)</td></tr>
+<tr><td>Psyllium (Plantago)</td><td>1–2 cucharadas en agua por la mañana</td></tr>
+<tr><td>Lactulosa</td><td>PRN; 30 mL por toma</td></tr>
+<tr><td>Anticoagulantes/antiagregantes</td><td>No usa actualmente (suspendidos por riesgo hemorrágico, referido)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VII. Alergias</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Medicamentos</td><td>Niega</td></tr>
+<tr><td>Alimentos</td><td>Niega</td></tr>
+<tr><td>Precauciones</td><td>Evitar AINEs y fármacos antiagregantes/anticoagulantes por antecedente hemorrágico (no alergia)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VIII. Hábitos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Tabaco</td><td>Exfumador (paquetes-año: No consignado)</td></tr>
+<tr><td>Alcohol</td><td>Consumo crónico previo ~30 años (actual: No consignado)</td></tr>
+<tr><td>Actividad</td><td>No sedentario; actividades domésticas</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IX. Exposiciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Exposición a químicos/polvos</td><td>Niega</td></tr>
+<tr><td>Humo de leña/cocina</td><td>Sí (uso previo; actualidad: No consignado)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">X. Antecedentes familiares</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>ACV</td><td>Sí (hermana)</td></tr>
+<tr><td>Cáncer</td><td>Sí (hermana; tipo: No consignado)</td></tr>
+<tr><td>Otros</td><td>No consignado</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XI. Revisión por sistemas</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>ROS global</td><td>Sin síntomas activos al momento de la consulta</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XII. Inmunizaciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>COVID-19</td><td>2 dosis (fecha última: No consignado)</td></tr>
+<tr><td>Influenza</td><td>Aplicada el año pasado</td></tr>
+<tr><td>Otras (tétanos/SRP- MMR/BCG/Hepatitis B)</td><td>Sí (fechas: No consignado)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIII. Evaluación funcional</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Karnofsky</td><td>100%</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIV. Examen físico</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Signos vitales</td><td>PA 122/74; FC 68; FR 16; T° 36.5; SatO₂ 97% AA</td></tr>
+<tr><td>Peso / talla</td><td>79.4 kg / 1.74 m</td></tr>
+<tr><td>Hallazgos</td><td>Sin hallazgos patológicos relevantes; sin edema; neurológico sin focalidad</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XV. Impresión diagnóstica</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Problema principal</td><td>Control preventivo del adulto mayor</td></tr>
+<tr><td>Problemas relevantes</td><td>Diverticulosis con sangrado recurrente; déficit de antitrombina III; evento vascular ocular; glaucoma ángulo estrecho; amaurosis OI</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XVI. Plan</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Seguimiento</td><td>Continuar gastroenterología; control por MI/Hematología según balance trombosis–sangrado</td></tr>
+<tr><td>Medidas</td><td>Mantener manejo de tránsito intestinal; continuidad de gotas oftálmicas y control oftalmológico</td></tr>
+<tr><td>Educación</td><td>Signos de alarma por sangrado digestivo y anemia</td></tr>
+</tbody></table></div>
+<hr/></div>
+</details>
+<details class="exp" open="">
+<summary>Baudelina Arjona — 86 años — Femenino</summary>
+<div class="exp-content"><h3 class="exp-h3">EXPEDIENTE 3 — Baudelina Arjona</h3>
+<h4 class="exp-h4">I. Datos de identificación</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Nombre</td><td>Baudelina Arjona</td></tr>
+<tr><td>Edad</td><td>86 años</td></tr>
+<tr><td>Sexo</td><td>Femenino</td></tr>
+<tr><td>Lugar de nacimiento</td><td>Tolé, Chiriquí</td></tr>
+<tr><td>Residencia/Procedencia</td><td>David, Quintas de La Riviera</td></tr>
+<tr><td>Estado civil</td><td>Casada</td></tr>
+<tr><td>Ocupación</td><td>Ama de casa; antecedente laboral: costurera</td></tr>
+<tr><td>Escolaridad</td><td>Primaria (hasta 6.º grado)</td></tr>
+<tr><td>Raza/etnia</td><td>Mestiza</td></tr>
+<tr><td>Religión</td><td>Católica</td></tr>
+<tr><td>Aseguramiento</td><td>CSS</td></tr>
+<tr><td>Informante</td><td>Paciente</td></tr>
+<tr><td>Cédula/ID</td><td>Omitida</td></tr>
+<tr><td>Relación con el núcleo familiar</td><td>Abuela</td></tr>
+<tr><td>Fecha de entrevista</td><td>17/12/2025</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">II. Motivo de consulta</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Motivo de consulta</td><td>Control de seguimiento del adulto mayor / reevaluación general</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">III. Enfermedad actual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Síntoma referido</td><td>Episodios previos de debilidad/fatiga con mareos (antes casi diarios postalmuerzo), en mejoría</td></tr>
+<tr><td>Posturalidad</td><td>No postural</td></tr>
+<tr><td>Síncope</td><td>Niega</td></tr>
+<tr><td>Caídas</td><td>Caída hace ~4 meses por tropezón, sin fracturas</td></tr>
+<tr><td>Deambulación</td><td>Sin bastón/andadera</td></tr>
+<tr><td>Parkinson</td><td>Dx hace ~1 año; Hoehn &amp; Yahr estadio 1</td></tr>
+<tr><td>Tratamiento</td><td>Cloisone® (carbidopa/levodopa) 1/3 tab TID; Parmital® 0.25 mg 1/2 tab AM y 1/2 tab PM</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IV. Antecedentes personales no patológicos (vivienda y entorno)</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Vivienda</td><td>Propia</td></tr>
+<tr><td>Material predominante</td><td>Cemento</td></tr>
+<tr><td>Baños</td><td>Higiénicos (aprox. 2)</td></tr>
+<tr><td>Agua potable</td><td>Sí</td></tr>
+<tr><td>Eliminación de basura</td><td>Recolección municipal</td></tr>
+<tr><td>Mascotas</td><td>Sí (1 perro)</td></tr>
+<tr><td>Convivientes</td><td>4 personas</td></tr>
+<tr><td>Viajes últimos 3 meses</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">V. Antecedentes personales patológicos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Parkinson</td><td>Sí</td></tr>
+<tr><td>Osteoporosis</td><td>Sí (grado: No consignado)</td></tr>
+<tr><td>Diverticulosis</td><td>Sí (sin sangrado)</td></tr>
+<tr><td>Otros crónicos mayores</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VI. Medicación habitual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Cloisone®</td><td>1/3 tableta TID</td></tr>
+<tr><td>Parmital® 0.25 mg</td><td>1/2 tableta AM y 1/2 tableta PM</td></tr>
+<tr><td>Tratamiento osteoporosis</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VII. Alergias</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Medicamentos</td><td>Niega</td></tr>
+<tr><td>Alimentos</td><td>Niega</td></tr>
+<tr><td>Precauciones</td><td>Evitar AINEs por antecedente de diverticulosis (no alergia)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VIII. Hábitos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Tabaco</td><td>Niega</td></tr>
+<tr><td>Alcohol</td><td>Niega</td></tr>
+<tr><td>Café</td><td>1 taza/día</td></tr>
+<tr><td>Actividad</td><td>Actividades del hogar</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IX. Exposiciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Humo de leña/cocina</td><td>Sí (crónico)</td></tr>
+<tr><td>Otras exposiciones</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">X. Antecedentes familiares</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>ACV</td><td>Sí (padre)</td></tr>
+<tr><td>Osteoporosis</td><td>Sí (madre y hermana)</td></tr>
+<tr><td>Otros (HTA/DM/cáncer/cardiopatía/Parkinson)</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XI. Revisión por sistemas</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Sistema</th><th>Hallazgos</th></tr></thead>
+<tbody>
+<tr><td>General/CV/Resp/GI/GU/Piel</td><td>Niega</td></tr>
+<tr><td>Músculo-esquelético</td><td>Dolor crónico dorsal/lumbar y hombros (mecánico/degenerativo), leve limitación para esfuerzos; niega fracturas</td></tr>
+<tr><td>Neurológico</td><td>Niega signos de alarma vascular; ver hallazgo objetivo en examen físico</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XII. Antecedentes gineco-obstétricos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Menarquia</td><td>13 años</td></tr>
+<tr><td>Menopausia</td><td>50 años</td></tr>
+<tr><td>G/P/A/C</td><td>G5 / P5 / A1 / C0 <em>(dato referido; requiere verificación numérica)</em></td></tr>
+<tr><td>PAP</td><td>Hace ~10 años</td></tr>
+<tr><td>Mamografía</td><td>No recuerda</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIII. Inmunizaciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>COVID-19</td><td>2 dosis (fecha última: No consignado)</td></tr>
+<tr><td>Influenza</td><td>Aplicada el año pasado</td></tr>
+<tr><td>Otras (tétanos/SRP- MMR/BCG/Hepatitis B)</td><td>Sí (fechas: No consignado)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIV. Evaluación funcional</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Karnofsky</td><td>100%</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XV. Examen físico</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Signos vitales</td><td>PA 118/70; FC 72; FR 16; T° 36.5; SatO₂ 97% AA</td></tr>
+<tr><td>Peso / talla</td><td>72.6 kg / 1.63 m</td></tr>
+<tr><td>Estado general</td><td>Bueno</td></tr>
+<tr><td>Neurológico objetivo</td><td>Orientada x3. Fuerza 4/5 en MS derecho (progresivo de meses) + dolor irradiado a mano derecha + parestesias predominio 2.º–4.º dedos. Niega facial caída, alteración del habla, pérdida visual nueva o debilidad en pierna</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XVI. Impresión diagnóstica</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Problema principal</td><td>Control del adulto mayor</td></tr>
+<tr><td>Problemas relevantes</td><td>Parkinson leve (H&amp;Y 1) en tratamiento; osteoporosis; diverticulosis sin sangrado</td></tr>
+<tr><td>Hallazgo a estudiar</td><td>Déficit motor focal MS derecho + parestesias (sugiere compromiso periférico o radicular)</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XVII. Plan</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Conducta</td><td>Evaluación dirigida de MS derecho; considerar EMG/NCV y/o evaluación cervical según criterio clínico</td></tr>
+<tr><td>Dolor</td><td>Medidas posturales y rehabilitación; evitar AINEs por antecedente GI</td></tr>
+<tr><td>Prevención</td><td>Prevención de caídas; seguimiento de osteoporosis</td></tr>
+</tbody></table></div>
+<hr/></div>
+</details>
+<details class="exp" open="">
+<summary>Michael Andrews Jordan Guerra — 25 años — Masculino</summary>
+<div class="exp-content"><h3 class="exp-h3">EXPEDIENTE 4 — Michael Andrews Jordan Guerra</h3>
+<h4 class="exp-h4">I. Datos de identificación</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Nombre</td><td>Michael Andrews Jordan Guerra</td></tr>
+<tr><td>Edad</td><td>25 años</td></tr>
+<tr><td>Sexo</td><td>Masculino</td></tr>
+<tr><td>Lugar de nacimiento</td><td>David</td></tr>
+<tr><td>Residencia/Procedencia</td><td>David, Quintas de La Riviera</td></tr>
+<tr><td>Ocupación</td><td>Estudiante de Medicina</td></tr>
+<tr><td>Escolaridad</td><td>Universitaria (en curso)</td></tr>
+<tr><td>Raza/etnia</td><td>Mestizo</td></tr>
+<tr><td>Religión</td><td>Católica</td></tr>
+<tr><td>Aseguramiento</td><td>No (no asegurado)</td></tr>
+<tr><td>Informante</td><td>Paciente</td></tr>
+<tr><td>Cédula/ID</td><td>Omitida</td></tr>
+<tr><td>Fecha de entrevista</td><td>17/12/2025</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">II. Motivo de consulta</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Motivo de consulta</td><td>Dolor en región anteromedial de rodilla derecha</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">III. Enfermedad actual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Inicio</td><td>6 semanas</td></tr>
+<tr><td>Localización</td><td>Cara anteromedial de rodilla derecha (≈ 4–5 cm bajo la interlínea articular medial)</td></tr>
+<tr><td>Carácter/intensidad</td><td>Mecánico, 4–6/10</td></tr>
+<tr><td>Desencadenantes</td><td>Escaleras, sentadilla profunda, levantarse tras sedestación, caminatas prolongadas</td></tr>
+<tr><td>Atenuantes</td><td>Reposo relativo</td></tr>
+<tr><td>Trauma</td><td>Niega trauma agudo</td></tr>
+<tr><td>Asociados</td><td>Niega bloqueo articular, inestabilidad, derrame importante, fiebre o síntomas sistémicos</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IV. Antecedentes personales no patológicos (vivienda y entorno)</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Vivienda</td><td>Propia</td></tr>
+<tr><td>Material predominante</td><td>Cemento</td></tr>
+<tr><td>Baños</td><td>Higiénicos (aprox. 2)</td></tr>
+<tr><td>Agua potable</td><td>Sí</td></tr>
+<tr><td>Eliminación de basura</td><td>Recolección municipal</td></tr>
+<tr><td>Mascotas</td><td>Sí (1 perro)</td></tr>
+<tr><td>Convivientes</td><td>4 personas</td></tr>
+<tr><td>Viajes últimos 3 meses</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">V. Antecedentes personales patológicos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Enfermedades crónicas</td><td>Niega</td></tr>
+<tr><td>Cirugías previas</td><td>Niega</td></tr>
+<tr><td>Hospitalizaciones</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VI. Medicación habitual</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Medicación diaria</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VII. Alergias</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Medicamentos</td><td>Niega</td></tr>
+<tr><td>Alimentos</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">VIII. Hábitos</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Tabaco</td><td>Niega</td></tr>
+<tr><td>Alcohol</td><td>No consignado</td></tr>
+<tr><td>Actividad física</td><td>Incremento reciente (relacionado al cuadro); detalle: No consignado</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">IX. Historia laboral y exposiciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Exposición laboral a químicos/polvos/humos</td><td>Niega</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">X. Antecedentes familiares relevantes (núcleo conviviente)</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Neurológico/óseo</td><td>Parkinson y osteoporosis en familiar conviviente</td></tr>
+<tr><td>Hematológico/GI</td><td>Déficit de antitrombina III y sangrado digestivo bajo por diverticulosis en familiar conviviente</td></tr>
+<tr><td>Vascular</td><td>Insuficiencia venosa crónica en familiar conviviente</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XI. Revisión por sistemas</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>ROS global</td><td>Negativo, excepto dolor localizado en rodilla derecha</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XII. Inmunizaciones</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>COVID-19</td><td>No consignado</td></tr>
+<tr><td>Influenza</td><td>No consignado</td></tr>
+<tr><td>Tétanos</td><td>No consignado</td></tr>
+<tr><td>SRP/MMR</td><td>No consignado</td></tr>
+<tr><td>BCG</td><td>No consignado</td></tr>
+<tr><td>Hepatitis B</td><td>No consignado</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIII. Evaluación funcional</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Karnofsky</td><td>100%</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XIV. Examen físico</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Signos vitales</td><td>PA 118/74; FC 72; FR 16; T° 36.6; SatO₂ 98% AA</td></tr>
+<tr><td>Peso / talla</td><td>178 lb (80.7 kg) / 1.78 m</td></tr>
+<tr><td>Rodilla derecha (inspección)</td><td>Sin eritema; sin derrame evidente</td></tr>
+<tr><td>Palpación</td><td>Dolor a la palpación en zona compatible con pata de ganso (anteromedial proximal tibia)</td></tr>
+<tr><td>Rango de movimiento</td><td>Conservado; dolor con flexión profunda</td></tr>
+<tr><td>Pruebas meniscales</td><td>McMurray/Thessaly negativas</td></tr>
+<tr><td>Estabilidad ligamentaria</td><td>Valgo sin inestabilidad; cajones anterior/posterior negativos</td></tr>
+<tr><td>Neurovascular distal</td><td>Conservado</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XV. Impresión diagnóstica</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Diagnóstico principal</td><td>Tendinopatía/bursitis de pata de ganso (rodilla derecha) por sobreuso</td></tr>
+<tr><td>Diferenciales</td><td>Distensión MCL leve; síndrome femoropatelar; meniscopatía medial (menos probable); lesión por estrés si persiste</td></tr>
+</tbody></table></div>
+<h4 class="exp-h4">XVI. Plan</h4>
+<div class="table-wrap"><table class="tbl">
+<thead><tr><th>Ítem</th><th>Dato</th></tr></thead>
+<tbody>
+<tr><td>Medidas generales</td><td>Reposo relativo 2–3 semanas; evitar sentadilla profunda y escaleras repetitivas</td></tr>
+<tr><td>Crioterapia</td><td>Hielo 10–15 min, 3–4 veces/día tras actividad (primeros días)</td></tr>
+<tr><td>Analgesia</td><td>Paracetamol PRN; considerar antiinflamatorio tópico si se dispone y no hay contraindicaciones</td></tr>
+<tr><td>Rehabilitación</td><td>Estiramientos isquiotibiales + fortalecimiento cuádriceps/abductores; progresión gradual</td></tr>
+<tr><td>Alarmas</td><td>Fiebre, derrame importante, incapacidad para apoyar, dolor nocturno progresivo, aumento de volumen</td></tr>
+<tr><td>Seguimiento</td><td>Reevaluación 2–4 semanas; si persiste, considerar imagen o referencia</td></tr>
+</tbody></table></div></div>
+</details>
+</section>
 
-    function getCard(user) {
-      return document.querySelector('.user-card[data-user="' + user + '"]');
-    }
+<section class="card" id="conclusion">
+<h2>Conclusión final</h2>
+<p>El hogar evaluado corresponde a una familia <strong>multigeneracional</strong> en etapa VIII del ciclo vital, con <strong>alta funcionalidad</strong> (APGAR 19–20/20) y un patrón FACES III <strong>balanceado</strong> (flexible–relacionado). La convivencia estable y el apoyo intrafamiliar constituyen factores protectores para el manejo de comorbilidades crónicas.</p>
+<p>Los riesgos principales se centran en <strong>caídas</strong> (Parkinson y alteraciones visuales), seguimiento de <strong>diverticulosis/anemia</strong> y control de <strong>osteoporosis</strong> e <strong>IVC</strong>, además de vigilar <strong>sobrecarga del cuidador</strong>. En APS se recomienda mantener un plan preventivo estructurado, con educación, rehabilitación segura y controles periódicos, aprovechando la cohesión familiar para sostener adherencia y continuidad del cuidado.</p>
+</section>
 
-    function updateFocusUI(user) {
-      const card = getCard(user);
-      const timerEl = card.querySelector('.focus-time');
-      const totalEl = card.querySelector('[data-total-for="' + user + '"]');
-      timerEl.textContent = formatTime(state[user].focusSeconds);
-      const totalMin = Math.floor(state[user].totalSeconds / 60);
-      totalEl.textContent = "Total hoy: " + totalMin + " min";
-    }
 
-    function tickFocus(user) {
-      state[user].focusSeconds++;
-      state[user].totalSeconds++;
-      state[user].blockSeconds++;
-      updateFocusUI(user);
+</div>
+<script>
+    const DATA = {"genogram": {"nodes": [{"id": "herminio", "name": "Herminio", "sex": "M", "role": "Abuelo", "age": "85 años", "conditions": ["Diverticulosis con sangrado recurrente", "Déficit de antitrombina III (referido)", "Evento vascular ocular", "Glaucoma de ángulo estrecho", "Amaurosis OI", "Anemia secundaria"], "gen": 1, "col": 0, "cohab": true}, {"id": "baudelina", "name": "Baudelina", "sex": "F", "role": "Abuela", "age": "86 años", "conditions": ["Enfermedad de Parkinson (H&Y 1)", "Osteoporosis", "Diverticulosis sin sangrado", "Hallazgo neurológico MS derecho a estudiar"], "gen": 1, "col": 1, "cohab": true}, {"id": "iliana", "name": "Iliana", "sex": "F", "role": "Tía", "age": "51 años", "conditions": ["Insuficiencia venosa crónica (MMII)"], "gen": 2, "col": 0, "cohab": true}, {"id": "parentx", "name": "Hijo/a", "sex": "U", "role": "(no conviviente)", "age": "No consignado", "conditions": [], "gen": 2, "col": 1, "cohab": false}, {"id": "informante", "name": "INFORMANTE", "sex": "M", "role": "Nieto", "age": "25 años", "conditions": ["Sin comorbilidades crónicas consignadas"], "gen": 3, "col": 1, "cohab": true, "isInformant": true}], "relations": {"couple": ["herminio", "baudelina"], "children": [["herminio", "baudelina", "iliana"], ["herminio", "baudelina", "parentx"]], "parentChild": [["parentx", "informante"]]}}, "psy": {"members": [{"id": "pH", "label": "Herminio"}, {"id": "pB", "label": "Baudelina"}, {"id": "pI", "label": "Iliana"}, {"id": "pN", "label": "INFORMANTE"}], "links": [{"a": "pH", "b": "pB", "w": 3, "label": "vínculo conyugal"}, {"a": "pB", "b": "pI", "w": 3, "label": "cercanía"}, {"a": "pI", "b": "pN", "w": 3, "label": "apoyo"}, {"a": "pH", "b": "pI", "w": 2, "label": "apoyo"}, {"a": "pH", "b": "pN", "w": 2, "label": "apoyo"}, {"a": "pB", "b": "pN", "w": 2, "label": "cercanía"}], "note": "Representación esquemática de vínculos percibidos (no diagnóstico)."}, "circles": {"INFORMANTE": {"yo": "INFORMANTE", "interno": ["Baudelina", "Iliana"], "medio": ["Herminio"], "externo": []}, "Iliana": {"yo": "Iliana", "interno": ["Baudelina", "Herminio"], "medio": ["INFORMANTE"], "externo": []}, "Herminio": {"yo": "Herminio", "interno": ["Baudelina"], "medio": ["Iliana", "INFORMANTE"], "externo": []}, "Baudelina": {"yo": "Baudelina", "interno": ["Herminio", "Iliana"], "medio": ["INFORMANTE"], "externo": []}}};
 
-      if (!state[user].shortUnlocked && state[user].blockSeconds >= POMODORO_MIN * 60) {
-        state[user].shortUnlocked = true;
-        updateBreakLocks(user);
-        showToast("Descanso corto desbloqueado para " + user + " (≥" + POMODORO_MIN + " min) ☕");
-      }
-    }
-
-    function startFocus(user) {
-      if (state[user].interval) return;
-      state[user].interval = setInterval(() => tickFocus(user), 1000);
-      const card = getCard(user);
-      const startBtn = card.querySelector('button[data-action="start"]');
-      const pauseBtn = card.querySelector('button[data-action="pause"]');
-      startBtn.classList.add("btn-disabled");
-      pauseBtn.classList.remove("btn-disabled");
-    }
-
-    function pauseFocus(user) {
-      const s = state[user];
-      if (s.interval) {
-        clearInterval(s.interval);
-        s.interval = null;
-      }
-      const card = getCard(user);
-      const startBtn = card.querySelector('button[data-action="start"]');
-      const pauseBtn = card.querySelector('button[data-action="pause"]');
-      startBtn.classList.remove("btn-disabled");
-      pauseBtn.classList.add("btn-disabled");
-    }
-
-    function resetFocus(user) {
-      const s = state[user];
-      if (s.interval) {
-        clearInterval(s.interval);
-        s.interval = null;
-      }
-      s.focusSeconds = 0;
-      s.blockSeconds = 0;
-      updateFocusUI(user);
-      const card = getCard(user);
-      const startBtn = card.querySelector('button[data-action="start"]');
-      const pauseBtn = card.querySelector('button[data-action="pause"]');
-      startBtn.classList.remove("btn-disabled");
-      pauseBtn.classList.add("btn-disabled");
-    }
-
-    // Descansos
-    function updateBreakStatus(user) {
-      const card = getCard(user);
-      const statusEl = card.querySelector('[data-break-status-for="' + user + '"]');
-      const s = state[user];
-      if (!statusEl) return;
-
-      if (!s.breakInterval || s.breakRemaining == null) {
-        statusEl.textContent = "Sin descanso activo";
-        return;
-      }
-      const label = s.breakType === "long" ? "Descanso largo" : "Descanso corto";
-      const m = String(Math.floor(s.breakRemaining / 60)).padStart(2, "0");
-      const sec = String(s.breakRemaining % 60).padStart(2, "0");
-      statusEl.textContent = label + ": " + m + ":" + sec;
-    }
-
-    function updateBreakLocks(user) {
-      const card = getCard(user);
-      const s = state[user];
-      const shortCard = card.querySelector('.break-card.break-short');
-      const longCard  = card.querySelector('.break-card.break-long');
-
-      if (shortCard) {
-        if (s.shortUnlocked) shortCard.classList.remove("locked");
-        else shortCard.classList.add("locked");
-      }
-      if (longCard) {
-        if (s.longUnlocked) longCard.classList.remove("locked");
-        else longCard.classList.add("locked");
-      }
-    }
-
-    function startBreak(user, type) {
-      const s = state[user];
-      if (s.breakInterval) return;
-
-      if (type === "short" && !s.shortUnlocked) return;
-      if (type === "long" && !s.longUnlocked) return;
-
-      pauseFocus(user);
-
-      s.breakType = type;
-      s.breakRemaining = type === "long" ? LONG_BREAK_SEC : SHORT_BREAK_SEC;
-      updateBreakStatus(user);
-
-      s.breakInterval = setInterval(() => {
-        s.breakRemaining--;
-        updateBreakStatus(user);
-        if (s.breakRemaining <= 0) {
-          endBreak(user, true);
-        }
-      }, 1000);
-    }
-
-    function endBreak(user, auto) {
-      const s = state[user];
-      if (s.breakInterval) {
-        clearInterval(s.breakInterval);
-        s.breakInterval = null;
-      }
-      s.breakRemaining = null;
-      s.breakType = null;
-      s.blockSeconds = 0;
-      updateBreakStatus(user);
-      if (auto) {
-        showToast("Fin del descanso para " + user + " · ¡nuevo bloque! 💪");
-      }
-    }
-
-    // Objetivos
-    function updateProgress(user) {
-      const card = getCard(user);
-      const checks = card.querySelectorAll(".goal-checkbox");
-      const total = checks.length;
-      const done = Array.from(checks).filter(cb => cb.checked).length;
-      const bar = card.querySelector(".progress-bar-fill");
-      const label = card.querySelector(".progress-label");
-      const pct = total ? Math.round((done / total) * 100) : 0;
-      if (bar) bar.style.width = pct + "%";
-      if (label) {
-        label.textContent = total === 0 ? "0 objetivos" : done + "/" + total + " objetivos";
-      }
-      return { total, done };
-    }
-
-    function addPoints(user, amount) {
-      const card = getCard(user);
-      const scoreEl = card.querySelector(".focus-score");
-      const current = parseInt(scoreEl.textContent || "0", 10);
-      scoreEl.textContent = String(current + amount);
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById("toast");
-      const text = document.getElementById("toastText");
-      text.textContent = msg;
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 2800);
-    }
-
-    document.addEventListener("click", (ev) => {
-      const t = ev.target;
-      if (!(t instanceof HTMLElement)) return;
-      const action = t.getAttribute("data-action");
-      const user = t.getAttribute("data-user");
-      if (!action || (user && !state[user])) return;
-
-      if (action === "start") {
-        startFocus(user);
-      } else if (action === "pause") {
-        pauseFocus(user);
-      } else if (action === "reset") {
-        resetFocus(user);
-      } else if (action === "add-goal") {
-        const card = getCard(user);
-        const input = card.querySelector(".goal-input");
-        const list = card.querySelector(".goal-list");
-        if (!input || !list) return;
-        const text = input.value.trim();
-        if (!text) return;
-        const li = document.createElement("li");
-        li.className = "goal-item";
-        li.innerHTML =
-          '<input type="checkbox" class="goal-checkbox" data-user="' + user + '">' +
-          '<span class="goal-text" contenteditable="true"></span>';
-        li.querySelector(".goal-text").textContent = text;
-        list.appendChild(li);
-        input.value = "";
-        updateProgress(user);
-      } else if (action === "start-break") {
-        const type = t.getAttribute("data-type");
-        startBreak(user, type);
-      } else if (action === "end-break") {
-        endBreak(user, false);
-      }
-    });
-
-    document.addEventListener("change", (ev) => {
-      const t = ev.target;
-      if (!(t instanceof HTMLInputElement)) return;
-      if (!t.classList.contains("goal-checkbox")) return;
-      const user = t.getAttribute("data-user");
-      if (!user || !state[user]) return;
-
-      const item = t.closest(".goal-item");
-      if (t.checked) {
-        item.classList.add("completed");
-        addPoints(user, 10);
-        resetFocus(user);
-        state[user].shortUnlocked = true;
-        state[user].longUnlocked = true;
-        updateBreakLocks(user);
-        const { total, done } = updateProgress(user);
-        if (total > 0 && done === total) {
-          showToast("¡" + user + " completó todos sus objetivos! 🎁");
-        } else {
-          showToast("Objetivo completado para " + user + " · descansos desbloqueados ☕");
-        }
-      } else {
-        item.classList.remove("completed");
-        updateProgress(user);
-      }
-    });
-
-    ["jordan","carolina"].forEach(user => {
-      updateFocusUI(user);
-      updateBreakLocks(user);
-      const card = getCard(user);
-      const pauseBtn = card.querySelector('button[data-action="pause"]');
-      if (pauseBtn) pauseBtn.classList.add("btn-disabled");
-    });
-
-    // ================== TOCADISCOS & PLAYLIST ==================
-    const playerState = {
-      playlist: [],
-      currentIndex: -1
-    };
-
-    // PON TU API KEY AQUÍ SI QUIERES BÚSQUEDA DIRECTA DENTRO DE LA APP
-    const YT_API_KEY = ""; // si lo dejas vacío, abre la búsqueda en una pestaña nueva
-
-    function extractYouTubeId(input) {
-      const raw = input.trim();
-      if (!raw) return null;
-
-      // Solo ID
-      if (!raw.includes("http") && !raw.includes("www")) {
-        return raw;
-      }
-
-      try {
-        const url = new URL(raw);
-        if (url.hostname === "youtu.be") {
-          return url.pathname.slice(1);
-        }
-        const v = url.searchParams.get("v");
-        if (v) return v;
-        const parts = url.pathname.split("/");
-        const idx = parts.indexOf("embed");
-        if (idx !== -1 && parts[idx + 1]) {
-          return parts[idx + 1];
-        }
-        return null;
-      } catch (e) {
-        return raw;
-      }
-    }
-
-    function buildEmbedUrl(videoId) {
-      const params = new URLSearchParams({
-        autoplay: "1",
-        mute: "1",
-        loop: "1",
-        playlist: videoId,
-        controls: "1",
-        modestbranding: "1"
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e)=>{
+        const id=a.getAttribute('href').slice(1);
+        const el=document.getElementById(id);
+        if(el){ e.preventDefault(); el.scrollIntoView({behavior:'smooth', block:'start'}); history.replaceState(null,'', '#'+id); }
       });
-      return "https://www.youtube-nocookie.com/embed/" +
-        encodeURIComponent(videoId) +
-        "?" + params.toString();
-    }
+    });
 
-    function loadPlaylistFromStorage() {
-      try {
-        const raw = localStorage.getItem("lofiPlaylist");
-        if (!raw) return;
-        const saved = JSON.parse(raw);
-        if (Array.isArray(saved.playlist)) {
-          playerState.playlist = saved.playlist;
-        }
-        if (typeof saved.currentIndex === "number") {
-          playerState.currentIndex = saved.currentIndex;
-        } else if (playerState.playlist.length > 0) {
-          playerState.currentIndex = 0;
-        }
-      } catch (e) {}
+    function expandAll(open=true){
+      document.querySelectorAll('details').forEach(d=>d.open=open);
     }
+    document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+    document.getElementById('btnExpand').addEventListener('click', ()=>expandAll(true));
+    document.getElementById('btnCollapse').addEventListener('click', ()=>expandAll(false));
 
-    function savePlaylistToStorage() {
-      try {
-        localStorage.setItem("lofiPlaylist", JSON.stringify({
-          playlist: playerState.playlist,
-          currentIndex: playerState.currentIndex
-        }));
-      } catch (e) {}
-    }
-
-    function renderPlaylistUI() {
-      const list = document.getElementById("playlistList");
-      if (!list) return;
-      list.innerHTML = "";
-      playerState.playlist.forEach((item, idx) => {
-        const li = document.createElement("li");
-        li.className = "playlist-item";
-        if (idx === playerState.currentIndex) {
-          li.classList.add("active");
-        }
-        li.dataset.index = String(idx);
-        li.dataset.id = item.id;
-        li.dataset.label = item.label;
-        li.draggable = true;
-        li.innerHTML =
-          '<span class="playlist-index">' + (idx + 1) + '.</span>' +
-          '<span class="playlist-text">' + item.label + '</span>' +
-          '<button type="button" class="playlist-delete" data-index="' + idx + '">✖</button>';
-        list.appendChild(li);
-      });
-    }
-
-    function playCurrentVideo() {
-      const iframe = document.getElementById("lofiPlayer");
-      if (!iframe) return;
-      if (
-        playerState.currentIndex < 0 ||
-        playerState.currentIndex >= playerState.playlist.length
-      ) {
-        iframe.src = "about:blank";
-        return;
+    function wrapLines(text, maxChars){
+      const words = String(text).split(/\s+/).filter(Boolean);
+      const lines=[]; let line=[];
+      for(const w of words){
+        const test = (line.concat([w])).join(' ');
+        if(test.length>maxChars && line.length){ lines.push(line.join(' ')); line=[w]; }
+        else line.push(w);
       }
-      const id = playerState.playlist[playerState.currentIndex].id;
-      iframe.src = buildEmbedUrl(id);
+      if(line.length) lines.push(line.join(' '));
+      return lines;
     }
 
-    function addTrackToPlaylist(id, label) {
-      if (!id) return;
-      // evitar duplicados exactos por ID
-      const exists = playerState.playlist.some(t => t.id === id);
-      if (exists) {
-        showToast("Esa pista ya está en la playlist 😉");
-        return;
-      }
-      playerState.playlist.push({ id, label: label || id });
-      if (playerState.currentIndex === -1) {
-        playerState.currentIndex = 0;
-      }
-      savePlaylistToStorage();
-      renderPlaylistUI();
+    function createSVG(w,h,viewBox){
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox', viewBox || `0 0 ${w} ${h}`);
+      svg.classList.add('svg-card');
+      svg.setAttribute('role','img');
+      return svg;
     }
 
-    async function searchYouTube(query) {
-      const resultsEl = document.getElementById("searchResults");
-      if (!resultsEl) return;
-      resultsEl.innerHTML = "";
+    function nodeBBox(x,y,shapeSize, linesCount){
+      const top=y-shapeSize/2;
+      const height=shapeSize + 14*linesCount + 14; // name+role+cond lines
+      return {x: x-shapeSize/2-6, y: top-20, w: shapeSize+12, h: height};
+    }
 
-      if (!query) return;
+    function overlap(a,b){
+      return !(a.x+a.w < b.x || b.x+b.w < a.x || a.y+a.h < b.y || b.y+b.h < a.y);
+    }
 
-      // Sin API key: abrir búsqueda externa
-      if (!YT_API_KEY) {
-        window.open(
-          "https://www.youtube.com/results?search_query=" + encodeURIComponent(query),
-          "_blank"
-        );
-        showToast("Búsqueda abierta en otra pestaña. Configura tu API key para ver resultados aquí 🔑");
-        return;
+    function renderGenogram(){
+      const W=920, H=560;
+      const svg=createSVG(W,H,`0 0 ${W} ${H}`);
+      svg.setAttribute('aria-label','Genograma familiar');
+
+      const nodes=DATA.genogram.nodes.map(n=>Object.assign({}, n));
+      // layout by gen/col with collision resolution
+      const genMap=new Map();
+      nodes.forEach(n=>{ if(!genMap.has(n.gen)) genMap.set(n.gen, []); genMap.get(n.gen).push(n); });
+      for(const [gen,arr] of genMap){
+        arr.sort((a,b)=>a.col-b.col);
       }
+      const yPos={1:120,2:290,3:450};
+      const xStart=220, xGap=280;
+      nodes.forEach(n=>{ n.x = xStart + n.col*xGap; n.y = yPos[n.gen] || 120; });
 
-      try {
-        const url = "https://www.googleapis.com/youtube/v3/search?" +
-          new URLSearchParams({
-            key: YT_API_KEY,
-            part: "snippet",
-            type: "video",
-            maxResults: "8",
-            q: query
-          }).toString();
-
-        const res = await fetch(url);
-        if (!res.ok) {
-          showToast("Error al buscar en YouTube 😿");
-          return;
-        }
-        const data = await res.json();
-        if (!Array.isArray(data.items)) {
-          showToast("No encontré resultados");
-          return;
-        }
-
-        data.items.forEach(item => {
-          const videoId = item.id.videoId;
-          const title = item.snippet.title;
-          const channel = item.snippet.channelTitle;
-
-          const li = document.createElement("li");
-          li.className = "search-item";
-          li.innerHTML = `
-            <div class="search-main">
-              <div class="search-title">${title}</div>
-              <div class="search-meta">${channel}</div>
-            </div>
-            <button type="button" class="search-add-btn"
-              data-video-id="${videoId}"
-              data-label="${title}">
-              ➕
-            </button>
-          `;
-          resultsEl.appendChild(li);
+      // collision resolution within each generation
+      for(const [gen,arr] of genMap){
+        const bbs=[];
+        arr.forEach(n=>{
+          const condLines = (n.conditions && n.conditions.length)? wrapLines(n.conditions.join(' • '), 34).length : 0;
+          const bb=nodeBBox(n.x,n.y,80, condLines+2);
+          bbs.push({n,bb,condLines});
         });
-      } catch (e) {
-        showToast("No se pudo completar la búsqueda 😿");
-      }
-    }
-
-    function setupVideoPlayer() {
-      const input = document.getElementById("videoInput");
-      const btnAdd = document.getElementById("addToPlaylistBtn");
-      const btnPlay = document.getElementById("playPlaylistBtn");
-      const btnNext = document.getElementById("nextTrackBtn");
-      const btnPrev = document.getElementById("prevTrackBtn");
-      const btnClear = document.getElementById("clearPlaylistBtn");
-      const btnSearch = document.getElementById("searchBtn");
-      const list = document.getElementById("playlistList");
-      const searchResults = document.getElementById("searchResults");
-      const iframe = document.getElementById("lofiPlayer");
-
-      if (!input || !btnAdd || !btnPlay || !btnNext || !btnPrev || !btnClear || !btnSearch || !list || !searchResults || !iframe) return;
-
-      // Arranca vacío (nada de mensajes raros de contenido bloqueado)
-      iframe.src = "about:blank";
-
-      loadPlaylistFromStorage();
-      renderPlaylistUI();
-
-      btnAdd.addEventListener("click", () => {
-        const text = input.value.trim();
-        if (!text) return;
-        const id = extractYouTubeId(text);
-        if (!id) {
-          showToast("No pude leer ese link de YouTube 😿");
-          return;
-        }
-        addTrackToPlaylist(id, text);
-        if (playerState.playlist.length === 1) {
-          playCurrentVideo();
-          showToast("Primera pista añadida y reproduciendo 🎧");
-        } else {
-          showToast("Pista añadida a la playlist 🎶");
-        }
-        input.value = "";
-      });
-
-      btnPlay.addEventListener("click", () => {
-        if (playerState.playlist.length === 0) {
-          showToast("No hay pistas en la playlist todavía 🐱");
-          return;
-        }
-        if (playerState.currentIndex === -1) {
-          playerState.currentIndex = 0;
-        }
-        savePlaylistToStorage();
-        renderPlaylistUI();
-        playCurrentVideo();
-      });
-
-      btnNext.addEventListener("click", () => {
-        const len = playerState.playlist.length;
-        if (!len) return;
-        if (playerState.currentIndex === -1) {
-          playerState.currentIndex = 0;
-        } else {
-          playerState.currentIndex = (playerState.currentIndex + 1) % len;
-        }
-        savePlaylistToStorage();
-        renderPlaylistUI();
-        playCurrentVideo();
-      });
-
-      btnPrev.addEventListener("click", () => {
-        const len = playerState.playlist.length;
-        if (!len) return;
-        if (playerState.currentIndex === -1) {
-          playerState.currentIndex = 0;
-        } else {
-          playerState.currentIndex = (playerState.currentIndex - 1 + len) % len;
-        }
-        savePlaylistToStorage();
-        renderPlaylistUI();
-        playCurrentVideo();
-      });
-
-      btnClear.addEventListener("click", () => {
-        playerState.playlist = [];
-        playerState.currentIndex = -1;
-        savePlaylistToStorage();
-        renderPlaylistUI();
-        iframe.src = "about:blank";
-        showToast("Playlist limpiada 🧹");
-      });
-
-      btnSearch.addEventListener("click", () => {
-        const q = input.value.trim();
-        if (!q) return;
-        searchYouTube(q);
-      });
-
-      // Enter para buscar (y Ctrl+Enter para añadir, por si quieres)
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault();
-          btnAdd.click();
-        } else if (e.key === "Enter") {
-          e.preventDefault();
-          btnSearch.click();
-        }
-      });
-
-      // Añadir desde resultados de búsqueda
-      searchResults.addEventListener("click", (e) => {
-        const btn = e.target.closest(".search-add-btn");
-        if (!btn) return;
-        const id = btn.getAttribute("data-video-id");
-        const label = btn.getAttribute("data-label");
-        addTrackToPlaylist(id, label);
-        showToast("Añadido desde la búsqueda 🎶");
-        savePlaylistToStorage();
-        renderPlaylistUI();
-      });
-
-      // Click en playlist + eliminar individual
-      list.addEventListener("click", (e) => {
-        const del = e.target.closest(".playlist-delete");
-        const iframeInner = document.getElementById("lofiPlayer");
-        if (del) {
-          const idx = parseInt(del.getAttribute("data-index"), 10);
-          if (Number.isNaN(idx)) return;
-          const len = playerState.playlist.length;
-          if (!len) return;
-
-          const removingCurrent = idx === playerState.currentIndex;
-          const currentId = playerState.playlist[playerState.currentIndex]?.id || null;
-
-          playerState.playlist.splice(idx, 1);
-
-          if (playerState.playlist.length === 0) {
-            playerState.currentIndex = -1;
-            if (iframeInner) iframeInner.src = "about:blank";
-          } else {
-            if (removingCurrent) {
-              playerState.currentIndex = Math.min(idx, playerState.playlist.length - 1);
-              playCurrentVideo();
-            } else if (idx < playerState.currentIndex) {
-              playerState.currentIndex--;
-            } else {
-              // idx > currentIndex: no cambia
+        for(let iter=0; iter<8; iter++){ // a few passes
+          let moved=false;
+          for(let i=0;i<bbs.length;i++) for(let j=i+1;j<bbs.length;j++) {
+            if(overlap(bbs[i].bb, bbs[j].bb)){
+              // push apart
+              bbs[i].n.x -= 20; bbs[j].n.x += 20;
+              bbs[i].bb.x -= 20; bbs[j].bb.x += 20;
+              moved=true;
             }
           }
-
-          savePlaylistToStorage();
-          renderPlaylistUI();
-          showToast("Pista eliminada ✂️");
-          return;
+          if(!moved) break;
         }
+      }
 
-        const li = e.target.closest(".playlist-item");
-        if (!li) return;
-        const idx = parseInt(li.dataset.index, 10);
-        if (Number.isNaN(idx)) return;
-        playerState.currentIndex = idx;
-        savePlaylistToStorage();
-        renderPlaylistUI();
-        playCurrentVideo();
-      });
+      function line(x1,y1,x2,y2,opts={}){
+        const l=document.createElementNS(svg.namespaceURI,'line');
+        l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+        l.setAttribute('stroke', opts.stroke||'currentColor');
+        l.setAttribute('stroke-width', opts.w||2);
+        l.setAttribute('opacity', opts.o||0.6);
+        if(opts.dash) l.setAttribute('stroke-dasharray', opts.dash);
+        svg.appendChild(l);
+        return l;
+      }
 
-      // Drag & drop para reordenar playlist
-      let draggingItem = null;
+      // relations
+      const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
+      const [c1,c2]=DATA.genogram.relations.couple;
+      // couple line
+      line(byId[c1].x+40, byId[c1].y, byId[c2].x-40, byId[c2].y, {w:3,o:0.7});
+      // marriage midpoint to children line
+      const mx=(byId[c1].x+byId[c2].x)/2;
+      const my=byId[c1].y;
+      line(mx, my, mx, 210, {w:2,o:0.6});
+      // sibling line at gen2 y
+      const childY=byId['iliana'].y;
+      line(byId['iliana'].x, 210, byId['parentx'].x, 210, {w:2,o:0.6});
+      // down to each child
+      line(byId['iliana'].x,210, byId['iliana'].x, childY-40, {w:2,o:0.6});
+      line(byId['parentx'].x,210, byId['parentx'].x, byId['parentx'].y-40, {w:2,o:0.6});
+      // parentx to informante
+      line(byId['parentx'].x, byId['parentx'].y+40, byId['informante'].x, byId['informante'].y-40, {w:2,o:0.6});
 
-      list.addEventListener("dragstart", (e) => {
-        const li = e.target.closest(".playlist-item");
-        if (!li) return;
-        draggingItem = li;
-        li.classList.add("dragging");
-      });
-
-      list.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        const afterElement = (() => {
-          const items = [...list.querySelectorAll(".playlist-item:not(.dragging)")];
-          const y = e.clientY;
-          let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
-
-          items.forEach(item => {
-            const box = item.getBoundingClientRect();
-            const offset = y - (box.top + box.height / 2);
-            if (offset < 0 && offset > closest.offset) {
-              closest = { offset, element: item };
-            }
-          });
-          return closest.element;
-        })();
-
-        if (!draggingItem) return;
-        if (afterElement == null) {
-          list.appendChild(draggingItem);
+      function drawNode(n){
+        const g=document.createElementNS(svg.namespaceURI,'g');
+        g.setAttribute('transform',`translate(${n.x},${n.y})`);
+        // shape
+        if(n.sex==='M'){
+          const r=document.createElementNS(svg.namespaceURI,'rect');
+          r.setAttribute('x',-40); r.setAttribute('y',-40); r.setAttribute('width',80); r.setAttribute('height',80);
+          r.setAttribute('rx',12); r.setAttribute('fill','rgba(255,255,255,.9)');
+          r.setAttribute('stroke','rgba(20,25,35,.25)'); r.setAttribute('stroke-width','2');
+          g.appendChild(r);
+        } else if(n.sex==='F'){
+          const c=document.createElementNS(svg.namespaceURI,'circle');
+          c.setAttribute('cx',0); c.setAttribute('cy',0); c.setAttribute('r',40);
+          c.setAttribute('fill','rgba(255,255,255,.9)');
+          c.setAttribute('stroke','rgba(20,25,35,.25)'); c.setAttribute('stroke-width','2');
+          g.appendChild(c);
         } else {
-          list.insertBefore(draggingItem, afterElement);
+          const p=document.createElementNS(svg.namespaceURI,'polygon');
+          p.setAttribute('points','0,-44 44,0 0,44 -44,0');
+          p.setAttribute('fill','rgba(255,255,255,.9)');
+          p.setAttribute('stroke','rgba(20,25,35,.25)'); p.setAttribute('stroke-width','2');
+          g.appendChild(p);
         }
+        // name
+        const t=document.createElementNS(svg.namespaceURI,'text');
+        t.setAttribute('x',0); t.setAttribute('y',-52);
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('font-size','12');
+        t.setAttribute('font-weight','800');
+        t.textContent = `${n.name}`;
+        g.appendChild(t);
+        // age/role
+        const t2=document.createElementNS(svg.namespaceURI,'text');
+        t2.setAttribute('x',0); t2.setAttribute('y',62);
+        t2.setAttribute('text-anchor','middle');
+        t2.setAttribute('font-size','11');
+        t2.setAttribute('fill','rgba(31,36,48,.75)');
+        t2.textContent = `${n.role}${n.age?(' · '+n.age):''}`;
+        g.appendChild(t2);
+        // conditions
+        if(n.conditions && n.conditions.length){
+          const cond = n.conditions.join(' • ');
+          const lines = wrapLines(cond, 34);
+          lines.slice(0,6).forEach((ln,idx)=>{
+            const tt=document.createElementNS(svg.namespaceURI,'text');
+            tt.setAttribute('x',0);
+            tt.setAttribute('y',80 + idx*14);
+            tt.setAttribute('text-anchor','middle');
+            tt.setAttribute('font-size','10');
+            tt.setAttribute('fill','rgba(31,36,48,.82)');
+            tt.textContent = ln;
+            g.appendChild(tt);
+          });
+        }
+        // informant marker
+        if(n.isInformant){
+          const tri=document.createElementNS(svg.namespaceURI,'polygon');
+          tri.setAttribute('points','0,-78 -8,-64 8,-64');
+          tri.setAttribute('fill','rgba(123,21,50,.85)');
+          g.appendChild(tri);
+          const lab=document.createElementNS(svg.namespaceURI,'text');
+          lab.setAttribute('x',0); lab.setAttribute('y',-86);
+          lab.setAttribute('text-anchor','middle'); lab.setAttribute('font-size','10');
+          lab.setAttribute('font-weight','800');
+          lab.setAttribute('fill','rgba(123,21,50,.95)');
+          lab.textContent='INFORMANTE';
+          g.appendChild(lab);
+        }
+        svg.appendChild(g);
+      }
+      nodes.forEach(drawNode);
+
+      // household enclosure around cohabitants only
+      const cohab = nodes.filter(n=>n.cohab);
+      const boxes = cohab.map(n=>nodeBBox(n.x,n.y,80, (n.conditions && n.conditions.length)? wrapLines(n.conditions.join(' • '),34).length + 2 : 2));
+      const minX=Math.min(...boxes.map(b=>b.x)), minY=Math.min(...boxes.map(b=>b.y));
+      const maxX=Math.max(...boxes.map(b=>b.x+b.w)), maxY=Math.max(...boxes.map(b=>b.y+b.h));
+      const rect=document.createElementNS(svg.namespaceURI,'rect');
+      rect.setAttribute('x',minX-18); rect.setAttribute('y',minY-18);
+      rect.setAttribute('width',(maxX-minX)+36); rect.setAttribute('height',(maxY-minY)+36);
+      rect.setAttribute('rx',18);
+      rect.setAttribute('fill','rgba(123,21,50,.03)');
+      rect.setAttribute('stroke','rgba(123,21,50,.25)');
+      rect.setAttribute('stroke-width','2');
+      rect.setAttribute('stroke-dasharray','8 6');
+      svg.insertBefore(rect, svg.firstChild);
+
+      const label=document.createElementNS(svg.namespaceURI,'text');
+      label.setAttribute('x',minX-10); label.setAttribute('y',minY-26);
+      label.setAttribute('font-size','12'); label.setAttribute('font-weight','850');
+      label.setAttribute('fill','rgba(123,21,50,.95)');
+      label.textContent='Convivientes';
+      svg.appendChild(label);
+
+      // Legend
+      const lg=document.createElementNS(svg.namespaceURI,'g');
+      lg.setAttribute('transform','translate(40,40)');
+      const lt=document.createElementNS(svg.namespaceURI,'text');
+      lt.setAttribute('x',0); lt.setAttribute('y',0);
+      lt.setAttribute('font-size','12'); lt.setAttribute('font-weight','900');
+      lt.textContent='Leyenda';
+      lg.appendChild(lt);
+      const male=document.createElementNS(svg.namespaceURI,'rect');
+      male.setAttribute('x',0); male.setAttribute('y',10); male.setAttribute('width',18); male.setAttribute('height',18); male.setAttribute('rx',4);
+      male.setAttribute('fill','rgba(255,255,255,.9)'); male.setAttribute('stroke','rgba(20,25,35,.35)');
+      lg.appendChild(male);
+      const mt=document.createElementNS(svg.namespaceURI,'text');
+      mt.setAttribute('x',26); mt.setAttribute('y',24); mt.setAttribute('font-size','11'); mt.textContent='Varón';
+      lg.appendChild(mt);
+      const fem=document.createElementNS(svg.namespaceURI,'circle');
+      fem.setAttribute('cx',9); fem.setAttribute('cy',48); fem.setAttribute('r',9);
+      fem.setAttribute('fill','rgba(255,255,255,.9)'); fem.setAttribute('stroke','rgba(20,25,35,.35)');
+      lg.appendChild(fem);
+      const ft=document.createElementNS(svg.namespaceURI,'text');
+      ft.setAttribute('x',26); ft.setAttribute('y',52); ft.setAttribute('font-size','11'); ft.textContent='Mujer';
+      lg.appendChild(ft);
+      const inf=document.createElementNS(svg.namespaceURI,'polygon');
+      inf.setAttribute('points','9,74 3,86 15,86');
+      inf.setAttribute('fill','rgba(123,21,50,.85)');
+      lg.appendChild(inf);
+      const it=document.createElementNS(svg.namespaceURI,'text');
+      it.setAttribute('x',26); it.setAttribute('y',86); it.setAttribute('font-size','11'); it.textContent='Indicador de informante';
+      lg.appendChild(it);
+      svg.appendChild(lg);
+
+      return svg;
+    }
+
+    function renderPsycho(){
+      const W=920, H=420;
+      const svg=createSVG(W,H,`0 0 ${W} ${H}`);
+      svg.setAttribute('aria-label','Psicofigura familiar');
+      const pad=50;
+      const box=document.createElementNS(svg.namespaceURI,'rect');
+      box.setAttribute('x',pad); box.setAttribute('y',pad);
+      box.setAttribute('width',W-2*pad); box.setAttribute('height',H-2*pad);
+      box.setAttribute('rx',18);
+      box.setAttribute('fill','rgba(43,92,138,.03)');
+      box.setAttribute('stroke','rgba(43,92,138,.25)');
+      box.setAttribute('stroke-width','2');
+      box.setAttribute('stroke-dasharray','8 6');
+      svg.appendChild(box);
+
+      const pos={
+        pH:{x:W*0.30,y:H*0.30},
+        pB:{x:W*0.70,y:H*0.30},
+        pI:{x:W*0.30,y:H*0.70},
+        pN:{x:W*0.70,y:H*0.70},
+      };
+      // links
+      DATA.psy.links.forEach(l=>{
+        const a=pos[l.a], b=pos[l.b];
+        const ln=document.createElementNS(svg.namespaceURI,'line');
+        ln.setAttribute('x1',a.x); ln.setAttribute('y1',a.y);
+        ln.setAttribute('x2',b.x); ln.setAttribute('y2',b.y);
+        ln.setAttribute('stroke','rgba(31,36,48,.70)');
+        ln.setAttribute('stroke-width', l.w);
+        ln.setAttribute('opacity',0.6);
+        svg.appendChild(ln);
       });
-
-      list.addEventListener("dragend", () => {
-        if (!draggingItem) return;
-        draggingItem.classList.remove("dragging");
-        draggingItem = null;
-
-        const items = Array.from(list.querySelectorAll(".playlist-item"));
-        const currentId = playerState.playlist[playerState.currentIndex]?.id || null;
-
-        playerState.playlist = items.map(li => ({
-          id: li.dataset.id,
-          label: li.dataset.label
-        }));
-
-        playerState.currentIndex = playerState.playlist.findIndex(t => t.id === currentId);
-        if (playerState.currentIndex === -1 && playerState.playlist.length > 0) {
-          playerState.currentIndex = 0;
+      // nodes
+      function person(id,label,isInf=false){
+        const g=document.createElementNS(svg.namespaceURI,'g');
+        g.setAttribute('transform',`translate(${pos[id].x},${pos[id].y})`);
+        const c=document.createElementNS(svg.namespaceURI,'circle');
+        c.setAttribute('cx',0); c.setAttribute('cy',0); c.setAttribute('r',40);
+        c.setAttribute('fill','rgba(255,255,255,.92)');
+        c.setAttribute('stroke', isInf ? 'rgba(123,21,50,.45)' : 'rgba(20,25,35,.25)');
+        c.setAttribute('stroke-width', isInf? 3:2);
+        g.appendChild(c);
+        const t=document.createElementNS(svg.namespaceURI,'text');
+        t.setAttribute('x',0); t.setAttribute('y',5);
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('font-size','12');
+        t.setAttribute('font-weight','900');
+        t.textContent=label;
+        g.appendChild(t);
+        if(isInf){
+          const tri=document.createElementNS(svg.namespaceURI,'polygon');
+          tri.setAttribute('points','0,-58 -8,-44 8,-44');
+          tri.setAttribute('fill','rgba(123,21,50,.85)');
+          g.appendChild(tri);
         }
+        svg.appendChild(g);
+      }
+      person('pH','Herminio');
+      person('pB','Baudelina');
+      person('pI','Iliana');
+      person('pN','INFORMANTE',true);
 
-        savePlaylistToStorage();
-        renderPlaylistUI();
+      const title=document.createElementNS(svg.namespaceURI,'text');
+      title.setAttribute('x',pad); title.setAttribute('y',pad-18);
+      title.setAttribute('font-size','12'); title.setAttribute('font-weight','850');
+      title.setAttribute('fill','rgba(43,92,138,.95)');
+      title.textContent='Convivientes (psicofigura)';
+      svg.appendChild(title);
+
+      const note=document.createElementNS(svg.namespaceURI,'text');
+      note.setAttribute('x',pad); note.setAttribute('y',H-18);
+      note.setAttribute('font-size','11');
+      note.setAttribute('fill','rgba(31,36,48,.65)');
+      note.textContent=DATA.psy.note;
+      svg.appendChild(note);
+
+      return svg;
+    }
+
+    function renderCircles(){
+      const root=document.getElementById('circles-grid');
+      const models=DATA.circles;
+      const configs=[
+        ['INFORMANTE', models['INFORMANTE']],
+        ['Iliana', models['Iliana']],
+        ['Herminio', models['Herminio']],
+        ['Baudelina', models['Baudelina']],
+      ];
+      configs.forEach(([title,model])=>{
+        const wrap=document.createElement('div');
+        wrap.className='panel';
+        wrap.innerHTML=`<h3>Resultado — ${title}</h3>`;
+        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox','0 0 320 240');
+        svg.classList.add('svg-card');
+        // circles
+        const circles=[90,60,30];
+        circles.forEach(r=>{
+          const c=document.createElementNS(svg.namespaceURI,'circle');
+          c.setAttribute('cx',160); c.setAttribute('cy',120); c.setAttribute('r',r);
+          c.setAttribute('fill','none'); c.setAttribute('stroke','currentColor');
+          c.setAttribute('opacity','0.22'); c.setAttribute('stroke-width','2');
+          svg.appendChild(c);
+        });
+        const center=document.createElementNS(svg.namespaceURI,'circle');
+        center.setAttribute('cx',160); center.setAttribute('cy',120); center.setAttribute('r',18);
+        center.setAttribute('fill','rgba(123,21,50,.08)');
+        center.setAttribute('stroke','rgba(123,21,50,.35)');
+        center.setAttribute('stroke-width','2');
+        svg.appendChild(center);
+        const ct=document.createElementNS(svg.namespaceURI,'text');
+        ct.setAttribute('x',160); ct.setAttribute('y',125);
+        ct.setAttribute('text-anchor','middle'); ct.setAttribute('font-size','11');
+        ct.setAttribute('font-weight','900'); ct.setAttribute('fill','rgba(123,21,50,.95)');
+        ct.textContent=model.yo;
+        svg.appendChild(ct);
+
+        function place(names, radius, startAngle){
+          const step = names.length ? (Math.PI*2)/names.length : 0;
+          names.forEach((nm,idx)=>{
+            const ang=startAngle + idx*step;
+            const x=160 + radius*Math.cos(ang);
+            const y=120 + radius*Math.sin(ang);
+            const b=document.createElementNS(svg.namespaceURI,'rect');
+            const label=nm;
+            const w=Math.max(60, label.length*7);
+            b.setAttribute('x',x-w/2); b.setAttribute('y',y-12);
+            b.setAttribute('width',w); b.setAttribute('height',24);
+            b.setAttribute('rx','10');
+            b.setAttribute('fill','rgba(255,255,255,.92)');
+            b.setAttribute('stroke','rgba(20,25,35,.22)');
+            svg.appendChild(b);
+            const t=document.createElementNS(svg.namespaceURI,'text');
+            t.setAttribute('x',x); t.setAttribute('y',y+5);
+            t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','11');
+            t.setAttribute('font-weight','800');
+            t.textContent=label;
+            svg.appendChild(t);
+          });
+        }
+        place(model.interno, 45, -Math.PI/2);
+        place(model.medio, 75, -Math.PI/2 + 0.8);
+        place(model.externo, 105, -Math.PI/2 + 1.2);
+
+        // title
+        const tt=document.createElementNS(svg.namespaceURI,'text');
+        tt.setAttribute('x',160); tt.setAttribute('y',22);
+        tt.setAttribute('text-anchor','middle'); tt.setAttribute('font-size','12');
+        tt.setAttribute('font-weight','900'); tt.textContent='Círculo familiar';
+        svg.appendChild(tt);
+
+        wrap.appendChild(svg);
+        root.appendChild(wrap);
       });
     }
 
-    // Inicializar tocadiscos
-    setupVideoPlayer();
-  </script>
+    
+
+    // Mount diagrams
+    document.getElementById('genogram-mount').appendChild(renderGenogram());
+    document.getElementById('psy-mount').appendChild(renderPsycho());
+    renderCircles();
+    
+    </script>
 </body>
 </html>
