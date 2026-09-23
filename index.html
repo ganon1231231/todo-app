@@ -991,6 +991,27 @@ html[data-theme="night"] .study-board-stage,html[data-theme="halloween"] .study-
             </article>
           </div>
 
+          <article class="card cloud-sync-card">
+            <div class="section-head">
+              <div><p class="eyebrow">CLOUD SYNC</p><h2>Sincronización con la nube</h2><p class="muted compact">Sube tu progreso local a tu cuenta de Supabase o descárgalo a este dispositivo.</p></div>
+              <span id="cloudSyncBadge" class="evidence-badge">Local-only</span>
+            </div>
+            <div id="cloudSyncStatus" class="cloud-sync-status">
+              <div class="cloud-sync-row"><span>Estado</span><b id="cloudSyncState">Sin sesión</b></div>
+              <div class="cloud-sync-row"><span>Usuario</span><b id="cloudSyncUser">—</b></div>
+              <div class="cloud-sync-row"><span>Cambios pendientes</span><b id="cloudSyncPending">0</b></div>
+              <div class="cloud-sync-row"><span>Última sincronización</span><b id="cloudSyncLast">—</b></div>
+            </div>
+            <div class="button-row">
+              <button id="cloudPushAllBtn" class="btn btn-primary">⬆ Subir todo a la nube</button>
+              <button id="cloudPullAllBtn" class="btn btn-secondary">⬇ Descargar de la nube</button>
+              <button id="cloudRefreshBtn" class="btn btn-secondary">↻ Actualizar estado</button>
+            </div>
+            <div id="cloudSyncLog" class="cloud-sync-log" aria-live="polite"></div>
+          </article>
+
+
+
           <div class="two-col">
             <article class="card ai-export-card dossier-card">
               <div class="section-head"><div><p class="eyebrow">AI STUDY DOSSIER</p><h2>Manual personalizado + QBank para IA</h2><p class="muted compact">Exporta tus patrones de rendimiento en un prompt estructurado. La IA debe verificar la teoría clínica con evidencia actual antes de construir el manual y las preguntas.</p></div><span class="evidence-badge">EBM-FIRST</span></div>
@@ -3006,6 +3027,10 @@ function bindEvents(){
   $('#requestPersistenceBtn').addEventListener('click',requestPersistence);
   $('#exportDataBtn').addEventListener('click',exportDataOnly);
   $('#exportFullBtn').addEventListener('click',exportFull);
+  // v3.0.0 — Cloud Sync buttons in Datos view
+  $('#cloudPushAllBtn')?.addEventListener('click',cloudPushAll);
+  $('#cloudPullAllBtn')?.addEventListener('click',cloudPullAll);
+  $('#cloudRefreshBtn')?.addEventListener('click',cloudRefreshStatus);
   $('#copyAIReportBtn')?.addEventListener('click',()=>exportAIReport(true));
   $('#downloadAIReportBtn')?.addEventListener('click',()=>exportAIReport(false));
   $('#aiExportScope')?.addEventListener('change',renderAIExportPreview);
@@ -4520,6 +4545,190 @@ async function deleteAttachmentFromCloud(attempt, attachmentId){
     });
   } catch(e){ console.warn('[cloud] attachment delete failed', e); }
 }
+
+// =====================================================================
+// v3.0.0 — Cloud Sync UI (Datos view)
+// ---------------------------------------------------------------------
+// Botones explícitos en la vista Datos para que el usuario pueda:
+//   • Subir TODO su progreso local a la nube (incluso datos preexistentes
+//     de v2.6.7 que nunca se habían sincronizado).
+//   • Descargar todo lo de la nube a este dispositivo (reemplaza lo local).
+//   • Ver el estado actual de la sincronización.
+// =====================================================================
+
+function cloudLog(message, kind='info') {
+  const log = document.getElementById('cloudSyncLog');
+  if (!log) return;
+  const time = new Intl.DateTimeFormat('es-PA', {hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date());
+  const line = document.createElement('div');
+  line.className = kind;
+  line.textContent = `[${time}] ${message}`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+  // Mantener máximo 50 líneas
+  while (log.children.length > 50) log.removeChild(log.firstChild);
+}
+
+function cloudSetBadge(text, kind='idle') {
+  const badge = document.getElementById('cloudSyncBadge');
+  if (!badge) return;
+  badge.textContent = text;
+  badge.style.background = kind === 'ok' ? 'var(--primary)' : kind === 'warn' ? 'var(--warn)' : 'var(--surface-2)';
+  badge.style.color = kind === 'ok' ? '#fff' : 'var(--text)';
+}
+
+function cloudRefreshStatus() {
+  const stateEl = document.getElementById('cloudSyncState');
+  const userEl = document.getElementById('cloudSyncUser');
+  const pendingEl = document.getElementById('cloudSyncPending');
+  const lastEl = document.getElementById('cloudSyncLast');
+  const badge = document.getElementById('cloudSyncBadge');
+  if (!stateEl) return;
+
+  const hasUser = !!(state.cloudUser);
+  if (!hasUser) {
+    stateEl.textContent = 'Sin sesión (modo local)';
+    userEl.textContent = '—';
+    pendingEl.textContent = '—';
+    lastEl.textContent = '—';
+    if (badge) { badge.textContent = 'Local-only'; badge.style.background = 'var(--surface-2)'; badge.style.color = 'var(--muted)'; }
+    return;
+  }
+  userEl.textContent = state.cloudUser?.email || '—';
+  stateEl.textContent = 'Conectado';
+  if (badge) { badge.textContent = 'Cloud Sync'; badge.style.background = 'var(--primary)'; badge.style.color = '#fff'; }
+
+  // Pending count
+  if (window.DrCoachSync) {
+    window.DrCoachSync.refreshPendingCount().then(n => {
+      pendingEl.textContent = String(n);
+    }).catch(() => { pendingEl.textContent = '—'; });
+  } else {
+    pendingEl.textContent = '0';
+  }
+
+  // Last sync time
+  const lastTs = Number(localStorage.getItem('drcoach.lastSyncAt') || 0);
+  if (lastTs > 0) {
+    try {
+      lastEl.textContent = new Intl.DateTimeFormat('es-PA', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(lastTs));
+    } catch { lastEl.textContent = '—'; }
+  } else {
+    lastEl.textContent = 'Nunca';
+  }
+}
+
+async function cloudPushAll() {
+  if (!state.cloudUser) {
+    cloudLog('No hay sesión de Supabase activa. Inicia sesión primero.', 'err');
+    toast('Inicia sesión en Dr.Coach! Cloud primero.');
+    return;
+  }
+  if (!window.DrCoachSync) {
+    cloudLog('Módulo de sincronización no disponible.', 'err');
+    return;
+  }
+  const btn = document.getElementById('cloudPushAllBtn');
+  if (btn) btn.disabled = true;
+  cloudLog(`Iniciando subida a la nube… (${state.attempts.length} intentos, ${state.sessions.length} sesiones)`);
+  try {
+    let pushed = 0;
+    for (const a of state.attempts) {
+      await window.DrCoachSync.pushAttempt(a);
+      pushed++;
+    }
+    cloudLog(`✓ ${pushed} intentos en cola de subida.`, 'ok');
+
+    let sCount = 0;
+    for (const s of state.sessions) {
+      await window.DrCoachSync.pushSession(s);
+      sCount++;
+    }
+    cloudLog(`✓ ${sCount} sesiones en cola de subida.`, 'ok');
+
+    // Settings (solo las sincronizables)
+    await window.DrCoachSync.pushSettings(state.settings);
+    cloudLog(`✓ Preferencias sincronizables en cola.`, 'ok');
+
+    // Imágenes del Study Board
+    if (window.DrCoachStorage) {
+      let imgCount = 0;
+      for (const a of state.attempts) {
+        const ids = attemptAttachmentIds(a);
+        for (const id of ids) {
+          try {
+            const att = attachmentById(id) || await DB.get('attachments', id);
+            if (!att?.blob) continue;
+            await window.DrCoachStorage.uploadAttachment({
+              attemptId: a.id,
+              attachmentId: id,
+              blob: att.blob,
+            });
+            imgCount++;
+          } catch (e) {
+            console.warn('[cloud] attachment upload failed', id, e);
+          }
+        }
+      }
+      if (imgCount > 0) cloudLog(`✓ ${imgCount} imágenes subidas a Storage.`, 'ok');
+    }
+
+    // Forzar el drenado de la cola ahora
+    cloudLog('Procesando cola de subida…');
+    await window.DrCoachSync.push();
+    localStorage.setItem('drcoach.lastSyncAt', String(Date.now()));
+    cloudLog('✓ Subida completada.', 'ok');
+    toast('Progreso subido a la nube.');
+    cloudRefreshStatus();
+  } catch (e) {
+    console.error('[cloud] pushAll failed', e);
+    cloudLog(`Error: ${e.message || e}`, 'err');
+    toast('Error al subir. Revisa el log.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function cloudPullAll() {
+  if (!state.cloudUser) {
+    cloudLog('No hay sesión de Supabase activa. Inicia sesión primero.', 'err');
+    toast('Inicia sesión en Dr.Coach! Cloud primero.');
+    return;
+  }
+  if (!window.DrCoachSync) {
+    cloudLog('Módulo de sincronización no disponible.', 'err');
+    return;
+  }
+  const btn = document.getElementById('cloudPullAllBtn');
+  if (btn) btn.disabled = true;
+  cloudLog('Iniciando descarga desde la nube…');
+  try {
+    // Pull fuerza total (sin filtro de timestamp)
+    await window.DrCoachSync.pull(true);
+    // Recargar estado local desde IndexedDB
+    await reloadState();
+    renderAll();
+    cloudLog('✓ Descarga completada. Estado local actualizado.', 'ok');
+    toast('Progreso descargado a este dispositivo.');
+    cloudRefreshStatus();
+  } catch (e) {
+    console.error('[cloud] pullAll failed', e);
+    cloudLog(`Error: ${e.message || e}`, 'err');
+    toast('Error al descargar. Revisa el log.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Hook: cuando el usuario entra a la vista Datos, refrescar el estado cloud
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-view="data"]');
+  if (btn) setTimeout(cloudRefreshStatus, 50);
+});
+// También al iniciar la app
+const _originalInit = init;
+// (init se llama onDOMContentLoaded; refrescar el estado 1s después)
+setTimeout(() => { try { cloudRefreshStatus(); } catch(_) {} }, 1500);
 
 // =====================================================================
 // End v3.0.0 cloud helpers
