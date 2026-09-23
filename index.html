@@ -2236,15 +2236,17 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
   }
 
   async function push() {
-    if (!CLOUD.enabled || !CLOUD.user) return;
-    if (!navigator.onLine) { setStatus('offline'); return; }
-    if (state.running) return;
+    if (!CLOUD.enabled || !CLOUD.user) return { processed: 0, failed: 0, lastError: null };
+    if (!navigator.onLine) { setStatus('offline'); return { processed: 0, failed: 0, lastError: 'offline' }; }
+    if (state.running) return { processed: 0, failed: 0, lastError: 'busy' };
     const queue = await getQueue();
-    if (queue.length === 0) { setStatus('idle'); return; }
+    if (queue.length === 0) { setStatus('idle'); return { processed: 0, failed: 0, lastError: null }; }
     state.running = true;
     setStatus('syncing', { phase: 'push', pending: queue.length });
     let processed = 0;
     let failed = 0;
+    let lastError = null;
+    let stoppedForAuth = false;
     try {
       for (const entry of queue) {
         try {
@@ -2252,34 +2254,46 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
           await dequeue(entry.id);
           processed++;
         } catch (err) {
-          console.warn('[DrCoachSync] entry failed', entry, err);
+          const msg = String(err?.message || err || 'unknown');
+          console.warn('[DrCoachSync] entry failed', entry, msg);
           failed++;
+          lastError = msg;
           // Move to dead-letter queue after 3 failures to avoid infinite loop
           entry.failures = (entry.failures || 0) + 1;
           if (entry.failures >= 3) {
             console.error('[DrCoachSync] entry moved to dead-letter after 3 failures:', entry);
             await dequeue(entry.id);
-            // Persist to localStorage for inspection (best-effort)
             try {
               const dlq = JSON.parse(localStorage.getItem('drcoach.sync.dlq') || '[]');
-              dlq.push({ ...entry, lastError: String(err.message || err), ts: Date.now() });
+              dlq.push({ ...entry, lastError: msg, ts: Date.now() });
               localStorage.setItem('drcoach.sync.dlq', JSON.stringify(dlq.slice(-50)));
             } catch (_) {}
           } else {
-            // Update failures count in IndexedDB
             try { await DB.put(QUEUE_STORE, entry); } catch (_) {}
           }
-          // Stop on auth errors
-          if (/JWT|auth|permission|denied|signature/i.test(String(err.message || err))) {
-            setStatus('offline', { error: 'auth' });
+          // Stop on auth errors (retrying won't help until user re-logs in)
+          if (/JWT|auth|permission|denied|signature|expired/i.test(msg)) {
+            stoppedForAuth = true;
             break;
           }
         }
       }
+      // Determine final status: distinguish "offline" (no internet) from "error"
+      // (Supabase rejected). The user-facing message must reflect the real cause.
       if (processed > 0 && failed === 0) {
         setStatus('idle', { pushed: processed });
-      } else if (processed === 0 && failed > 0) {
-        setStatus('offline', { error: 'push failed', count: failed });
+      } else if (stoppedForAuth) {
+        setStatus('offline', { error: 'auth', lastError });
+      } else if (failed > 0 && processed === 0) {
+        // All entries failed — could be schema error or network error.
+        // We surface a NEW status "error" so the UI can distinguish it from
+        // a real connectivity issue. Indicator will show "⚠ Error" instead
+        // of "Sin conexión".
+        if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|ERR_INTERNET/i.test(lastError || '')) {
+          setStatus('offline', { error: 'network', lastError });
+        } else {
+          setStatus('error', { error: 'supabase', lastError, count: failed });
+        }
       } else {
         const remaining = await refreshPendingCount();
         setStatus(remaining > 0 ? 'pending' : 'idle', { count: remaining, pushed: processed });
@@ -2287,6 +2301,7 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
     } finally {
       state.running = false;
     }
+    return { processed, failed, lastError };
   }
 
   async function applyEntry(entry) {
@@ -2329,22 +2344,19 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
       if (Array.isArray(r.attachmentIds)) r.attachment_ids = r.attachmentIds;
       if (r.boardAttachmentId != null && r.board_attachment_id == null) r.board_attachment_id = r.boardAttachmentId;
       if (r.studyBoardId != null && r.study_board_id == null) r.study_board_id = r.studyBoardId;
+      // ⚠️ studyBoard (camelCase) → study_board (snake_case) — contains the full
+      // serialized Study Board (objects, strokes, view). Without this mapping,
+      // Supabase rejects the upsert with "Could not find the 'studyBoard' column".
+      if (r.studyBoard != null && r.study_board == null) r.study_board = r.studyBoard;
       if (r.isReview != null) r.is_review = r.isReview;
       if (r.reviewEvents != null && r.review_events == null) r.review_events = r.reviewEvents;
-      // Strip ALL legacy aliases and fields not in the cloud schema:
-      //   strokes (now inside study_board), concept, rule, errorReasons,
-      //   attachmentIds, boardAttachmentId, studyBoardId, isReview, reviewEvents,
-      //   sessionId, questionId, createdAt (already mapped above),
-      //   whyFailed (v2.6.7 stored it; cloud has only `notes`),
-      //   attachmentId (legacy primary; cloud uses board_attachment_id).
-      // Without this cleanup, Supabase rejects the upsert with
-      //   "Could not find the 'X' column of 'attempts' in the schema cache"
-      // and the entry stays in the queue forever.
+      // Strip ALL legacy aliases and fields not in the cloud schema
       delete r.strokes; delete r.concept; delete r.rule;
       delete r.errorReasons; delete r.attachmentIds; delete r.boardAttachmentId;
       delete r.studyBoardId; delete r.isReview; delete r.reviewEvents;
       delete r.sessionId; delete r.questionId; delete r.createdAt;
       delete r.whyFailed; delete r.attachmentId;
+      delete r.studyBoard;  // ⚠️ already mapped to study_board above
       // Avoid sending empty strings for jsonb fields (PostgreSQL type mismatch)
       if (r.study_board === undefined) r.study_board = null;
       if (r.review_events === undefined) r.review_events = [];
@@ -2526,6 +2538,7 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
     syncing:     '☁',
     pending:     '☁',
     offline:     '⚠',
+    error:       '⚠',
     local:       '💾',
   };
   const LABELS = {
@@ -2534,6 +2547,7 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
     syncing:     'Sincronizando…',
     pending:     (n) => `${n} cambio${n === 1 ? '' : 's'} pendiente${n === 1 ? '' : 's'}`,
     offline:     'Sin conexión',
+    error:       'Error de sync',
     local:       'Solo local',
   };
 
@@ -4720,10 +4734,24 @@ async function cloudPushAll() {
 
     // Forzar el drenado de la cola ahora
     cloudLog('Procesando cola de subida…');
-    await window.DrCoachSync.push();
-    localStorage.setItem('drcoach.lastSyncAt', String(Date.now()));
-    cloudLog('✓ Subida completada.', 'ok');
-    toast('Progreso subido a la nube.');
+    const result = await window.DrCoachSync.push();
+    if (result.processed > 0 && result.failed === 0) {
+      localStorage.setItem('drcoach.lastSyncAt', String(Date.now()));
+      cloudLog(`✓ Subida completada. ${result.processed} registros subidos.`, 'ok');
+      toast('Progreso subido a la nube.');
+    } else if (result.failed > 0 && result.processed === 0) {
+      cloudLog(`❌ Error: no se pudo subir ningún registro.`, 'err');
+      cloudLog(`   Detalle: ${result.lastError || 'desconocido'}`, 'err');
+      cloudLog(`   Revisa la consola (F12) para ver el error completo de Supabase.`, 'warn');
+      toast('Error al subir. Revisa el log.');
+    } else if (result.failed > 0) {
+      cloudLog(`⚠ Subida parcial: ${result.processed} OK, ${result.failed} fallaron.`, 'warn');
+      cloudLog(`   Último error: ${result.lastError || 'desconocido'}`, 'warn');
+      toast('Subida parcial. Revisa el log.');
+    } else {
+      cloudLog('✓ Subida completada.', 'ok');
+      toast('Progreso subido a la nube.');
+    }
     cloudRefreshStatus();
   } catch (e) {
     console.error('[cloud] pushAll failed', e);
