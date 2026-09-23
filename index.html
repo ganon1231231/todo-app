@@ -2244,6 +2244,7 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
     state.running = true;
     setStatus('syncing', { phase: 'push', pending: queue.length });
     let processed = 0;
+    let failed = 0;
     try {
       for (const entry of queue) {
         try {
@@ -2252,14 +2253,37 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
           processed++;
         } catch (err) {
           console.warn('[DrCoachSync] entry failed', entry, err);
-          // Keep in queue, retry next cycle. Stop if it's an auth error.
-          if (/JWT|auth|permission|denied/i.test(String(err.message || err))) {
+          failed++;
+          // Move to dead-letter queue after 3 failures to avoid infinite loop
+          entry.failures = (entry.failures || 0) + 1;
+          if (entry.failures >= 3) {
+            console.error('[DrCoachSync] entry moved to dead-letter after 3 failures:', entry);
+            await dequeue(entry.id);
+            // Persist to localStorage for inspection (best-effort)
+            try {
+              const dlq = JSON.parse(localStorage.getItem('drcoach.sync.dlq') || '[]');
+              dlq.push({ ...entry, lastError: String(err.message || err), ts: Date.now() });
+              localStorage.setItem('drcoach.sync.dlq', JSON.stringify(dlq.slice(-50)));
+            } catch (_) {}
+          } else {
+            // Update failures count in IndexedDB
+            try { await DB.put(QUEUE_STORE, entry); } catch (_) {}
+          }
+          // Stop on auth errors
+          if (/JWT|auth|permission|denied|signature/i.test(String(err.message || err))) {
             setStatus('offline', { error: 'auth' });
             break;
           }
         }
       }
-      setStatus(processed === queue.length ? 'idle' : 'pending', { count: queue.length - processed });
+      if (processed > 0 && failed === 0) {
+        setStatus('idle', { pushed: processed });
+      } else if (processed === 0 && failed > 0) {
+        setStatus('offline', { error: 'push failed', count: failed });
+      } else {
+        const remaining = await refreshPendingCount();
+        setStatus(remaining > 0 ? 'pending' : 'idle', { count: remaining, pushed: processed });
+      }
     } finally {
       state.running = false;
     }
@@ -2295,19 +2319,38 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
       if (Array.isArray(r.strokes) && r.studyBoard && !r.studyBoard.strokes) {
         r.studyBoard.strokes = r.strokes;
       }
-      // Map v2.6.7 field names → v3 cloud schema
-      if (r.concept && !r.key_concept) r.key_concept = r.concept;
-      if (r.rule && !r.memory_rule) r.memory_rule = r.rule;
-      if (r.errorReasons && !r.error_reasons) r.error_reasons = r.errorReasons;
+      // Map v2.6.7 camelCase field names → v3 cloud snake_case schema
+      if (r.sessionId != null && r.session_id == null) r.session_id = r.sessionId;
+      if (r.questionId != null && r.question_id == null) r.question_id = r.questionId;
+      if (r.createdAt != null && r.created_at == null) r.created_at = r.createdAt;
+      if (r.concept != null && r.key_concept == null) r.key_concept = r.concept;
+      if (r.rule != null && r.memory_rule == null) r.memory_rule = r.rule;
+      if (r.errorReasons != null && r.error_reasons == null) r.error_reasons = r.errorReasons;
       if (Array.isArray(r.attachmentIds)) r.attachment_ids = r.attachmentIds;
-      if (r.boardAttachmentId && !r.board_attachment_id) r.board_attachment_id = r.boardAttachmentId;
-      if (r.studyBoardId && !r.study_board_id) r.study_board_id = r.studyBoardId;
+      if (r.boardAttachmentId != null && r.board_attachment_id == null) r.board_attachment_id = r.boardAttachmentId;
+      if (r.studyBoardId != null && r.study_board_id == null) r.study_board_id = r.studyBoardId;
       if (r.isReview != null) r.is_review = r.isReview;
-      if (r.reviewEvents && !r.review_events) r.review_events = r.reviewEvents;
-      // Strip the legacy aliases — cloud columns will reject unknown keys
+      if (r.reviewEvents != null && r.review_events == null) r.review_events = r.reviewEvents;
+      // Strip ALL legacy aliases and fields not in the cloud schema:
+      //   strokes (now inside study_board), concept, rule, errorReasons,
+      //   attachmentIds, boardAttachmentId, studyBoardId, isReview, reviewEvents,
+      //   sessionId, questionId, createdAt (already mapped above),
+      //   whyFailed (v2.6.7 stored it; cloud has only `notes`),
+      //   attachmentId (legacy primary; cloud uses board_attachment_id).
+      // Without this cleanup, Supabase rejects the upsert with
+      //   "Could not find the 'X' column of 'attempts' in the schema cache"
+      // and the entry stays in the queue forever.
       delete r.strokes; delete r.concept; delete r.rule;
       delete r.errorReasons; delete r.attachmentIds; delete r.boardAttachmentId;
       delete r.studyBoardId; delete r.isReview; delete r.reviewEvents;
+      delete r.sessionId; delete r.questionId; delete r.createdAt;
+      delete r.whyFailed; delete r.attachmentId;
+      // Avoid sending empty strings for jsonb fields (PostgreSQL type mismatch)
+      if (r.study_board === undefined) r.study_board = null;
+      if (r.review_events === undefined) r.review_events = [];
+      if (r.error_reasons === undefined) r.error_reasons = [];
+      if (r.attachment_ids === undefined) r.attachment_ids = [];
+      // Cast dates if needed (already ISO strings, should be fine)
     }
     if (table === 'canvas_objects') {
       // Ensure board_id + type + data are present
@@ -2322,8 +2365,10 @@ window.DRCOACH_LOGO_DATA_URL = "data:image/webp;base64,UklGRsLgAwBXRUJQVlA4WAoAA
       if (r.runningSince != null) r.running_since = r.runningSince;
       if (r.startedAt != null) r.started_at = r.startedAt;
       if (r.endedAt != null) r.ended_at = r.endedAt;
+      if (r.createdAt != null && r.created_at == null) r.created_at = r.createdAt;
       delete r.plannedCount; delete r.completedCount; delete r.elapsedSec;
       delete r.runningSince; delete r.startedAt; delete r.endedAt;
+      delete r.createdAt;
     }
     return r;
   }
