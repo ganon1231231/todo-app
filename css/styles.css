@@ -616,4 +616,14 @@ html[data-theme="night"] .study-board-stage,html[data-theme="halloween"] .study-
 .cloud-sync-log .ok{color:#29a36f}
 .cloud-sync-log .warn{color:var(--warn)}
 .cloud-sync-log .err{color:#c0392b}
+/* v3.0.3 — panel del Sync Doctor (diagnóstico de Cloud Sync) */
+.cloud-sync-diag{margin-top:10px;display:grid;gap:8px}
+.cloud-diag-item{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:9px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font-size:.8rem}
+.cloud-diag-item .diag-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-weight:700;font-size:.75rem;margin-top:1px}
+.cloud-diag-item.diag-ok .diag-icon{background:color-mix(in srgb,#29a36f 18%,transparent);color:#1d7a52}
+.cloud-diag-item.diag-fail .diag-icon{background:color-mix(in srgb,#c0392b 16%,transparent);color:#a83226}
+.cloud-diag-item.diag-ok{border-color:color-mix(in srgb,#29a36f 28%,var(--line))}
+.cloud-diag-item.diag-fail{border-color:color-mix(in srgb,#c0392b 30%,var(--line))}
+.cloud-diag-item b{display:block;font-size:.82rem;color:var(--text)}
+.cloud-diag-item span:not(.diag-icon){color:var(--muted);font-size:.76rem;line-height:1.45;word-break:break-word}
 @media (max-width:640px){.cloud-sync-status{font-size:.78rem}.cloud-sync-row span{font-size:.66rem}}

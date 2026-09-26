@@ -416,6 +416,7 @@
               <div class="cloud-sync-row"><span>Estado</span><b id="cloudSyncState">Sin sesión</b></div>
               <div class="cloud-sync-row"><span>Usuario</span><b id="cloudSyncUser">—</b></div>
               <div class="cloud-sync-row"><span>Cambios pendientes</span><b id="cloudSyncPending">0</b></div>
+              <div class="cloud-sync-row"><span>Registros en error</span><b id="cloudSyncDlq">0</b></div>
               <div class="cloud-sync-row"><span>Última sincronización</span><b id="cloudSyncLast">—</b></div>
             </div>
             <div class="button-row">
@@ -423,6 +424,11 @@
               <button id="cloudPullAllBtn" class="btn btn-secondary">⬇ Descargar de la nube</button>
               <button id="cloudRefreshBtn" class="btn btn-secondary">↻ Actualizar estado</button>
             </div>
+            <div class="button-row">
+              <button id="cloudDiagBtn" class="btn btn-secondary">🩺 Ejecutar diagnóstico</button>
+              <button id="cloudRetryBtn" class="btn btn-secondary" hidden>♻ Reintentar registros en error</button>
+            </div>
+            <div id="cloudDiagOutput" class="cloud-sync-diag" hidden></div>
             <div id="cloudSyncLog" class="cloud-sync-log" aria-live="polite"></div>
           </article>
 

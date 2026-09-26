@@ -27,6 +27,32 @@
 
   const QUEUE_STORE = 'pending_syncs';   // {id, table, op:'upsert'|'delete', payload, ts}
   const SYNCED_AT_KEY = 'drcoach.lastSyncAt'; // localStorage
+  const DLQ_KEY = 'drcoach.sync.dlq';   // localStorage dead-letter queue
+
+  // v3.0.3 · Column whitelist — the ONLY columns each cloud table accepts.
+  // Uploading a row built from the local IndexedDB schema with a whitelist
+  // guarantees PostgREST never sees a camelCase/legacy field again.
+  // (The old blacklist-based sanitizer let `updatedAt` slip through on any
+  // edited attempt → Supabase rejected the upsert with PGRST204 "Could not
+  // find the 'updatedAt' column" → permanent "Error de sync".)
+  const CLOUD_COLUMNS = {
+    attempts: [
+      'id', 'session_id', 'question_id', 'subject', 'system', 'topic', 'focus',
+      'result', 'confidence', 'stem', 'key_concept', 'memory_rule', 'notes',
+      'error_reasons', 'attachment_ids', 'board_attachment_id',
+      'study_board_id', 'study_board', 'is_review', 'mastered',
+      'review_events', 'ordinal', 'created_at', 'updated_at',
+    ],
+    sessions: [
+      'id', 'subject', 'planned_count', 'completed_count', 'elapsed_sec',
+      'paused', 'running_since', 'started_at', 'ended_at', 'status',
+      'created_at', 'updated_at',
+    ],
+    canvas_objects: [
+      'id', 'board_id', 'attempt_id', 'type', 'data', 'z_index',
+      'created_at', 'updated_at',
+    ],
+  };
 
   const TABLES = ['attempts', 'sessions', 'canvas_objects'];
   // Settings: only sync the white-listed subset. Everything else stays local.
@@ -100,6 +126,28 @@
 
   // ---------- public API ---------------------------------------------
 
+  // v3.0.3 · Dead-letter recovery — entries that failed 3 times used to be
+  // parked forever, so a device hit by the old `updatedAt` bug stayed broken
+  // ("se queda buggeado") even after the code was fixed. Re-queueing on every
+  // app start gives each stuck entry one fresh chance per session; if it
+  // still fails it simply returns to the DLQ (no infinite loops: push() only
+  // runs when the queue is non-empty and each entry gets 3 attempts).
+  async function requeueDLQ() {
+    let dlq = [];
+    try { dlq = JSON.parse(localStorage.getItem(DLQ_KEY) || '[]'); } catch (_) { return 0; }
+    if (!Array.isArray(dlq) || dlq.length === 0) return 0;
+    let n = 0;
+    for (const entry of dlq) {
+      if (!entry || !entry.table || !entry.op) continue;
+      const { lastError, failures, ...clean } = entry;
+      try { await DB.put(QUEUE_STORE, { ...clean, failures: 0 }); n++; } catch (_) {}
+    }
+    try { localStorage.setItem(DLQ_KEY, '[]'); } catch (_) {}
+    if (n > 0) console.info(`[DrCoachSync] ${n} registro(s) en error reincorporados a la cola de subida.`);
+    refreshPendingCount();
+    return n;
+  }
+
   async function init() {
     // Try to recover Supabase session; if present, do an initial Pull
     // and start the background poller.
@@ -112,6 +160,7 @@
       setStatus('local');
       return;
     }
+    await requeueDLQ(); // v3.0.3: self-heal entries parked by older versions
     // Subscribe to auth changes
     CLOUD.onAuthChange((user) => {
       if (!user) {
@@ -150,18 +199,24 @@
     setStatus('syncing', { phase: 'pull' });
     try {
       const sb = CLOUD.supabase;
-      const sinceTs = force ? 0 : Number(localStorage.getItem(SYNCED_AT_KEY) || 0);
-      const sinceIso = sinceTs ? new Date(sinceTs).toISOString() : null;
+      // v3.0.3 · Always FULL pull. The old incremental filter
+      // (`.gt('updated_at', localTimestamp)`) compared the DEVICE clock
+      // against the SERVER clock: on a device whose clock runs slightly
+      // ahead, brand-new cloud rows were silently skipped — the other
+      // device looked like it "never saved the progress". The dataset is
+      // small (2 users), so a full pull is cheap and bulletproof.
       let totalMerged = 0;
+      // Rows with unsynced local changes must not be overwritten by cloud.
+      const dirty = await dirtyRowSet();
 
       for (const table of TABLES) {
-        let q = sb.from(table).select('*').eq('user_id', CLOUD.userId);
-        if (sinceIso) q = q.gt('updated_at', sinceIso);
-        const { data, error } = await q;
+        const { data, error } = await sb.from(table).select('*').eq('user_id', CLOUD.userId);
         if (error) throw error;
         if (!data?.length) continue;
-        // Merge into IndexedDB (last-write-wins by updated_at)
+        // Merge into IndexedDB (cloud wins unless the local row has
+        // pending changes in the sync queue).
         for (const row of data) {
+          if (dirty.has(`${table}:${row.id}`)) continue;
           await mergeRowToLocal(table, row);
           totalMerged++;
         }
@@ -173,10 +228,31 @@
       if (pending > 0) await push();
     } catch (err) {
       console.warn('[DrCoachSync] pull failed:', err);
-      setStatus('offline', { error: String(err.message || err) });
+      const msg = String(err?.message || err || '');
+      // v3.0.3: tell "no internet" apart from "Supabase rejected the query"
+      // so the indicator shows ⚠ Error de sync instead of ⚠ Sin conexión.
+      if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|ERR_INTERNET/i.test(msg)) {
+        setStatus('offline', { error: 'network', lastError: msg });
+      } else {
+        setStatus('error', { error: 'supabase', lastError: msg });
+      }
     } finally {
       state.running = false;
     }
+  }
+
+  // v3.0.3: ids with a pending local upsert/delete — those rows are NEWER
+  // locally than the cloud copy by definition, so pull() must not clobber
+  // them (the old `updated_at` comparison mixed device vs server clocks).
+  async function dirtyRowSet() {
+    const set = new Set();
+    try {
+      const queue = await getQueue();
+      for (const e of queue) {
+        if (e.op === 'upsert' || e.op === 'delete') set.add(`${e.table}:${e.payload?.id}`);
+      }
+    } catch (_) {}
+    return set;
   }
 
   async function push() {
@@ -208,9 +284,9 @@
             console.error('[DrCoachSync] entry moved to dead-letter after 3 failures:', entry);
             await dequeue(entry.id);
             try {
-              const dlq = JSON.parse(localStorage.getItem('drcoach.sync.dlq') || '[]');
+              const dlq = JSON.parse(localStorage.getItem(DLQ_KEY) || '[]');
               dlq.push({ ...entry, lastError: msg, ts: Date.now() });
-              localStorage.setItem('drcoach.sync.dlq', JSON.stringify(dlq.slice(-50)));
+              localStorage.setItem(DLQ_KEY, JSON.stringify(dlq.slice(-50)));
             } catch (_) {}
           } else {
             try { await DB.put(QUEUE_STORE, entry); } catch (_) {}
@@ -252,7 +328,8 @@
     const sb = CLOUD.supabase;
     const { table, op, payload } = entry;
     if (op === 'upsert') {
-      // Attach user_id + updated_at, strip internal-only fields
+      // Whitelist columns + attach user_id; PostgREST can never reject an
+      // unknown field again.
       const row = sanitizeRow(table, payload);
       row.user_id = CLOUD.userId;
       const { error } = await sb.from(table).upsert(row, { onConflict: 'id' });
@@ -261,58 +338,61 @@
       const { error } = await sb.from(table).delete().eq('id', payload.id);
       if (error) throw error;
     } else if (op === 'settings') {
-      // Sync only white-listed settings
+      // Sync only white-listed settings.
+      // v3.0.3: UPSERT instead of UPDATE — if the profile row does not exist
+      // (accounts created before the DB trigger existed) the old code silently
+      // updated 0 rows and preferences never reached the cloud. Now the row
+      // self-heals on first sync (RLS insert policy allows it).
       const settings = (payload || {}).settings || {};
       const filtered = Object.fromEntries(Object.entries(settings).filter(([k]) => SYNCED_SETTINGS_KEYS.has(k)));
       if (Object.keys(filtered).length === 0) return;
-      const { error } = await sb.from('profiles').update({ preferences: filtered }).eq('id', CLOUD.userId);
+      const profileRow = { id: CLOUD.userId, preferences: filtered };
+      const dn = CLOUD.user?.user_metadata?.display_name;
+      if (dn) profileRow.display_name = dn;
+      const { error } = await sb.from('profiles').upsert(profileRow);
       if (error) throw error;
     }
   }
 
   function sanitizeRow(table, payload) {
-    const r = JSON.parse(JSON.stringify(payload));
-    // Remove legacy fields that don't exist in cloud schema
+    // v3.0.3 · Whitelist sanitizer.
+    // Step 1 — deep-copy and map known legacy camelCase fields to the
+    //          cloud snake_case columns (v2.6.7 compatibility).
+    // Step 2 — build a FRESH object keeping only the columns that exist in
+    //          the cloud table (CLOUD_COLUMNS). Anything unknown/legacy is
+    //          dropped by construction, so Supabase can never answer
+    //          PGRST204 "Could not find the 'X' column" again.
+    const r = JSON.parse(JSON.stringify(payload || {}));
     if (table === 'attempts') {
       // v2.6.7 stored strokes inline; cloud expects them inside study_board.
       if (Array.isArray(r.strokes) && r.studyBoard && !r.studyBoard.strokes) {
         r.studyBoard.strokes = r.strokes;
       }
-      // Map v2.6.7 camelCase field names → v3 cloud snake_case schema
-      if (r.sessionId != null && r.session_id == null) r.session_id = r.sessionId;
-      if (r.questionId != null && r.question_id == null) r.question_id = r.questionId;
-      if (r.createdAt != null && r.created_at == null) r.created_at = r.createdAt;
-      if (r.concept != null && r.key_concept == null) r.key_concept = r.concept;
-      if (r.rule != null && r.memory_rule == null) r.memory_rule = r.rule;
-      if (r.errorReasons != null && r.error_reasons == null) r.error_reasons = r.errorReasons;
-      if (Array.isArray(r.attachmentIds)) r.attachment_ids = r.attachmentIds;
-      if (r.boardAttachmentId != null && r.board_attachment_id == null) r.board_attachment_id = r.boardAttachmentId;
-      if (r.studyBoardId != null && r.study_board_id == null) r.study_board_id = r.studyBoardId;
-      // ⚠️ studyBoard (camelCase) → study_board (snake_case) — contains the full
-      // serialized Study Board (objects, strokes, view). Without this mapping,
-      // Supabase rejects the upsert with "Could not find the 'studyBoard' column".
-      if (r.studyBoard != null && r.study_board == null) r.study_board = r.studyBoard;
+      if (r.sessionId != null) r.session_id = r.sessionId;
+      if (r.questionId != null) r.question_id = r.questionId;
+      if (r.createdAt != null) r.created_at = r.createdAt;
+      // ⚠️ updatedAt (camelCase, set on every local edit) → updated_at.
+      // This exact field used to slip through and break every upload.
+      if (r.updatedAt != null) r.updated_at = r.updatedAt;
+      if (r.concept != null) r.key_concept = r.concept;
+      if (r.rule != null) r.memory_rule = r.rule;
+      if (r.errorReasons != null) r.error_reasons = r.errorReasons;
+      if (r.attachmentIds != null) r.attachment_ids = r.attachmentIds;
+      if (r.boardAttachmentId != null) r.board_attachment_id = r.boardAttachmentId;
+      if (r.studyBoardId != null) r.study_board_id = r.studyBoardId;
+      // Full serialized Study Board (objects, strokes, view).
+      if (r.studyBoard != null) r.study_board = r.studyBoard;
       if (r.isReview != null) r.is_review = r.isReview;
-      if (r.reviewEvents != null && r.review_events == null) r.review_events = r.reviewEvents;
-      // Strip ALL legacy aliases and fields not in the cloud schema
-      delete r.strokes; delete r.concept; delete r.rule;
-      delete r.errorReasons; delete r.attachmentIds; delete r.boardAttachmentId;
-      delete r.studyBoardId; delete r.isReview; delete r.reviewEvents;
-      delete r.sessionId; delete r.questionId; delete r.createdAt;
-      delete r.whyFailed; delete r.attachmentId;
-      delete r.studyBoard;  // ⚠️ already mapped to study_board above
-      // Avoid sending empty strings for jsonb fields (PostgreSQL type mismatch)
+      if (r.reviewEvents != null) r.review_events = r.reviewEvents;
+      // jsonb / array columns refuse empty strings in PostgreSQL
       if (r.study_board === undefined) r.study_board = null;
       if (r.review_events === undefined) r.review_events = [];
       if (r.error_reasons === undefined) r.error_reasons = [];
       if (r.attachment_ids === undefined) r.attachment_ids = [];
-      // Cast dates if needed (already ISO strings, should be fine)
     }
     if (table === 'canvas_objects') {
-      // Ensure board_id + type + data are present
-      if (!r.board_id && r.boardId) r.board_id = r.boardId;
-      if (!r.attempt_id && r.attemptId) r.attempt_id = r.attemptId;
-      delete r.boardId; delete r.attemptId;
+      if (r.boardId != null) r.board_id = r.boardId;
+      if (r.attemptId != null) r.attempt_id = r.attemptId;
     }
     if (table === 'sessions') {
       if (r.plannedCount != null) r.planned_count = r.plannedCount;
@@ -321,12 +401,17 @@
       if (r.runningSince != null) r.running_since = r.runningSince;
       if (r.startedAt != null) r.started_at = r.startedAt;
       if (r.endedAt != null) r.ended_at = r.endedAt;
-      if (r.createdAt != null && r.created_at == null) r.created_at = r.createdAt;
-      delete r.plannedCount; delete r.completedCount; delete r.elapsedSec;
-      delete r.runningSince; delete r.startedAt; delete r.endedAt;
-      delete r.createdAt;
+      if (r.createdAt != null) r.created_at = r.createdAt;
+      if (r.updatedAt != null) r.updated_at = r.updatedAt;
     }
-    return r;
+    // Step 2 — whitelist projection.
+    const cols = CLOUD_COLUMNS[table];
+    if (!cols) return {}; // unknown table → send nothing rather than guess
+    const out = {};
+    for (const col of cols) {
+      if (r[col] !== undefined) out[col] = r[col];
+    }
+    return out;
   }
 
   async function mergeRowToLocal(table, row) {
@@ -437,6 +522,45 @@
   function getStatus() { return state.status; }
 
   // ---------- expose -------------------------------------------------
+  // v3.0.3 · Sync Doctor — checks every link of the chain and returns a
+  // list of {ok, label, detail} results for the Datos panel to display.
+  async function diagnose() {
+    const results = [];
+    const push = (ok, label, detail = '') => results.push({ ok, label, detail });
+    try {
+      if (!CLOUD.enabled) {
+        push(false, 'Configuración', 'Supabase no configurado (falta config/supabase.config.js o contiene placeholders).');
+        return results;
+      }
+      push(true, 'Configuración', 'Credenciales cargadas correctamente.');
+      const sb = CLOUD.supabase;
+      if (!sb) { push(false, 'Cliente', 'Cliente de Supabase no inicializado.'); return results; }
+      const session = await CLOUD.getSession();
+      if (!session?.user) { push(false, 'Sesión', 'No hay sesión activa (inicia sesión de nuevo).'); return results; }
+      push(true, 'Sesión', `Activa para ${CLOUD.userEmail}`);
+      // Tables reachable + readable with RLS
+      for (const table of ['attempts', 'sessions', 'profiles']) {
+        const { error } = await sb.from(table).select('*').limit(1);
+        if (error) push(false, `Tabla ${table}`, error.message);
+        else push(true, `Tabla ${table}`, 'Accesible con tu usuario.');
+      }
+      // Profile row existence (settings sync needs it; now it self-heals)
+      const { data: prof, error: profErr } = await sb.from('profiles').select('id, display_name, preferences').eq('id', CLOUD.userId).limit(1);
+      if (profErr) push(false, 'Perfil', profErr.message);
+      else if (!prof?.length) push(false, 'Perfil', 'No existe todavía — se creará automáticamente en la próxima subida (v3.0.3).');
+      else push(true, 'Perfil', `OK (${prof[0].display_name || 'sin nombre'})`);
+      // Queue + DLQ counters
+      const queue = await getQueue();
+      push(queue.length === 0, 'Cola de subida', queue.length === 0 ? 'Vacía — todo está en la nube.' : `${queue.length} cambio(s) pendientes de subir.`);
+      let dlqCount = 0;
+      try { dlqCount = (JSON.parse(localStorage.getItem(DLQ_KEY) || '[]') || []).length; } catch (_) {}
+      push(dlqCount === 0, 'Registros en error', dlqCount === 0 ? 'Ninguno.' : `${dlqCount} registro(s) aparcaron tras 3 fallos — usa "Reintentar registros en error".`);
+    } catch (err) {
+      push(false, 'Diagnóstico', String(err?.message || err));
+    }
+    return results;
+  }
+
   window.DrCoachSync = {
     init,
     pull,
@@ -448,6 +572,8 @@
     pushProfile,
     enqueue,
     refreshPendingCount,
+    requeueDLQ,
+    diagnose,
     setStatus,
     getStatus,
     registerIndicator,

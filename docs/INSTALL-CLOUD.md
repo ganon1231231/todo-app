@@ -109,11 +109,30 @@ cloud/
 
 ## 9. Resolución de problemas
 
+### 🩺 Primero: el botón "Ejecutar diagnóstico" (v3.0.3)
+
+Antes de tocar nada a mano: entra a **Datos → Cloud Sync → 🩺 Ejecutar diagnóstico**. Recorre en un clic toda la cadena (config → sesión → tablas → perfil → cola) y te dice exactamente qué eslabón falla. Con el resultado en la mano, usa esta tabla:
+
+| Qué muestra el indicador / diagnóstico | Qué significa | Arreglo |
+|---|---|---|
+| ☁ Guardado | Todo subido y sincronizado | Nada que hacer ✅ |
+| ☁ N cambios pendientes | Hay cambios locales esperando subida | Con conexión se suben solos (45 s). Puedes forzar con "⬆ Subir todo a la nube" |
+| ⚠ Sin conexión | No hay internet (o Supabase no responde) | Revisa tu red; al volver, se reintenta solo |
+| ⚠ Error de sync | Supabase rechazó algo (schema/permisos/datos) | Mira el detalle en el log de la vista Datos y en la tabla de abajo |
+| "N registros en error" > 0 | Filas que fallaron 3 veces y quedaron aparcadas | Pulsa **"♻ Reintentar registros en error"** (v3.0.3 las re-subirá con el formato corregido) |
+| Perfil: "No existe todavía" | Cuenta creada antes de que el trigger de perfiles existiera | No bloquea nada desde v3.0.3: la fila se crea sola en la próxima subida de preferencias |
+| Tabla attempts/sessions: error | El schema no está aplicado o quedó a medias | Re-ejecuta `supabase/schema.sql` completo (es seguro re-ejecutarlo, no toca datos) |
+
+> **Nota v3.0.3:** si venías usando la app con el "⚠ Error de sync" pegado, tus datos locales estuvieron siempre a salvo (el fallo era solo al subir). Actualiza la app, abre Datos y usa el botón de reintento: los registros atrapados se recuperan y suben.
+
+### Otros problemas
+
 - **"No se pudo iniciar sesión: NetworkError"** → revisa conexión; si el problema persiste, prueba con otro navegador. La pestaña **Solo local** te permite seguir trabajando.
 - **"El correo no ha sido confirmado"** → entra a Supabase Dashboard → Authentication → Users → clic en el usuario → **Confirm user** o reenvía el email de confirmación.
 - **"permission denied" / RLS** → revisa que ejecutaste `schema.sql` completo, incluyendo las sentencias `create policy`.
 - **El indicador se queda en "N cambios pendientes"** → abre DevTools → Console. Si hay errores 401/403, las credenciales están mal; si hay 404, la URL del proyecto está mal; si hay CORS, asegúrate de que la URL no termina en `/`.
 - **Las imágenes no se ven en otro dispositivo** → las URLs firmadas expiran en 7 días; al abrir el board, Dr.Coach! descarga y cachea localmente. Si una imagen antigua no carga, el botón "Sincronizar ahora" (en Datos → Cloud) refresca todo.
+- **El SQL Editor terminó en rojo con "permission denied" citando `auth.users`** → era la limitación habitual del schema antiguo. Con el `schema.sql` de v3.0.3 ese paso ya no puede cortar el script: re-ejecútalo entero y verás solo avisos informativos si algo no aplicó.
 
 ---
 

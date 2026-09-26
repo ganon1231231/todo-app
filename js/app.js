@@ -3,7 +3,7 @@
 
 const DB = window.DrCoachDB || window.MediospiraDB;
 const ZIP = window.DrCoachZip || window.MediospiraZip;
-const APP_VERSION = '3.0.2';
+const APP_VERSION = '3.0.3';
 const APP_NAME = 'Dr.Coach!';
 const SCHEMA_VERSION = 2;
 const TARGET_TOTAL = 4085;
@@ -483,6 +483,8 @@ function bindEvents(){
   $('#cloudPushAllBtn')?.addEventListener('click',cloudPushAll);
   $('#cloudPullAllBtn')?.addEventListener('click',cloudPullAll);
   $('#cloudRefreshBtn')?.addEventListener('click',cloudRefreshStatus);
+  $('#cloudDiagBtn')?.addEventListener('click',cloudDiagnose);
+  $('#cloudRetryBtn')?.addEventListener('click',cloudRetryFailed);
   $('#copyAIReportBtn')?.addEventListener('click',()=>exportAIReport(true));
   $('#downloadAIReportBtn')?.addEventListener('click',()=>exportAIReport(false));
   $('#aiExportScope')?.addEventListener('change',renderAIExportPreview);
@@ -2033,6 +2035,8 @@ function cloudRefreshStatus() {
   const stateEl = document.getElementById('cloudSyncState');
   const userEl = document.getElementById('cloudSyncUser');
   const pendingEl = document.getElementById('cloudSyncPending');
+  const dlqEl = document.getElementById('cloudSyncDlq');
+  const retryBtn = document.getElementById('cloudRetryBtn');
   const lastEl = document.getElementById('cloudSyncLast');
   const badge = document.getElementById('cloudSyncBadge');
   if (!stateEl) return;
@@ -2042,6 +2046,8 @@ function cloudRefreshStatus() {
     stateEl.textContent = 'Sin sesión (modo local)';
     userEl.textContent = '—';
     pendingEl.textContent = '—';
+    if (dlqEl) dlqEl.textContent = '—';
+    if (retryBtn) retryBtn.hidden = true;
     lastEl.textContent = '—';
     if (badge) { badge.textContent = 'Local-only'; badge.style.background = 'var(--surface-2)'; badge.style.color = 'var(--muted)'; }
     return;
@@ -2059,6 +2065,12 @@ function cloudRefreshStatus() {
     pendingEl.textContent = '0';
   }
 
+  // v3.0.3 · Registros en error (dead-letter queue) + botón de reintento
+  let dlqCount = 0;
+  try { dlqCount = (JSON.parse(localStorage.getItem('drcoach.sync.dlq') || '[]') || []).length; } catch (_) {}
+  if (dlqEl) dlqEl.textContent = String(dlqCount);
+  if (retryBtn) retryBtn.hidden = dlqCount === 0;
+
   // Last sync time
   const lastTs = Number(localStorage.getItem('drcoach.lastSyncAt') || 0);
   if (lastTs > 0) {
@@ -2067,6 +2079,73 @@ function cloudRefreshStatus() {
     } catch { lastEl.textContent = '—'; }
   } else {
     lastEl.textContent = 'Nunca';
+  }
+}
+
+// v3.0.3 · Sync Doctor: recorre cada eslabón de la cadena (config →
+// cliente → sesión → tablas → perfil → cola/DLQ) y muestra el resultado
+// en un panel legible. Pensado para responder "¿por qué me da error de
+// sync?" sin abrir la consola.
+async function cloudDiagnose() {
+  const out = document.getElementById('cloudDiagOutput');
+  const btn = document.getElementById('cloudDiagBtn');
+  if (!out) return;
+  if (!window.DrCoachSync?.diagnose) {
+    cloudLog('Módulo de sincronización no disponible.', 'err');
+    return;
+  }
+  if (btn) btn.disabled = true;
+  out.hidden = false;
+  out.innerHTML = '<div class="cloud-diag-item">Comprobando…</div>';
+  cloudLog('Ejecutando diagnóstico de Cloud Sync…');
+  try {
+    const results = await window.DrCoachSync.diagnose();
+    out.innerHTML = results.map(r =>
+      `<div class="cloud-diag-item ${r.ok ? 'diag-ok' : 'diag-fail'}"><span class="diag-icon" aria-hidden="true">${r.ok ? '✓' : '✗'}</span><div><b>${escapeHTML(r.label)}</b><span>${escapeHTML(r.detail)}</span></div></div>`
+    ).join('');
+    const bad = results.filter(r => !r.ok).length;
+    cloudLog(bad === 0
+      ? '✓ Diagnóstico completo: todo correcto.'
+      : `⚠ Diagnóstico completo: ${bad} punto(s) con problema. Revisa el detalle de arriba.`, bad === 0 ? 'ok' : 'warn');
+  } catch (e) {
+    out.innerHTML = `<div class="cloud-diag-item diag-fail"><span class="diag-icon" aria-hidden="true">✗</span><div><b>Diagnóstico</b><span>${escapeHTML(String(e?.message || e))}</span></div></div>`;
+    cloudLog(`Error en diagnóstico: ${e?.message || e}`, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+    cloudRefreshStatus();
+  }
+}
+
+// v3.0.3 · Reincorpora los registros que quedaron aparcados en la
+// dead-letter (tras 3 fallos del bug anterior) y fuerza la subida ahora.
+async function cloudRetryFailed() {
+  if (!state.cloudUser) { toast('Inicia sesión en Dr.Coach! Cloud primero.'); return; }
+  if (!window.DrCoachSync?.requeueDLQ) return;
+  const btn = document.getElementById('cloudRetryBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const n = await window.DrCoachSync.requeueDLQ();
+    if (n === 0) {
+      cloudLog('No hay registros en error que reintentar.', 'ok');
+      return;
+    }
+    cloudLog(`♻ ${n} registro(s) reincorporados a la cola. Subiendo…`);
+    const result = await window.DrCoachSync.push();
+    if (result.failed === 0 && result.processed > 0) {
+      localStorage.setItem('drcoach.lastSyncAt', String(Date.now()));
+      cloudLog(`✓ ${result.processed} registro(s) recuperados y subidos a la nube.`, 'ok');
+      toast('Registros recuperados y subidos.');
+    } else if (result.failed > 0) {
+      cloudLog(`⚠ ${result.processed} subidos, ${result.failed} siguen fallando. Detalle: ${result.lastError || 'desconocido'}`, 'warn');
+      toast('Algunos registros siguen fallando. Revisa el log.');
+    } else {
+      cloudLog('Sin cambios pendientes por subir.', 'ok');
+    }
+  } catch (e) {
+    cloudLog(`Error al reintentar: ${e?.message || e}`, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+    cloudRefreshStatus();
   }
 }
 

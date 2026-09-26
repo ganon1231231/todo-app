@@ -64,6 +64,8 @@ for (const s of ['attempts','sessions','settings','attachments','baselines','pen
 
 | Síntoma | Causa probable | Arreglo |
 |---|---|---|
+| **"⚠ Error de sync"** fijo / "no se pudo subir ningún registro" (v3.0.2 o anterior) | Bug conocido del sanitizador: mandaba el campo `updatedAt` que la tabla no tiene y Supabase rechazaba la fila | Actualiza a **v3.0.3** (lista blanca de columnas); los registros atrapados se re-suben solos al abrir la app o con "♻ Reintentar registros en error" |
+| **El progreso no aparece en el otro dispositivo/cuenta** (v3.0.2 o anterior) | Doble causa: la subida fallaba (fila anterior) y el pull incremental comparaba reloj del dispositivo vs del servidor y se saltaba filas nuevas | Actualiza a **v3.0.3** (pull completo siempre) y luego Datos → "⬇ Descargar de la nube" en el dispositivo que no veía el progreso |
 | La app queda en "Guardado local" pero los cambios no aparecen en otro dispositivo | `pending_syncs` con cola atascada (falló la subida) | Espera a tener red; la cola se reintentará. Si persiste: F12 → Console busca avisos de `[DrCoachCloud]`; los datos NO se pierden |
 | "Base local ✓ IndexedDB" no aparece en Datos | `js/db.js` no cargó o IndexedDB bloqueada | Cierra otras pestañas de Dr.Coach! (solo puede haber una conexión escritora a la vez); recarga |
 | La app pide modo otra vez o se comporta rara tras actualizar | Caché vieja del Service Worker | Una recarga normal basta (v3.0.2+ renueva sola); si no, F12 → Application → Storage → Clear site data |

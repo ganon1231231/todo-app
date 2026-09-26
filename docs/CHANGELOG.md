@@ -1,5 +1,23 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.0.3 · Reparación de Cloud Sync
+
+> Corrige el **"⚠ Error de sync"** que impedía guardar el progreso en la nube y hacer que apareciera en el otro dispositivo. Los datos locales NUNCA estuvieron en riesgo: el fallo era solo al subir.
+
+### Corregido
+- **Las subidas fallaban con columnas inexistentes** ("Could not find the 'updatedAt' column"). El sanitizador de `cloud/sync.js` era una lista negra y dejaba escapar el campo camelCase `updatedAt` que la app añade a cada intento editado (y a todo registro descargado y vuelto a subir): Supabase rechazaba la fila y el indicador quedaba en "⚠ Error de sync". Ahora es una **lista blanca**: se construye la fila solo con las columnas que existen en cada tabla de `supabase/schema.sql`, así que ningún campo legacy o futuro puede colarse de nuevo.
+- **Los registros que fallaron 3 veces quedaban aparcados para siempre** (dead-letter) — el motivo del "se queda buggeado". Ahora se reincorporan solos a la cola cada vez que abres la app y, además, hay un botón **"♻ Reintentar registros en error"** en la vista Datos.
+- **El pull incremental comparaba el reloj de tu dispositivo con el del servidor** (`.gt('updated_at', hora_local)`): con el reloj adelantado unos minutos, los datos recién subidos desde el otro dispositivo se saltaban en silencio — la causa del "en mi otra cuenta no aparece mi progreso". Ahora el pull es siempre completo (barato para 2 usuarios) y **nunca sobrescribe filas con cambios locales pendientes** en la cola.
+- **Las preferencias no se subían si la fila de perfil no existía** (cuentas creadas antes de que el trigger existiera): el `UPDATE` afectaba a 0 filas en silencio. Ahora es `UPSERT` y la fila de perfil se auto-crea en la primera subida.
+- El diagnóstico ahora distingue **"⚠ Sin conexión"** (no hay internet) de **"⚠ Error de sync"** (Supabase rechazó algo), también en los pulls.
+
+### Añadido
+- **🩺 Ejecutar diagnóstico** (vista Datos): comprueba en un clic la configuración, la sesión, el acceso a las tablas con RLS, la existencia de la fila de perfil y el estado de la cola y de los registros en error — sin abrir la consola.
+- **Fila "Registros en error"** en el panel de Cloud Sync de la vista Datos, con contador en vivo.
+
+### Cambiado
+- **`supabase/schema.sql` reescrito a prueba de balas**: idempotente (seguro para re-ejecutar), con `ADD COLUMN IF NOT EXISTS` para completar instalaciones a medias, y las dos sentencias que pueden chocar con permisos del proyecto (trigger sobre `auth.users` y alta del bucket) envueltas en `DO … EXCEPTION` para que **un fallo parcial no aborte el resto del script**. Incluye backfill de perfiles para usuarios ya existentes y una consulta de verificación al final.
+
 ## Sin publicar (herramientas y docs — la app no cambia)
 
 ### Añadido
