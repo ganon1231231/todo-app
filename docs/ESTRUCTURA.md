@@ -2,6 +2,49 @@
 
 Esta es la brújula del proyecto. La idea: **cada problema tiene una carpeta asignada**.
 
+## Arquitectura en un vistazo
+
+```mermaid
+flowchart LR
+  subgraph RAIZ["Raíz del repo"]
+    INDEX["index.html<br/>entrada única"]
+    SW["sw.js<br/>cache offline"]
+    MAN["manifest.webmanifest<br/>app instalable"]
+  end
+
+  subgraph CODIGO["Código de la app"]
+    CSS["css/styles.css<br/>estilos"]
+    APP["js/app.js<br/>lógica"]
+    DB["js/db.js<br/>capa IndexedDB"]
+    ZIP["js/zip.js<br/>backups"]
+  end
+
+  subgraph NUBE["Nube (opcional)"]
+    CFG["config/supabase.config.js<br/>credenciales (no se sube)"]
+    CLI["cloud/supabase-client.js"]
+    AUTH["cloud/auth.js<br/>login"]
+    SYNC["cloud/sync.js<br/>pull/push"]
+    STO["cloud/storage.js<br/>imágenes"]
+    SQL["supabase/schema.sql<br/>tablas + RLS"]
+  end
+
+  INDEX --> CSS
+  INDEX --> APP
+  INDEX --> SW
+  APP --> DB
+  APP --> ZIP
+  APP --> SYNC
+  DB --> IDB[("IndexedDB<br/>progreso local")]
+  CFG --> CLI
+  CLI --> AUTH
+  CLI --> SYNC
+  CLI --> STO
+  SYNC --> SB[("Supabase<br/>Postgres + Storage")]
+  SQL -. ejecutar en .-> SB
+```
+
+> Regla del flujo: **`js/db.js` + IndexedDB son la fuente de la verdad local**; `cloud/` es un espejo opcional. Si quitas la nube, la app sigue completa.
+
 ---
 
 ## 1. Mapa por tipo de problema
@@ -58,6 +101,11 @@ Tres sitios, por orden de sospecha:
 ---
 
 ## 2. Publicar una nueva versión (ritual completo)
+
+**Atajo (recomendado):** `bash scripts/release.sh patch` (o `minor` / `major`).
+Hace los pasos 2 y 4 automáticamente: sube la versión en `js/app.js`, renueva la caché en `sw.js`, hace commit y crea el tag `vX.Y.Z`. Tú solo escribes los cambios en `docs/CHANGELOG.md` y haces `git push origin main --tags`.
+
+Si prefieres hacerlo a mano:
 
 1. **Haz tus cambios** en la carpeta correspondiente.
 2. **Bump de versión** en 3 sitios:
