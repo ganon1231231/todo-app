@@ -3,7 +3,7 @@
 
 const DB = window.DrCoachDB || window.MediospiraDB;
 const ZIP = window.DrCoachZip || window.MediospiraZip;
-const APP_VERSION = '3.0.4';
+const APP_VERSION = '3.0.5';
 const APP_NAME = 'Dr.Coach!';
 const SCHEMA_VERSION = 2;
 const TARGET_TOTAL = 4085;
@@ -485,6 +485,7 @@ function bindEvents(){
   $('#cloudRefreshBtn')?.addEventListener('click',cloudRefreshStatus);
   $('#cloudDiagBtn')?.addEventListener('click',cloudDiagnose);
   $('#cloudRetryBtn')?.addEventListener('click',cloudRetryFailed);
+  $('#cloudClearQueueBtn')?.addEventListener('click',cloudClearQueue);
   $('#copyAIReportBtn')?.addEventListener('click',()=>exportAIReport(true));
   $('#downloadAIReportBtn')?.addEventListener('click',()=>exportAIReport(false));
   $('#aiExportScope')?.addEventListener('change',renderAIExportPreview);
@@ -2159,6 +2160,37 @@ async function cloudRetryFailed() {
     }
   } catch (e) {
     cloudLog(`Error al reintentar: ${e?.message || e}`, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+    cloudRefreshStatus();
+  }
+}
+
+// v3.0.5 · Vacía la cola de subida de forma controlada. Responde a la
+// pregunta "¿hacemos un clear cola o buscamos el verdadero problema?":
+// el diagnóstico (🩺) ahora dice cuál es el problema real; este botón solo
+// descarta SUBIDAS pendientes — los datos locales NUNCA se tocan.
+async function cloudClearQueue() {
+  if (!window.DrCoachSync?.clearQueue) return;
+  let n = 0;
+  try { n = await window.DrCoachSync.getQueueCount(); } catch (_) {}
+  const ok = confirm(
+    `¿Vaciar la cola de subida (${n} cambio(s) pendientes)?\n\n` +
+    '· Tus datos LOCALES no se tocan: nada se borra de la app.\n' +
+    '· Solo se descartan las subidas pendientes; lo que no haya llegado a la nube NO se subirá desde aquí.\n\n' +
+    'Antes de vaciar, mira el 🩺 Diagnóstico:\n' +
+    '· Si "Prueba de escritura" está en ✗, ejecuta primero supabase/schema.sql en el SQL Editor de Supabase y usa "⬆ Subir todo a la nube" — vaciar ahora descartaría progreso real.\n' +
+    '· Si está en ✓ y la cola es vieja o duplicada, vaciar es seguro.'
+  );
+  if (!ok) return;
+  const btn = document.getElementById('cloudClearQueueBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const cleared = await window.DrCoachSync.clearQueue();
+    cloudLog(`🧹 Cola vaciada: ${cleared} cambio(s) descartado(s). Tus datos locales siguen intactos.`, 'ok');
+    toast('Cola de subida vaciada.');
+  } catch (e) {
+    cloudLog(`Error al vaciar la cola: ${e?.message || e}`, 'err');
   } finally {
     if (btn) btn.disabled = false;
     cloudRefreshStatus();

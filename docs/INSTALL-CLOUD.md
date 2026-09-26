@@ -121,11 +121,16 @@ Antes de tocar nada a mano: entra a **Datos → Cloud Sync → 🩺 Ejecutar dia
 | ⚠ Error de sync | Supabase rechazó algo (schema/permisos/datos) | Pasa el ratón por el indicador: desde v3.0.4 el tooltip muestra el mensaje real. Mira también el log de la vista Datos |
 | ⚠ Sesión expirada (v3.0.4) | El token de sesión caducó y no se pudo renovar | Vuelve a iniciar sesión (cierra sesión en Datos y entra de nuevo). Ya no aparece disfrazado de "Sin conexión" |
 | "N registros en error" > 0 | Filas que fallaron 3 veces y quedaron aparcadas | Pulsa **"♻ Reintentar registros en error"** (v3.0.3 las re-subirá con el formato corregido) |
+| Cola de subida ✗ con TODO lo demás en ✓ (v3.0.5) | Cambios que no se suben aunque la sesión y las tablas están bien | Mira el **desglose nuevo** de la fila: si "Prueba de escritura" está en ✗ ejecuta `supabase/schema.sql` y usa "⬆ Subir todo"; si está en ✓ y la cola es vieja/duplicada, pulsa **"🧹 Vaciar cola de subida"** (no toca tus datos locales) |
+| Prueba de escritura ✗ (v3.0.5) | Tus tablas se LEEN bien pero Supabase RECHAZA las escrituras — tu progreso NO está llegando a la nube | Re-ejecuta `supabase/schema.sql` completo en el SQL Editor (crea las políticas que falten; es seguro) y luego "⬆ Subir todo a la nube" |
+| Motor de sync: "operación colgada recuperada" (v3.0.5) | Una petición sin respuesta llegó a congelar el motor | Nada que hacer: el watchdog lo liberó solo y el sync continúa. Si se repite mucho, revisa tu red |
 | Perfil: "No existe todavía" | Cuenta creada antes de que el trigger de perfiles existiera | No bloquea nada desde v3.0.3: la fila se crea sola en la próxima subida de preferencias |
 | Tabla attempts/sessions: error | El schema no está aplicado o quedó a medias | Re-ejecuta `supabase/schema.sql` completo (es seguro re-ejecutarlo, no toca datos) |
 | La fila "Versión de la app" (Datos) difiere entre dispositivos | Un dispositivo sigue con código viejo que la nube rechaza | En el dispositivo viejo: recarga la app (una recarga normal basta desde v3.0.2) y comprueba que la fila muestra la misma versión |
 
 > **Nota v3.0.4:** si el "⚠ Error de sync" aparecía al abrir la app o al volver de dormir el dispositivo, era el token caducado + un pull sin reintento. Ahora la sesión se renueva antes de cada subida/descarga y los fallos transitorios se recuperan solos (2 reintentos + redescarga periódica cada ~2 min). Si aun así persiste, el tooltip del indicador y la fila "Estado" de Datos te dicen el motivo exacto.
+>
+> **Nota v3.0.5:** toda petición tiene ahora límite de tiempo y un watchdog libera el motor si algo se atasca — la cola ya no puede quedarse "N pendientes" para siempre en silencio. El diagnóstico añade la **Prueba de escritura** (distingue "leer bien pero no poder escribir") y el desglose forense de la cola; y existe el botón **"🧹 Vaciar cola de subida"** para descartar restos viejos sin tocar tus datos locales.
 
 ### Otros problemas
 

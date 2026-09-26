@@ -1,5 +1,23 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.0.5 · La cola de subida ya no se queda atascada — y el diagnóstico te dice la verdad
+
+> Síntoma que cierra esta versión: el diagnóstico mostraba **todo en ✓ (config, sesión, tablas, perfil) pero "Cola de subida: ✗ N cambio(s) pendientes"** con "Registros en error: Ninguno", y esos cambios no se subían nunca. ¿Vaciar la cola o buscar el problema? Esta versión hace las dos cosas: arregla las causas reales y añade el botón **"🧹 Vaciar cola de subida"** para los restos viejos, con la prueba que distingue un caso del otro.
+
+### Corregido
+- **Una petición colgada congelaba el motor para siempre**: supabase-js no tiene timeout; una única request que no respondía (cambio de red, portátil dormido a mitad de petición) dejaba el motor "ocupado" para siempre → cada push/pull posterior se saltaba EN SILENCIO y la cola jamás se drenaba (el clásico "N pendientes" sin ningún error visible). Ahora **toda llamada de red tiene límite de tiempo** (15 s sesión / 30 s datos) y un **watchdog de 90 s** libera el motor si algo se atasca igualmente.
+- **El error quedaba enmascarado como "N cambios pendientes"**: el temporizador interno sobrescribía el estado "⚠ Error de sync" con la etiqueta de pendientes 45 s después de cada fallo. Ahora los estados de error son **persistentes** hasta que una subida/descarga se recupera de verdad — lo que ves en el indicador es la verdad.
+- **Éxito parcial reportado como éxito**: si una subida subía 3 filas y fallaban 2, el panel lo mostraba como pendientes sin error. Ahora un éxito parcial se muestra como error con su motivo.
+- **Subidas duplicadas en la cola**: "⬆ Subir todo a la nube" re-encolaba TODAS las filas en cada pulsación; pulsarlo dos veces (o a través de versiones) apilaba duplicados que inflaban el contador "Cola de subida". Ahora la cola se **deduplica sola** (una entrada por tabla+fila, siempre con el dato más reciente).
+- **El usuario podía quedar "null" para el motor pero "✓" para el diagnóstico**: un evento de autenticación con sesión nula dejaba al motor saltándose todas las subidas en silencio mientras el diagnóstico (que renueva la sesión él mismo) seguía diciendo "Sesión ✓". El motor ahora **auto-recupera la sesión** antes de rendirse.
+- Filas locales dañadas (un texto donde va una lista) ya no bloquean la cola para siempre: los campos lista/jsonb se normalizan al subir.
+
+### Añadido
+- **🩺 Diagnóstico v2 — "Prueba de escritura"**: la comprobación que faltaba. Las tablas podían leerse ✓ mientras RLS bloqueaba las ESCRITURAS (el síntoma exacto de una base creada con un schema antiguo). Ahora el diagnóstico sube una escritura de prueba inofensiva (re-graba tu propio perfil con su contenido actual) y te muestra el error REAL de Supabase si algo falla — se acabó adivinar.
+- **🩺 Diagnóstico v2 — cola forense**: la fila "Cola de subida" ahora desglosa qué hay atascado (attempts ×N, sessions ×N), desde cuándo, cuánto ocupa, si alguna entrada falló antes (con el motivo), si hay duplicados y si hay entradas >400 KB (boards con imágenes muy grandes).
+- **Fila "Motor de sync"** en el diagnóstico: estado actual del motor, último error y cuántas operaciones colgadas recuperó el watchdog.
+- **Botón "🧹 Vaciar cola de subida"** (Datos): descarta las subidas pendientes SIN tocar tus datos locales. Con confirmación que te avisa: si la prueba de escritura está en ✗, vaciar descartaría progreso real — arregla eso primero.
+
 ## v3.0.4 · Endurecimiento del motor de sync (además de lo arreglado en v3.0.3)
 
 > Si después de v3.0.3 el indicador volvía a mostrar "⚠ Error de sync" de vez en cuando (o al abrir la app), esta versión elimina las causas restantes. Verificado contra el esquema real de Supabase: las 48 columnas que la app usa coinciden una a una y las filas de ejemplo pasan la validación — el problema restante estaba en la GESTIÓN de fallos del motor, no en la base de datos.

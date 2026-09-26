@@ -82,6 +82,10 @@
   const PULL_RETRY_DELAY_MS = 4000;    // v3.0.4: first transient retry
   const PULL_RETRY_MAX = 2;            // v3.0.4: 2 automatic retries per burst
   const TOKEN_MARGIN_MS = 60000;       // v3.0.4: refresh JWT 60 s before expiry
+  // v3.0.5 · Anti-wedge: NO network call may hold a sync operation forever.
+  const NET_TIMEOUT_MS = 30000;        // per-request cap (pull selects, upserts…)
+  const AUTH_TIMEOUT_MS = 15000;       // session/refresh cap
+  const RUNNING_WATCHDOG_MS = 90000;   // if running=true beyond this, force-release
 
   const state = {
     status: 'idle',
@@ -94,6 +98,8 @@
     tickCount: 0,
     pullRetries: 0,
     pullRetryTimer: null,
+    runningWatchdog: null, // v3.0.5
+    stuckCount: 0,         // v3.0.5: hung operations recovered by the watchdog
   };
 
   // v3.0.4 · One place decides WHY a request failed, so the indicator can
@@ -104,6 +110,59 @@
     if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|ERR_INTERNET|network|load failed/i.test(m)) return 'network';
     if (/JWT|jwt expired|invalid JWT|PGRST301|PGRST302|401\b|invalid refresh token|session missing|Invalid API key|signature|expired/i.test(m)) return 'auth';
     return 'supabase';
+  }
+
+  // v3.0.5 · supabase-js requests have NO built-in timeout. A single hung
+  // request (mobile network switch, laptop sleeping mid-request…) left
+  // state.running = true FOREVER: every later push()/pull() silently
+  // returned "busy" and the upload queue never drained again (the classic
+  // "N cambio(s) pendientes" with DLQ empty and no error anywhere).
+  // Every network await now goes through withTimeout(); the watchdog
+  // (below) is the last-resort self-heal.
+  function withTimeout(promise, ms, label = 'Red') {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => {
+        // "NetworkTimeout" is matched by classifyError() → 'network'.
+        reject(new Error(`NetworkTimeout: ${label} no respondió en ${Math.round(ms / 1000)} s`));
+      }, ms);
+      Promise.resolve(promise).then(
+        (v) => { clearTimeout(t); resolve(v); },
+        (e) => { clearTimeout(t); reject(e); }
+      );
+    });
+  }
+
+  // v3.0.5 · Self-heal: an auth event can momentarily null CLOUD.user (e.g.
+  // a failed token refresh fires with session=null). The old code then
+  // silently skipped EVERY push/pull while the Sync Doctor — which calls
+  // getSession() itself — kept reporting "Sesión ✓". If the user is missing
+  // but the client is enabled, try to recover the session once.
+  async function ensureUser() {
+    if (CLOUD.user) return true;
+    if (!CLOUD.enabled) return false;
+    try {
+      const s = await withTimeout(CLOUD.getSession(), AUTH_TIMEOUT_MS, 'getSession');
+      return !!(s?.user);
+    } catch (_) { return false; }
+  }
+
+  // v3.0.5 · Last-resort guard: if state.running stays true for >90 s
+  // something wedged despite the timeouts — release it so sync resumes.
+  function armRunningWatchdog() {
+    clearTimeout(state.runningWatchdog);
+    state.runningWatchdog = setTimeout(() => {
+      state.runningWatchdog = null;
+      if (!state.running) return;
+      state.running = false;
+      state.stuckCount++;
+      console.warn('[DrCoachSync] watchdog: una operación llevaba >90 s colgada; motor liberado.');
+      setStatus('error', { error: 'supabase', lastError: 'Una operación de sync se quedó colgada y fue reiniciada (watchdog).' });
+      refreshPendingCount();
+    }, RUNNING_WATCHDOG_MS);
+  }
+  function disarmRunningWatchdog() {
+    clearTimeout(state.runningWatchdog);
+    state.runningWatchdog = null;
   }
 
   function setStatus(s, meta = {}) {
@@ -134,6 +193,21 @@
     await ensureQueueStore();
     const id = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random().toString(36).slice(2)) + Date.now());
     const entry = { id, table, op, payload, ts: Date.now() };
+    // v3.0.5 · Dedupe: ONE pending entry per table+op+row. "Subir todo a la
+    // nube" re-enqueues every local row on each press — pressing it twice
+    // (or across versions) used to STACK duplicate entries, inflating the
+    // "Cola de subida" counter with rows that were already in the cloud.
+    try {
+      const existing = await DB.getAll(QUEUE_STORE);
+      const dup = existing.find(e => e && e.table === table && e.op === op &&
+        (op === 'settings' || String(e.payload?.id) === String(payload?.id)));
+      if (dup) {
+        // Replace with the newest payload; keep the failure history.
+        await DB.put(QUEUE_STORE, { ...dup, payload: entry.payload, ts: entry.ts });
+        refreshPendingCount();
+        return;
+      }
+    } catch (_) { /* dedupe is best-effort; fall through to plain enqueue */ }
     await DB.put(QUEUE_STORE, entry);
     refreshPendingCount();
   }
@@ -150,9 +224,17 @@
 
   async function refreshPendingCount() {
     const queue = await getQueue();
+    // v3.0.5 · 'error' / 'auth' / 'offline' are STICKY. The old code replaced
+    // them with "Cambios pendientes de subir" on the very next poll tick, so
+    // a failing upload masked itself as a harmless pending count — the real
+    // error was only visible inside the Sync Doctor. If entries are failing,
+    // the error label stays until a push/pull actually recovers.
+    const sticky = state.status === 'error' || state.status === 'auth' || state.status === 'offline';
     if (queue.length > 0) {
-      setStatus('pending', { count: queue.length });
-    } else if (state.status === 'pending') {
+      if (!sticky) setStatus('pending', { count: queue.length });
+    } else if (state.status === 'pending' || state.status === 'error' || state.status === 'auth') {
+      setStatus('idle');
+    } else if (state.status === 'offline' && navigator.onLine) {
       setStatus('idle');
     }
     return queue.length;
@@ -173,7 +255,9 @@
     let n = 0;
     for (const entry of dlq) {
       if (!entry || !entry.table || !entry.op) continue;
-      const { lastError, failures, ...clean } = entry;
+      // v3.0.5: KEEP lastError — the Sync Doctor shows why the entry failed
+      // before. Only the failure counter resets so it gets fresh attempts.
+      const { failures, ...clean } = entry;
       try { await DB.put(QUEUE_STORE, { ...clean, failures: 0 }); n++; } catch (_) {}
     }
     try { localStorage.setItem(DLQ_KEY, '[]'); } catch (_) {}
@@ -250,7 +334,9 @@
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(async () => {
-      if (!CLOUD.user || state.running) return;
+      if (state.running) return;
+      // v3.0.5: recover a momentarily-null user instead of skipping forever
+      if (!CLOUD.user) { const ok = await ensureUser(); if (!ok) return; }
       state.tickCount++;
       const pending = await refreshPendingCount();
       // v3.0.4: pending changes → push (as before). Every 3rd tick → also
@@ -270,13 +356,14 @@
   }
 
   async function pull(force = false) {
-    if (!CLOUD.enabled || !CLOUD.user) return;
-    if (!navigator.onLine) { setStatus('offline'); return; }
+    if (!CLOUD.enabled || !navigator.onLine) { if (!navigator.onLine) setStatus('offline'); return; }
+    if (!(await ensureUser())) return; // v3.0.5: try to self-heal a null user
     if (state.running) return;
     state.running = true;
+    armRunningWatchdog(); // v3.0.5
     setStatus('syncing', { phase: 'pull' });
     try {
-      await ensureFreshSession(); // v3.0.4: never fire requests with a dying JWT
+      await withTimeout(ensureFreshSession(), AUTH_TIMEOUT_MS, 'Renovación de sesión'); // v3.0.4/5: never fire requests with a dying (or hanging) JWT
       const sb = CLOUD.supabase;
       // v3.0.3 · Always FULL pull. The old incremental filter
       // (`.gt('updated_at', localTimestamp)`) compared the DEVICE clock
@@ -289,7 +376,10 @@
       const dirty = await dirtyRowSet();
 
       for (const table of TABLES) {
-        const { data, error } = await sb.from(table).select('*').eq('user_id', CLOUD.userId);
+        const { data, error } = await withTimeout(
+          sb.from(table).select('*').eq('user_id', CLOUD.userId),
+          NET_TIMEOUT_MS, `Descarga de ${table}`
+        );
         if (error) throw error;
         if (!data?.length) continue;
         // Merge into IndexedDB (cloud wins unless the local row has
@@ -324,6 +414,7 @@
       }
     } finally {
       state.running = false;
+      disarmRunningWatchdog(); // v3.0.5
     }
   }
 
@@ -342,19 +433,21 @@
   }
 
   async function push() {
-    if (!CLOUD.enabled || !CLOUD.user) return { processed: 0, failed: 0, lastError: null };
-    if (!navigator.onLine) { setStatus('offline'); return { processed: 0, failed: 0, lastError: 'offline' }; }
+    if (!CLOUD.enabled || !navigator.onLine) { if (!navigator.onLine) setStatus('offline'); return { processed: 0, failed: 0, lastError: 'offline' }; }
+    if (!(await ensureUser())) return { processed: 0, failed: 0, lastError: 'sin-usuario' }; // v3.0.5
     if (state.running) return { processed: 0, failed: 0, lastError: 'busy' };
     const queue = await getQueue();
     if (queue.length === 0) { setStatus('idle'); return { processed: 0, failed: 0, lastError: null }; }
     state.running = true;
+    armRunningWatchdog(); // v3.0.5
     setStatus('syncing', { phase: 'push', pending: queue.length });
     // v3.0.4: refresh the token BEFORE draining the queue — the first
     // entry would otherwise 401 after sleep/wake and pollute the DLQ.
     try {
-      await ensureFreshSession();
+      await withTimeout(ensureFreshSession(), AUTH_TIMEOUT_MS, 'Renovación de sesión');
     } catch (err) {
       state.running = false;
+      disarmRunningWatchdog();
       const emsg = String(err?.message || err);
       const kind0 = classifyError(emsg);
       if (kind0 === 'auth') setStatus('auth', { error: 'auth', lastError: emsg });
@@ -368,16 +461,19 @@
     try {
       for (const entry of queue) {
         try {
-          await applyEntry(entry);
+          // v3.0.5: hard cap per entry — a hung upsert can no longer freeze
+          // the whole drain (state.running) forever.
+          await withTimeout(applyEntry(entry), NET_TIMEOUT_MS, `Subida de ${entry.table}`);
           await dequeue(entry.id);
           processed++;
         } catch (err) {
           const msg = String(err?.message || err || 'unknown');
-          console.warn('[DrCoachSync] entry failed', entry, msg);
+          console.warn('[DrCoachSync] entry failed', entry.table, entry.payload?.id, msg);
           failed++;
           lastError = msg;
           // Move to dead-letter queue after 3 failures to avoid infinite loop
           entry.failures = (entry.failures || 0) + 1;
+          entry.lastError = msg.slice(0, 300); // v3.0.5: visible in the Sync Doctor
           if (entry.failures >= 3) {
             console.error('[DrCoachSync] entry moved to dead-letter after 3 failures:', entry);
             await dequeue(entry.id);
@@ -417,12 +513,20 @@
         } else {
           setStatus('error', { error: 'supabase', lastError, count: failed });
         }
+      } else if (failed > 0) {
+        // v3.0.5: partial success — surface the failure too (the old code
+        // fell through to "pending", masking rows that keep failing).
+        const kind = classifyError(lastError);
+        if (kind === 'network') setStatus('offline', { error: 'network', lastError });
+        else if (kind === 'auth') setStatus('auth', { error: 'auth', lastError });
+        else setStatus('error', { error: 'supabase', lastError, count: failed });
       } else {
         const remaining = await refreshPendingCount();
         setStatus(remaining > 0 ? 'pending' : 'idle', { count: remaining, pushed: processed });
       }
     } finally {
       state.running = false;
+      disarmRunningWatchdog(); // v3.0.5
     }
     return { processed, failed, lastError };
   }
@@ -490,11 +594,14 @@
       if (r.studyBoard != null) r.study_board = r.studyBoard;
       if (r.isReview != null) r.is_review = r.isReview;
       if (r.reviewEvents != null) r.review_events = r.reviewEvents;
-      // jsonb / array columns refuse empty strings in PostgreSQL
+      // jsonb / array columns refuse non-arrays in PostgreSQL. A legacy or
+      // corrupted local row carrying a string where an array belongs would
+      // fail with 22P02 on EVERY retry — normalize defensively (v3.0.5).
+      // (Only the upload copy is touched; IndexedDB keeps the original.)
       if (r.study_board === undefined) r.study_board = null;
-      if (r.review_events === undefined) r.review_events = [];
-      if (r.error_reasons === undefined) r.error_reasons = [];
-      if (r.attachment_ids === undefined) r.attachment_ids = [];
+      if (!Array.isArray(r.review_events)) r.review_events = [];
+      if (!Array.isArray(r.error_reasons)) r.error_reasons = [];
+      if (!Array.isArray(r.attachment_ids)) r.attachment_ids = [];
     }
     if (table === 'canvas_objects') {
       if (r.boardId != null) r.board_id = r.boardId;
@@ -625,6 +732,20 @@
   // ---------- status indicator registration --------------------------
   function registerIndicator(indicator) { state.indicator = indicator; }
 
+  // v3.0.5 · Controlled queue reset for the "🧹 Vaciar cola de subida"
+  // button. Does NOT touch local data — only discards PENDING UPLOAD
+  // operations. For rows that were already uploaded (duplicates) or that
+  // the user explicitly decides to stop retrying.
+  async function clearQueue() {
+    const q = await getQueue();
+    await ensureQueueStore();
+    await DB.clear(QUEUE_STORE);
+    refreshPendingCount();
+    return q.length;
+  }
+  async function getQueueCount() {
+    return (await getQueue()).length;
+  }
   function getStatus() { return state.status; }
   // v3.0.4: for the Datos panel — what exactly failed last, and why.
   function getLastError() { return { message: state.lastError, kind: state.lastErrorKind }; }
@@ -673,12 +794,70 @@
       if (profErr) push(false, 'Perfil', profErr.message);
       else if (!prof?.length) push(false, 'Perfil', 'No existe todavía — se creará automáticamente en la próxima subida (v3.0.3).');
       else push(true, 'Perfil', `OK (${prof[0].display_name || 'sin nombre'})`);
-      // Queue + DLQ counters
+
+      // v3.0.5 · WRITE TEST — reads can pass while RLS silently blocks
+      // INSERT/UPDATE. That exact mismatch ("tablas ✓ / cola ✗") is the
+      // signature of a database created with an older schema.sql: the doctor
+      // now proves it in one step. Safe: it writes the profile row back
+      // with its CURRENT content (a no-op write), so nothing changes.
+      try {
+        const current = prof?.[0];
+        const row = current
+          ? { id: current.id, display_name: current.display_name, preferences: current.preferences || {} }
+          : { id: CLOUD.userId, display_name: CLOUD.user?.user_metadata?.display_name || CLOUD.userEmail || 'Coach', preferences: {} };
+        const { error: wErr } = await sb.from('profiles').upsert(row);
+        if (wErr) {
+          push(false, 'Prueba de escritura', `Supabase RECHAZÓ una escritura de prueba: ${wErr.message}. Tus cambios locales NO están llegando a la nube → ejecuta supabase/schema.sql en el SQL Editor (es seguro) y luego "⬆ Subir todo a la nube".`);
+        } else {
+          push(true, 'Prueba de escritura', 'Supabase aceptó una escritura de prueba — permisos de subida OK.');
+        }
+      } catch (eW) {
+        push(false, 'Prueba de escritura', String(eW?.message || eW));
+      }
+
+      // v3.0.5 · ENGINE row — is the motor itself healthy?
+      try {
+        const st = getStatus();
+        const le = getLastError();
+        const stLabel = { idle: 'inactivo — todo al día', syncing: 'sincronizando ahora', pending: 'con cambios pendientes', offline: 'sin conexión', error: '⚠ error', auth: '⚠ sesión expirada' }[st] || st;
+        const stuckNote = state.stuckCount > 0 ? ` · ${state.stuckCount} operación(es) colgadas recuperadas automáticamente` : '';
+        const errNote = le?.message ? ` · último error: ${String(le.message).slice(0, 140)}` : '';
+        push(st !== 'error' && st !== 'auth', 'Motor de sync', `Estado: ${stLabel}${errNote}${stuckNote}`);
+      } catch (_) {}
+
+      // Queue + DLQ counters (v3.0.5: forensic detail — what is stuck,
+      // since when, whether it failed before, duplicates and size)
       const queue = await getQueue();
-      push(queue.length === 0, 'Cola de subida', queue.length === 0 ? 'Vacía — todo está en la nube.' : `${queue.length} cambio(s) pendientes de subir.`);
+      if (queue.length === 0) {
+        push(true, 'Cola de subida', 'Vacía — todo está en la nube.');
+      } else {
+        const byTable = {};
+        let withErr = 0;
+        let lastQError = null;
+        let oldest = null;
+        const seen = new Set();
+        let dups = 0;
+        let maxEntry = 0;
+        for (const e of queue) {
+          byTable[e.table] = (byTable[e.table] || 0) + 1;
+          if (e.lastError) { withErr++; lastQError = e.lastError; }
+          if (!oldest || (e.ts || 0) < oldest) oldest = e.ts;
+          const k = `${e.table}:${e.op}:${e.op === 'settings' ? 'settings' : e.payload?.id ?? ''}`;
+          if (seen.has(k)) dups++; else seen.add(k);
+          maxEntry = Math.max(maxEntry, JSON.stringify(e.payload || {}).length);
+        }
+        const mins = oldest ? Math.max(0, Math.round((Date.now() - oldest) / 60000)) : 0;
+        const age = mins >= 60 ? `${Math.floor(mins / 60)} h ${mins % 60} min` : `${mins} min`;
+        const det = Object.entries(byTable).map(([t, n]) => `${t} ×${n}`).join(', ');
+        const kb = Math.round(JSON.stringify(queue).length / 1024);
+        const bigNote = maxEntry > 400000 ? ` · ⚠ hay entradas de >400 KB (Study Board con imágenes muy grandes): pueden superar el límite de subida` : '';
+        const dupNote = dups > 0 ? ` · ${dups} duplicado(s) (se deduplican solos desde v3.0.5)` : '';
+        const errNote = withErr > 0 ? ` · ⚠ ${withErr} con error previo: ${String(lastQError).slice(0, 130)}` : '';
+        push(false, 'Cola de subida', `${queue.length} pendiente(s) — ${det} · esperando desde hace ~${age} · ${kb} KB${errNote}${bigNote}${dupNote}`);
+      }
       let dlqCount = 0;
       try { dlqCount = (JSON.parse(localStorage.getItem(DLQ_KEY) || '[]') || []).length; } catch (_) {}
-      push(dlqCount === 0, 'Registros en error', dlqCount === 0 ? 'Ninguno.' : `${dlqCount} registro(s) aparcaron tras 3 fallos — usa "Reintentar registros en error".`);
+      push(dlqCount === 0, 'Registros en error', dlqCount === 0 ? 'Ninguno.' : `${dlqCount} registro(s) aparcaron tras 3 fallos — usa "♻ Reintentar registros en error".`);
     } catch (err) {
       push(false, 'Diagnóstico', String(err?.message || err));
     }
@@ -697,6 +876,8 @@
     enqueue,
     refreshPendingCount,
     requeueDLQ,
+    clearQueue,
+    getQueueCount,
     diagnose,
     setStatus,
     getStatus,
