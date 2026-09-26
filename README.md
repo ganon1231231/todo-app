@@ -54,6 +54,7 @@ drcoach/
     ├── ESTRUCTURA.md     ← 📖 Mapa "¿dónde toco qué?" — EMPIEZA AQUÍ
     ├── CHANGELOG.md      ← Historial de versiones
     ├── INSTALL-CLOUD.md  ← Guía de configuración de Supabase paso a paso
+    ├── GITHUB-PAGES.md   ← Guía para publicar/actualizar tu web en GitHub
     └── DISTRIBUCION.md   ← Notas históricas de distribución (v2.6.7)
 ```
 
@@ -73,6 +74,10 @@ drcoach/
 ---
 
 ## 🌐 Publicar / actualizar en GitHub Pages
+
+Guía completa paso a paso (subir el repo, activar Pages, verificar, dominio propio, problemas frecuentes): **`docs/GITHUB-PAGES.md`**.
+
+Resumen rápido:
 
 1. Sube/reemplaza el contenido de esta carpeta en tu repositorio (manteniendo las carpetas tal cual).
 2. Espera a que GitHub Pages termine el deploy.
