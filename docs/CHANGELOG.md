@@ -1,5 +1,20 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.0.4 · Endurecimiento del motor de sync (además de lo arreglado en v3.0.3)
+
+> Si después de v3.0.3 el indicador volvía a mostrar "⚠ Error de sync" de vez en cuando (o al abrir la app), esta versión elimina las causas restantes. Verificado contra el esquema real de Supabase: las 48 columnas que la app usa coinciden una a una y las filas de ejemplo pasan la validación — el problema restante estaba en la GESTIÓN de fallos del motor, no en la base de datos.
+
+### Corregido
+- **Peticiones con el token caducado tras dormir el dispositivo**: el motor disparaba pull/push con el JWT viejo antes de que supabase-js lo renovara → 401 → "⚠ Error de sync". Ahora **cada pull y push renueva la sesión primero** si falta menos de 60 s para su expiración.
+- **Un solo fallo del pull al arrancar dejaba "⚠ Error de sync" pegado toda la sesión**: el reintento solo existía para subidas. Ahora el pull **se reintenta solo (2 veces, 4 s)** y el temporizador de 45 s **vuelve a descargar cada ~2 min** — la etiqueta de error se recupera sola y el progreso guardado en el OTRO dispositivo llega sin recargar la app.
+- **"Sesión expirada" ya no se disfraza de "⚠ Sin conexión"**: los fallos de autenticación (JWT caducado, refresh token inválido) tienen su propio estado con color rojo y mensaje accionable, tanto en el indicador como en la fila "Estado" de la vista Datos.
+- **El estado de error y su causa ya no son un secreto**: al pasar el ratón por el indicador se ve el mensaje real de Supabase, y la fila "Estado" del panel Cloud Sync muestra el detalle (truncado) en lugar de un "Conectado" plano.
+- Subir preferencias sin usuario activo ahora da un mensaje claro en vez de un error críptico de RLS.
+
+### Añadido
+- **Fila "Versión de la app"** en el panel Cloud Sync (Datos): confirma de un vistazo que AMBOS dispositivos corren la misma versión — un dispositivo viejo (≤3.0.2) sigue mandando campos que la nube rechaza.
+- **Diagnóstico más útil**: la comprobación de "Sesión" muestra la validez restante del token y, si ya caducó, intenta renovarlo ahí mismo y reporta el resultado.
+
 ## v3.0.3 · Reparación de Cloud Sync
 
 > Corrige el **"⚠ Error de sync"** que impedía guardar el progreso en la nube y hacer que apareciera en el otro dispositivo. Los datos locales NUNCA estuvieron en riesgo: el fallo era solo al subir.

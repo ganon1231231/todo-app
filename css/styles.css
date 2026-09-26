@@ -549,6 +549,12 @@ html[data-theme="night"] .study-board-stage,html[data-theme="halloween"] .study-
 .save-state.is-pending .save-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 16%,transparent)}
 .save-state.is-offline{color:var(--warn)}
 .save-state.is-offline .save-dot{background:var(--warn)}
+/* v3.0.4: "Sesión expirada" / "Error de sync" — red family, never confusable
+   with a simple connectivity blip. */
+.save-state.is-auth{color:var(--bad)}
+.save-state.is-auth .save-dot{background:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 14%,transparent)}
+.save-state.is-error{color:var(--bad);font-weight:600}
+.save-state.is-error .save-dot{background:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 14%,transparent);animation:dc-pulse 1.6s ease-in-out infinite}
 .save-state.is-local .save-dot{background:var(--muted)}
 .save-state.is-idle .save-dot{background:#29a36f}
 @keyframes dc-pulse{0%,100%{opacity:1}50%{opacity:.45}}

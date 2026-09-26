@@ -2,6 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
+  <!-- v3.0.4 · misma base auto-corregida que index.html (ver comentario ahí):
+       evita que los recursos relativos rompan si la URL no termina en "/" -->
+  <script>
+    (function () {
+      var p = location.pathname;
+      var base = (p.charAt(p.length - 1) === '/' || /\.[a-zA-Z0-9]+$/.test(p)) ? './' : p + '/';
+      document.write('<base href="' + base + '">');
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
   <meta name="theme-color" content="#1f4f9a" />

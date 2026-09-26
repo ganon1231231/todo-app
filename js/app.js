@@ -3,7 +3,7 @@
 
 const DB = window.DrCoachDB || window.MediospiraDB;
 const ZIP = window.DrCoachZip || window.MediospiraZip;
-const APP_VERSION = '3.0.3';
+const APP_VERSION = '3.0.4';
 const APP_NAME = 'Dr.Coach!';
 const SCHEMA_VERSION = 2;
 const TARGET_TOTAL = 4085;
@@ -2038,8 +2038,13 @@ function cloudRefreshStatus() {
   const dlqEl = document.getElementById('cloudSyncDlq');
   const retryBtn = document.getElementById('cloudRetryBtn');
   const lastEl = document.getElementById('cloudSyncLast');
+  const verEl = document.getElementById('cloudSyncVersion');
   const badge = document.getElementById('cloudSyncBadge');
   if (!stateEl) return;
+
+  // v3.0.4: make the app version visible in Datos — when the sync error
+  // comes from a device still running 3.0.2/3.0.3, this row proves it.
+  if (verEl) verEl.textContent = `v${APP_VERSION}`;
 
   const hasUser = !!(state.cloudUser);
   if (!hasUser) {
@@ -2053,8 +2058,19 @@ function cloudRefreshStatus() {
     return;
   }
   userEl.textContent = state.cloudUser?.email || '—';
-  stateEl.textContent = 'Conectado';
-  if (badge) { badge.textContent = 'Cloud Sync'; badge.style.background = 'var(--primary)'; badge.style.color = '#fff'; }
+  // v3.0.4: the Estado row mirrors the live indicator — including WHY it
+  // failed (auth / supabase) instead of a flat "Conectado".
+  const st = window.DrCoachSync?.getStatus?.() || 'idle';
+  const err = window.DrCoachSync?.getLastError?.();
+  const stLabel = { idle: 'Conectado — todo sincronizado', syncing: 'Sincronizando…', pending: 'Cambios pendientes de subir', offline: 'Sin conexión', error: '⚠ Error de sync', auth: '⚠ Sesión expirada' }[st] || st;
+  stateEl.textContent = (st === 'error' || st === 'auth') && err?.message ? `${stLabel} — ${String(err.message).slice(0, 120)}` : stLabel;
+  stateEl.style.color = (st === 'error' || st === 'auth') ? 'var(--bad)' : '';
+  if (badge) {
+    const ok = st === 'idle' || st === 'pending';
+    badge.textContent = ok ? 'Cloud Sync' : st === 'syncing' ? 'Cloud Sync' : '⚠ Revisar';
+    badge.style.background = ok || st === 'syncing' ? 'var(--primary)' : 'var(--bad)';
+    badge.style.color = '#fff';
+  }
 
   // Pending count
   if (window.DrCoachSync) {

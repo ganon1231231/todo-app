@@ -118,12 +118,14 @@ Antes de tocar nada a mano: entra a **Datos → Cloud Sync → 🩺 Ejecutar dia
 | ☁ Guardado | Todo subido y sincronizado | Nada que hacer ✅ |
 | ☁ N cambios pendientes | Hay cambios locales esperando subida | Con conexión se suben solos (45 s). Puedes forzar con "⬆ Subir todo a la nube" |
 | ⚠ Sin conexión | No hay internet (o Supabase no responde) | Revisa tu red; al volver, se reintenta solo |
-| ⚠ Error de sync | Supabase rechazó algo (schema/permisos/datos) | Mira el detalle en el log de la vista Datos y en la tabla de abajo |
+| ⚠ Error de sync | Supabase rechazó algo (schema/permisos/datos) | Pasa el ratón por el indicador: desde v3.0.4 el tooltip muestra el mensaje real. Mira también el log de la vista Datos |
+| ⚠ Sesión expirada (v3.0.4) | El token de sesión caducó y no se pudo renovar | Vuelve a iniciar sesión (cierra sesión en Datos y entra de nuevo). Ya no aparece disfrazado de "Sin conexión" |
 | "N registros en error" > 0 | Filas que fallaron 3 veces y quedaron aparcadas | Pulsa **"♻ Reintentar registros en error"** (v3.0.3 las re-subirá con el formato corregido) |
 | Perfil: "No existe todavía" | Cuenta creada antes de que el trigger de perfiles existiera | No bloquea nada desde v3.0.3: la fila se crea sola en la próxima subida de preferencias |
 | Tabla attempts/sessions: error | El schema no está aplicado o quedó a medias | Re-ejecuta `supabase/schema.sql` completo (es seguro re-ejecutarlo, no toca datos) |
+| La fila "Versión de la app" (Datos) difiere entre dispositivos | Un dispositivo sigue con código viejo que la nube rechaza | En el dispositivo viejo: recarga la app (una recarga normal basta desde v3.0.2) y comprueba que la fila muestra la misma versión |
 
-> **Nota v3.0.3:** si venías usando la app con el "⚠ Error de sync" pegado, tus datos locales estuvieron siempre a salvo (el fallo era solo al subir). Actualiza la app, abre Datos y usa el botón de reintento: los registros atrapados se recuperan y suben.
+> **Nota v3.0.4:** si el "⚠ Error de sync" aparecía al abrir la app o al volver de dormir el dispositivo, era el token caducado + un pull sin reintento. Ahora la sesión se renueva antes de cada subida/descarga y los fallos transitorios se recuperan solos (2 reintentos + redescarga periódica cada ~2 min). Si aun así persiste, el tooltip del indicador y la fila "Estado" de Datos te dicen el motivo exacto.
 
 ### Otros problemas
 

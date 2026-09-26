@@ -8,6 +8,8 @@
  *   ☁ Sincronizando…       — push or pull in progress
  *   ☁ N cambios pendientes — local changes queued, not yet pushed
  *   ⚠ Sin conexión         — offline
+ *   ⚠ Error de sync        — Supabase rejected something (hover = detail)
+ *   ⚠ Sesión expirada      — v3.0.4: JWT dead, needs re-login (hover = detail)
  *
  * It also keeps the legacy save pulse messages working by listening
  * for `savePulse()` calls made by app.js.
@@ -23,6 +25,7 @@
     pending:     '☁',
     offline:     '⚠',
     error:       '⚠',
+    auth:        '⚠',
     local:       '💾',
   };
   const LABELS = {
@@ -32,6 +35,7 @@
     pending:     (n) => `${n} cambio${n === 1 ? '' : 's'} pendiente${n === 1 ? '' : 's'}`,
     offline:     'Sin conexión',
     error:       'Error de sync',
+    auth:        'Sesión expirada',
     local:       'Solo local',
   };
 
@@ -47,10 +51,13 @@
     const labelFn = LABELS[status] || (() => status);
     const label = typeof labelFn === 'function' ? labelFn(meta?.count || 0) : labelFn;
     el.innerHTML = `<span class="save-dot save-dot-${status}"></span> ${icon} ${label}`;
-    el.classList.remove('is-syncing', 'is-pending', 'is-offline', 'is-local', 'is-idle');
+    el.classList.remove('is-syncing', 'is-pending', 'is-offline', 'is-local', 'is-idle', 'is-error', 'is-auth');
     el.classList.add(`is-${status}`);
-    // Refresh title for accessibility
-    el.setAttribute('title', `Dr.Coach! Cloud: ${label}`);
+    // v3.0.4: the tooltip now carries the ACTUAL failure detail (Supabase
+    // message), so hovering the ⚠ tells the user WHAT went wrong instead
+    // of just repeating the label.
+    const detail = meta?.lastError ? ` — ${String(meta.lastError).slice(0, 160)}` : '';
+    el.setAttribute('title', `Dr.Coach! Cloud: ${label}${detail}`);
   }
 
   // Observe legacy `savePulse` text changes so we can interleave:

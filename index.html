@@ -2,6 +2,21 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
+  <!-- v3.0.4 · Base auto-corregida: si esta página se sirve desde una URL
+       de directorio SIN barra final (p. ej. /drcoach en vez de /drcoach/),
+       los recursos relativos (js/, cloud/, css/, assets/) resolverían contra
+       la raíz del dominio y la app no arrancaría. Calculamos la base real a
+       partir del pathname ANTES de que el parser resuelva cualquier src.
+       - termina en "/"  → "./"  (GitHub Pages, servidores estáticos)
+       - termina en .html → "./" (apertura directa del archivo / Portable)
+       - cualquier otro caso (director sin barra) → pathname + "/"          -->
+  <script>
+    (function () {
+      var p = location.pathname;
+      var base = (p.charAt(p.length - 1) === '/' || /\.[a-zA-Z0-9]+$/.test(p)) ? './' : p + '/';
+      document.write('<base href="' + base + '">');
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#1f4f9a" />
   <meta name="description" content="Dr.Coach!: workspace de estudio local-first con QBank tracking, revisión, evidencias, AI Study Dossier y Focus Radio." />
@@ -418,6 +433,7 @@
               <div class="cloud-sync-row"><span>Cambios pendientes</span><b id="cloudSyncPending">0</b></div>
               <div class="cloud-sync-row"><span>Registros en error</span><b id="cloudSyncDlq">0</b></div>
               <div class="cloud-sync-row"><span>Última sincronización</span><b id="cloudSyncLast">—</b></div>
+              <div class="cloud-sync-row"><span>Versión de la app</span><b id="cloudSyncVersion">—</b></div>
             </div>
             <div class="button-row">
               <button id="cloudPushAllBtn" class="btn btn-primary">⬆ Subir todo a la nube</button>

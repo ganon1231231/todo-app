@@ -1,8 +1,19 @@
 /* ===================================================================
- * Dr.Coach! v3.0.0 — Sync Engine
+ * Dr.Coach! v3.0.4 — Sync Engine
  * -------------------------------------------------------------------
  * Pull / Push / Background sync between IndexedDB (local) and
  * Supabase (cloud). Designed for two users, no realtime collab.
+ *
+ * v3.0.4 · Engine hardening (fixes the lingering "⚠ Error de sync"):
+ *   • Every pull/push now refreshes the access token BEFORE running
+ *     (the old code fired requests with an expired JWT after the
+ *     device slept → 401 → "Error de sync").
+ *   • pull() retries itself up to 2× after transient failures, and the
+ *     45 s poller re-pulls every 3rd tick — one failed boot pull no
+ *     longer sticks the error label for the whole session, and changes
+ *     made on the OTHER device arrive without reloading.
+ *   • Auth failures get their own status "auth" ("⚠ Sesión expirada")
+ *     instead of being reported as connectivity problems.
  *
  * Strategy:
  *   • Pull  — fetch all rows for current user from cloud, upsert into
@@ -67,6 +78,10 @@
   ]);
 
   const POLL_INTERVAL_MS = 45000;
+  const PULL_EVERY_TICKS = 3;          // v3.0.4: auto re-pull ≈ every 2 min
+  const PULL_RETRY_DELAY_MS = 4000;    // v3.0.4: first transient retry
+  const PULL_RETRY_MAX = 2;            // v3.0.4: 2 automatic retries per burst
+  const TOKEN_MARGIN_MS = 60000;       // v3.0.4: refresh JWT 60 s before expiry
 
   const state = {
     status: 'idle',
@@ -74,13 +89,32 @@
     online: navigator.onLine,
     pullAt: 0,
     lastError: null,
+    lastErrorKind: null, // v3.0.4: 'network' | 'auth' | 'supabase' | null
     indicator: null, // updated via setStatus
+    tickCount: 0,
+    pullRetries: 0,
+    pullRetryTimer: null,
   };
 
-  // ---------- indicator plumbing -------------------------------------
+  // v3.0.4 · One place decides WHY a request failed, so the indicator can
+  // say "Sin conexión" (your internet), "Sesión expirada" (log in again)
+  // or "Error de sync" (Supabase rejected something) truthfully.
+  function classifyError(msg) {
+    const m = String(msg || '');
+    if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|ERR_INTERNET|network|load failed/i.test(m)) return 'network';
+    if (/JWT|jwt expired|invalid JWT|PGRST301|PGRST302|401\b|invalid refresh token|session missing|Invalid API key|signature|expired/i.test(m)) return 'auth';
+    return 'supabase';
+  }
+
   function setStatus(s, meta = {}) {
+    const KIND_TAGS = { supabase: 1, auth: 1, network: 1 };
+    state.lastError = meta?.lastError || (KIND_TAGS[meta?.error] ? null : meta?.error) || null;
+    state.lastErrorKind = s === 'error' ? 'supabase' : (s === 'auth' ? 'auth' : (s === 'offline' ? (meta?.error === 'auth' ? 'auth' : 'network') : null));
+    return rawSetStatus(s, meta);
+  }
+  // original setStatus from v3.0.3 (renamed so the wrapper above can enrich it)
+  function rawSetStatus(s, meta = {}) {
     state.status = s;
-    state.lastError = meta?.error || null;
     const indicator = state.indicator || window.DrCoachSyncIndicator;
     if (indicator && typeof indicator.update === 'function') {
       indicator.update(s, meta);
@@ -148,6 +182,40 @@
     return n;
   }
 
+  // v3.0.4 · Refresh the access token BEFORE it expires. After a laptop
+  // sleeps or the app sits in the background, supabase-js keeps the old
+  // JWT until its own timer wakes up; the first request then 401s and the
+  // old code reported "Error de sync". Proactively refreshing removes the
+  // whole class of failures.
+  async function ensureFreshSession() {
+    const sb = CLOUD.supabase;
+    if (!sb) throw new Error('Cliente de Supabase no inicializado.');
+    const session = await CLOUD.getSession();
+    if (!session) throw new Error('Sin sesión activa.');
+    const expMs = (session.expires_at || 0) * 1000;
+    if (!expMs || expMs - Date.now() < TOKEN_MARGIN_MS) {
+      const { data, error } = await sb.auth.refreshSession();
+      if (error || !data?.session) {
+        const msg = error?.message || 'no se pudo renovar la sesión';
+        throw new Error(`Sesión expirada (${msg}). Inicia sesión de nuevo desde la vista Datos.`);
+      }
+    }
+    return session;
+  }
+
+  // v3.0.4 · pull() self-recovery: a transient failure (sleep/wake, DNS
+  // hiccup, token refresh race) retries automatically instead of leaving
+  // "⚠ Error de sync" glued to the header until the next reload.
+  function schedulePullRetry() {
+    if (state.pullRetryTimer) clearTimeout(state.pullRetryTimer);
+    if (state.pullRetries >= PULL_RETRY_MAX) return;
+    state.pullRetries++;
+    state.pullRetryTimer = setTimeout(() => {
+      state.pullRetryTimer = null;
+      if (navigator.onLine && CLOUD.enabled && CLOUD.user) pull();
+    }, PULL_RETRY_DELAY_MS);
+  }
+
   async function init() {
     // Try to recover Supabase session; if present, do an initial Pull
     // and start the background poller.
@@ -160,6 +228,7 @@
       setStatus('local');
       return;
     }
+    state.pullRetries = 0;
     await requeueDLQ(); // v3.0.3: self-heal entries parked by older versions
     // Subscribe to auth changes
     CLOUD.onAuthChange((user) => {
@@ -181,9 +250,18 @@
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(async () => {
-      if (!CLOUD.user) return;
+      if (!CLOUD.user || state.running) return;
+      state.tickCount++;
       const pending = await refreshPendingCount();
+      // v3.0.4: pending changes → push (as before). Every 3rd tick → also
+      // PULL, so (a) a pull that failed at boot self-heals without a
+      // reload, and (b) progress saved on the OTHER device arrives here
+      // automatically instead of only after reopening the app.
       if (state.online && pending > 0) await push();
+      if (state.online && state.tickCount % PULL_EVERY_TICKS === 0) {
+        state.pullRetries = 0; // fresh budget for the periodic pull
+        await pull();
+      }
     }, POLL_INTERVAL_MS);
   }
   function stopPolling() {
@@ -198,6 +276,7 @@
     state.running = true;
     setStatus('syncing', { phase: 'pull' });
     try {
+      await ensureFreshSession(); // v3.0.4: never fire requests with a dying JWT
       const sb = CLOUD.supabase;
       // v3.0.3 · Always FULL pull. The old incremental filter
       // (`.gt('updated_at', localTimestamp)`) compared the DEVICE clock
@@ -222,6 +301,7 @@
         }
       }
       localStorage.setItem(SYNCED_AT_KEY, String(Date.now()));
+      state.pullRetries = 0; // v3.0.4: success resets the retry budget
       setStatus('idle', { merged: totalMerged });
       // Push anything queued while we were pulling
       const pending = await refreshPendingCount();
@@ -229,12 +309,18 @@
     } catch (err) {
       console.warn('[DrCoachSync] pull failed:', err);
       const msg = String(err?.message || err || '');
-      // v3.0.3: tell "no internet" apart from "Supabase rejected the query"
-      // so the indicator shows ⚠ Error de sync instead of ⚠ Sin conexión.
-      if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|ERR_INTERNET/i.test(msg)) {
+      const kind = classifyError(msg);
+      // v3.0.3: tell "no internet" apart from "Supabase rejected the query".
+      // v3.0.4: auth failures get their own state; transient ones retry.
+      if (kind === 'network') {
         setStatus('offline', { error: 'network', lastError: msg });
+        schedulePullRetry();
+      } else if (kind === 'auth') {
+        setStatus('auth', { error: 'auth', lastError: msg });
+        schedulePullRetry(); // refresh may recover once the network settles
       } else {
         setStatus('error', { error: 'supabase', lastError: msg });
+        schedulePullRetry();
       }
     } finally {
       state.running = false;
@@ -263,6 +349,18 @@
     if (queue.length === 0) { setStatus('idle'); return { processed: 0, failed: 0, lastError: null }; }
     state.running = true;
     setStatus('syncing', { phase: 'push', pending: queue.length });
+    // v3.0.4: refresh the token BEFORE draining the queue — the first
+    // entry would otherwise 401 after sleep/wake and pollute the DLQ.
+    try {
+      await ensureFreshSession();
+    } catch (err) {
+      state.running = false;
+      const emsg = String(err?.message || err);
+      const kind0 = classifyError(emsg);
+      if (kind0 === 'auth') setStatus('auth', { error: 'auth', lastError: emsg });
+      else setStatus('offline', { error: 'network', lastError: emsg });
+      return { processed: 0, failed: 0, lastError: emsg };
+    }
     let processed = 0;
     let failed = 0;
     let lastError = null;
@@ -291,8 +389,8 @@
           } else {
             try { await DB.put(QUEUE_STORE, entry); } catch (_) {}
           }
-          // Stop on auth errors (retrying won't help until user re-logs in)
-          if (/JWT|auth|permission|denied|signature|expired/i.test(msg)) {
+          // Stop on auth errors (retrying won't help until the session recovers)
+          if (classifyError(msg) === 'auth') {
             stoppedForAuth = true;
             break;
           }
@@ -303,14 +401,19 @@
       if (processed > 0 && failed === 0) {
         setStatus('idle', { pushed: processed });
       } else if (stoppedForAuth) {
-        setStatus('offline', { error: 'auth', lastError });
+        // v3.0.4: "Sesión expirada" is NOT a connectivity problem — its own
+        // label stops the misleading "⚠ Sin conexión".
+        setStatus('auth', { error: 'auth', lastError });
       } else if (failed > 0 && processed === 0) {
         // All entries failed — could be schema error or network error.
         // We surface a NEW status "error" so the UI can distinguish it from
         // a real connectivity issue. Indicator will show "⚠ Error" instead
         // of "Sin conexión".
-        if (/Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED|ERR_INTERNET/i.test(lastError || '')) {
+        const kind = classifyError(lastError);
+        if (kind === 'network') {
           setStatus('offline', { error: 'network', lastError });
+        } else if (kind === 'auth') {
+          setStatus('auth', { error: 'auth', lastError });
         } else {
           setStatus('error', { error: 'supabase', lastError, count: failed });
         }
@@ -343,6 +446,9 @@
       // (accounts created before the DB trigger existed) the old code silently
       // updated 0 rows and preferences never reached the cloud. Now the row
       // self-heals on first sync (RLS insert policy allows it).
+      // v3.0.4: explicit guard — a null user_id used to produce a confusing
+      // RLS error instead of a clear message.
+      if (!CLOUD.userId) throw new Error('Sin usuario activo: no se pueden subir preferencias.');
       const settings = (payload || {}).settings || {};
       const filtered = Object.fromEntries(Object.entries(settings).filter(([k]) => SYNCED_SETTINGS_KEYS.has(k)));
       if (Object.keys(filtered).length === 0) return;
@@ -520,6 +626,8 @@
   function registerIndicator(indicator) { state.indicator = indicator; }
 
   function getStatus() { return state.status; }
+  // v3.0.4: for the Datos panel — what exactly failed last, and why.
+  function getLastError() { return { message: state.lastError, kind: state.lastErrorKind }; }
 
   // ---------- expose -------------------------------------------------
   // v3.0.3 · Sync Doctor — checks every link of the chain and returns a
@@ -537,7 +645,23 @@
       if (!sb) { push(false, 'Cliente', 'Cliente de Supabase no inicializado.'); return results; }
       const session = await CLOUD.getSession();
       if (!session?.user) { push(false, 'Sesión', 'No hay sesión activa (inicia sesión de nuevo).'); return results; }
-      push(true, 'Sesión', `Activa para ${CLOUD.userEmail}`);
+      // v3.0.4: token freshness — show remaining validity and TRY a refresh
+      // when it is already expired, reporting the outcome instead of making
+      // the user guess.
+      const expMs = (session.expires_at || 0) * 1000;
+      if (expMs && expMs - Date.now() < TOKEN_MARGIN_MS) {
+        try {
+          const sb0 = CLOUD.supabase;
+          const { data: r, error: rerr } = await sb0.auth.refreshSession();
+          if (rerr || !r?.session) push(false, 'Sesión', `Token expirado y no se pudo renovar (${rerr?.message || 'sin detalle'}). Inicia sesión de nuevo.`);
+          else push(true, 'Sesión', `Token renovado correctamente para ${CLOUD.userEmail}.`);
+        } catch (e0) {
+          push(false, 'Sesión', `Token expirado y falló la renovación (${e0?.message || e0}).`);
+        }
+      } else {
+        const mins = expMs ? Math.round((expMs - Date.now()) / 60000) : null;
+        push(true, 'Sesión', `Activa para ${CLOUD.userEmail}${mins != null ? ` · token válido ~${mins} min más` : ''}`);
+      }
       // Tables reachable + readable with RLS
       for (const table of ['attempts', 'sessions', 'profiles']) {
         const { error } = await sb.from(table).select('*').limit(1);
@@ -576,6 +700,7 @@
     diagnose,
     setStatus,
     getStatus,
+    getLastError,
     registerIndicator,
     SYNCED_SETTINGS_KEYS,
     LOCAL_ONLY_SETTINGS_KEYS,
