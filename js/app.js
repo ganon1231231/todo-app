@@ -3,7 +3,7 @@
 
 const DB = window.DrCoachDB || window.MediospiraDB;
 const ZIP = window.DrCoachZip || window.MediospiraZip;
-const APP_VERSION = '3.0.1';
+const APP_VERSION = '3.0.2';
 const APP_NAME = 'Dr.Coach!';
 const SCHEMA_VERSION = 2;
 const TARGET_TOTAL = 4085;
