@@ -1,5 +1,20 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.0.6 · El recorte del Study Board funciona de verdad (corta, no estira)
+
+> Síntoma que cierra esta versión: al pegar una imagen en el Study Board y pulsar **Recortar**, arrastrar los bordes no recortaba (y en tablet era directamente imposible). Causas encontradas en el motor del canvas, no en el botón.
+
+### Corregido
+- **La matemática del recorte estaba rota**: el borde arrastrado NO seguía al puntero (fórmula de interpolación incorrecta) — el primer arrastre recortaba de casualidad, y a partir de ahí los mangos quedaban "muertos" en los bordes originales y los ajustes saltaban a saltos. Ahora **el borde sigue 1:1 al dedo/ratón** y puedes volver a ajustar el recorte las veces que quieras.
+- **La imagen se ESTIRABA al recortar**: la región recortada se dibujaba estirada para llenar el marco original (texto de preguntas deformado — parecía roto). Ahora el recorte es **real, tipo tijeras**: el objeto pasa a ser exactamente la región visible, la imagen jamás se deforma y el resto desaparece del marco (el archivo original se conserva intacto por si quieres deshacer).
+- **En tablet/touch era imposible recortar**: un dedo solo estaba reservado para mover el lienzo, así que los mangos de recorte eran inalcanzables. Ahora, **en modo recorte, un dedo arranca los bordes igual que el ratón**; dos dedos siguen haciendo zoom/pan como siempre.
+- **Esc cerraba TODO el Study Board** estando en modo recorte. Ahora Esc va por niveles: sale del recorte → quita la selección → y solo entonces cierra el board.
+
+### Mejorado
+- **Al pegar una imagen queda seleccionada** al momento: la barra contextual (Recortar / Duplicar / Eliminar…) aparece sola — antes había que adivinar que había que hacer clic primero sobre la imagen.
+- **El botón Recortar muestra el estado**: resaltado + «Listo ✓» mientras el modo recorte está activo (en la barra contextual y en la barra de herramientas).
+- **Mangos de recorte más grandes y con zona de agarre amplia (26 px)** para que sea cómodo con el dedo en pantallas táctiles.
+
 ## v3.0.5 · La cola de subida ya no se queda atascada — y el diagnóstico te dice la verdad
 
 > Síntoma que cierra esta versión: el diagnóstico mostraba **todo en ✓ (config, sesión, tablas, perfil) pero "Cola de subida: ✗ N cambio(s) pendientes"** con "Registros en error: Ninguno", y esos cambios no se subían nunca. ¿Vaciar la cola o buscar el problema? Esta versión hace las dos cosas: arregla las causas reales y añade el botón **"🧹 Vaciar cola de subida"** para los restos viejos, con la prueba que distingue un caso del otro.
