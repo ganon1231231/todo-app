@@ -1,0 +1,25 @@
+{
+  "name": "Dr.Coach!",
+  "short_name": "Dr.Coach!",
+  "description": "Study Command Center con QBank tracking, Medicospira Workspace, Review, evidencias, Focus Radio y AI Study Dossier.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f4f0",
+  "theme_color": "#315e99",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

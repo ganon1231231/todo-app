@@ -1,0 +1,14 @@
+# Dr.Coach! — archivos que NO se deben subir a GitHub
+
+# Config con credenciales reales de Supabase
+# (la plantilla config/supabase.config.example.js SÍ se sube)
+config/supabase.config.js
+
+# Datos locales de desarrollo
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+__pycache__/

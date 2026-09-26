@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f4f9a" />
+  <meta name="description" content="Dr.Coach!: workspace de estudio local-first con QBank tracking, revisión, evidencias, AI Study Dossier y Focus Radio." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <title>Dr.Coach! · Study Workspace</title>
+</head>
+<body>
+  <div class="theme-atmosphere" aria-hidden="true">
+    <svg class="theme-art theme-art-girl" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <g class="decor-stroke">
+        <path d="M75 155c18-34 62-42 80-10 21-31 67-22 74 14 8 42-53 76-74 92-20-16-84-51-80-96Z"/>
+        <path d="M1060 600c14-27 49-33 63-8 17-24 52-17 58 11 6 33-42 60-58 72-16-12-66-40-63-75Z"/>
+        <path d="M1030 118c20-42 68-53 93-22 28-23 74-7 76 34 3 50-59 67-91 93-28-29-95-51-78-105Z"/>
+        <path d="M106 636c35-48 83-34 85 14 1 29-23 48-48 58-32-11-59-33-51-61 3-6 8-10 14-11Z"/>
+      </g>
+      <g class="rose-line">
+        <path d="M92 115c22-32 53-26 58-2 25-17 48 4 37 27 20 17 6 45-18 43-8 25-42 28-54 7-24 9-45-16-31-37-17-20-7-45 8-38Z"/><path d="M139 178c-4 38-18 66-43 92M130 213c21 5 33 16 43 31M119 230c-17 5-30 14-41 27"/>
+        <path d="M1080 640c18-28 46-24 52-3 22-14 42 4 33 25 18 15 6 40-16 39-7 22-37 25-48 6-22 8-40-14-28-33-15-18-6-41 7-34Z"/><path d="M1118 696c-4 32-16 56-38 80"/>
+      </g>
+    </svg>
+    <svg class="theme-art theme-art-halloween" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <g class="pumpkin-line"><path d="M70 650c0-48 35-78 79-78s79 30 79 78-35 79-79 79-79-31-79-79Z"/><path d="M149 574c-8-23 1-43 17-53M112 585c-18 38-18 92 0 130M185 585c18 38 18 92 0 130"/><path d="M115 635l15-12 12 16M158 639l14-16 15 12M134 680c12 10 28 10 40 0"/></g>
+      <g class="bat-line"><path d="M1032 122c27-8 47 5 60 23 10-21 31-34 59-31-12 17-11 32 1 47-25-5-43 1-60 22-18-19-38-24-63-15 11-17 12-31 3-46Z"/><path d="M946 210c18-6 31 3 40 15 7-14 21-23 40-21-8 12-7 22 1 32-17-3-29 1-40 15-12-13-25-16-42-10 7-12 8-21 1-31Z"/></g>
+      <circle cx="1110" cy="660" r="62" class="moon-fill"/><path d="M1080 635c22-28 54-20 66 5-15-10-34-7-46 7-14 16-13 39-2 55-31-10-39-46-18-67Z" class="moon-cut"/>
+    </svg>
+    <svg class="theme-art theme-art-patrias" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <g class="flag-panama" transform="translate(36 84)"><path d="M0 0h128v84H0z" class="flag-white"/><path d="M64 0h64v42H64z" class="flag-red"/><path d="M0 42h64v42H0z" class="flag-blue"/><path d="M31 11l4 12h13l-11 7 4 12-10-7-10 7 4-12-11-7h13z" class="flag-blue-fill"/><path d="M96 53l4 12h13l-11 7 4 12-10-7-10 7 4-12-11-7h13z" class="flag-red-fill"/></g>
+      <g class="flag-panama small" transform="translate(1030 620) rotate(-5)"><path d="M0 0h120v78H0z" class="flag-white"/><path d="M60 0h60v39H60z" class="flag-red"/><path d="M0 39h60v39H0z" class="flag-blue"/><path d="M29 10l4 10h11l-9 6 3 10-9-6-9 6 3-10-9-6h11z" class="flag-blue-fill"/><path d="M91 49l4 10h11l-9 6 3 10-9-6-9 6 3-10-9-6h11z" class="flag-red-fill"/></g>
+      <g class="patria-stars"><path d="M1040 105l7 18 19 1-15 12 5 19-16-10-16 10 5-19-15-12 19-1z"/><path d="M100 612l6 16 17 1-13 10 4 17-14-9-14 9 4-17-13-10 17-1z"/><path d="M1135 210l4 11 12 1-9 7 3 12-10-7-10 7 3-12-9-7 12-1z"/></g>
+    </svg>
+    <svg class="theme-art theme-art-christmas" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <g class="snow-line"><path d="M94 116v90M50 161h88M63 130l62 62M125 130l-62 62"/><path d="M1090 600v82M1050 641h80M1061 612l58 58M1119 612l-58 58"/><path d="M1052 125v54M1026 152h52M1034 134l36 36M1070 134l-36 36"/></g>
+      <g class="tree-line"><path d="M1040 550l60-100 60 100h-28l42 70h-46l48 80h-152l48-80h-46l42-70Z"/><path d="M1100 700v42"/><path d="M1100 424l6 14 15 1-12 9 4 15-13-8-13 8 4-15-12-9 15-1Z"/></g>
+      <g class="holly-line"><path d="M98 648c21-13 41-8 54 8-4-21 8-38 28-44-6 22 1 39 20 49-21 5-34 18-37 40-13-17-31-23-53-17 13-13 9-25-12-36Z"/><circle cx="159" cy="667" r="11"/><circle cx="178" cy="681" r="10"/></g>
+    </svg>
+  </div>
+  <div id="appShell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <img class="brand-wordmark" src="assets/img/drcoach-logo.webp" alt="Dr.Coach!" />
+        <div class="greeting-copy">
+          <div id="dayGreeting" class="greeting-title">La constancia de hoy sostiene al médico que quieres ser mañana.</div>
+          <div id="dayGreetingSource" class="brand-sub">Dr.Coach!</div>
+        </div>
+      </div>
+      <div id="workspaceFocusTopMount" class="workspace-focus-top-mount" aria-label="Focus Radio en Workspace"></div>
+      <div class="top-actions">
+        <span id="saveState" class="save-state"><span class="save-dot"></span> Guardado local</span>
+        <button id="quickSessionBtn" class="btn btn-primary btn-small"><span aria-hidden="true">＋</span> Nuevo bloque</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="sidebar" aria-label="Navegación principal">
+        <button class="nav-item active" data-view="today"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-5v6h-5A1.5 1.5 0 0 1 3 19.5z"/></svg></span><b>Hoy</b></button>
+        <button class="nav-item" data-view="session"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg></span><b>Sesión</b></button>
+        <button class="nav-item" data-view="workspace"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M7 8h4M7 11h7"/></svg></span><b>Workspace</b></button>
+        <button class="nav-item" data-view="qbank"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 4v16"/></svg></span><b>QBank</b></button>
+        <button class="nav-item" data-view="review"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.2 9A7 7 0 0 0 6.1 7.1L4 10M5.8 15A7 7 0 0 0 17.9 16.9L20 14"/></svg></span><b>Review</b><em id="reviewBadge" class="badge hidden">0</em></button>
+        <button class="nav-item" data-view="analytics"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9m5 9V5m5 13v-7m5 7V3"/></svg></span><b>Analytics</b></button>
+        <button class="nav-item" data-view="history"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></span><b>Historial</b></button>
+        <button class="nav-item" data-view="data"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16m0 0-3-3m3 3 3-3M16 20V4m0 0-3 3m3-3 3 3"/></svg></span><b>Datos</b></button>
+        <button id="focusNavBtn" class="nav-item utility-nav" type="button"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M5 13h2v7H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2Zm14 0h-2v7h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2Z"/></svg></span><b>Radio</b><span id="focusDockSidebarSwitch" class="nav-mini-switch" role="switch" aria-checked="true" aria-label="Mostrar barra inferior de Focus Radio"><i></i></span></button>
+        <button class="nav-item" data-view="themes"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.4a2 2 0 0 0 1.7-3l-.35-.58a1.6 1.6 0 0 1 1.37-2.42H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14" cy="6.8" r="1"/></svg></span><b>Temas</b></button>
+        <div class="sidebar-foot"><span class="privacy-dot"></span><span>Local-first</span><small>v2.6.7 · Study Board</small></div>
+      </nav>
+
+      <main class="content">
+        <section id="view-today" class="view active-view">
+          <div class="page-title-row">
+            <div>
+              <p class="eyebrow">ROAD TO MAY 7</p>
+              <h1>Panel de estudio</h1>
+              <p class="muted">Cobertura, precisión y ritmo real hacia el 7 de mayo de 2027.</p>
+            </div>
+            <button class="btn btn-primary" data-start-session>Iniciar bloque</button>
+          </div>
+
+          <div class="hero-grid">
+            <article class="card hero-card">
+              <div class="card-label">Progreso del banco</div>
+              <div class="hero-number"><span id="overallDone">0</span><small>/ 4,085</small></div>
+              <div class="progress"><div id="overallProgressBar" class="progress-fill"></div></div>
+              <div class="split-meta"><span id="overallPct">0%</span><span id="overallRemaining">4,085 restantes</span></div>
+            </article>
+            <article class="card">
+              <div class="card-label">Hoy</div>
+              <div class="metric"><span id="todayDone">0</span><small id="todayGoalLabel">/ 16</small></div>
+              <div class="progress"><div id="todayProgressBar" class="progress-fill"></div></div>
+              <button id="editTodayGoal" class="text-btn">Editar meta diaria</button>
+            </article>
+            <article class="card">
+              <div class="card-label">Ritmo requerido</div>
+              <div class="metric"><span id="requiredPace">—</span><small>preg/día</small></div>
+              <p id="paceMessage" class="muted compact">Calculando...</p>
+            </article>
+            <article class="card">
+              <div class="card-label">Precisión first-pass</div>
+              <div class="metric"><span id="overallAccuracy">—</span><small>%</small></div>
+              <p id="accuracyDenom" class="muted compact">Sin respuestas calificables.</p>
+            </article>
+          </div>
+
+          <div class="motivation-grid">
+            <article class="card streak-card">
+              <div class="streak-fire" aria-hidden="true">🔥</div>
+              <div>
+                <div class="card-label">Racha de estudio</div>
+                <div class="streak-number"><span id="streakCurrent">0</span><small>días</small></div>
+                <p id="streakMessage" class="muted compact">Empieza hoy.</p>
+              </div>
+              <div class="streak-best"><span>Mejor</span><b id="streakBest">0</b></div>
+            </article>
+            <article class="card quote-card">
+              <div class="quote-mark" aria-hidden="true">“</div>
+              <blockquote id="dailyQuote">La constancia de hoy sostiene al médico que quieres ser mañana.</blockquote>
+              <div id="dailyQuoteSource" class="quote-source">Dr.Coach!</div>
+            </article>
+          </div>
+
+          <div class="two-col">
+            <article class="card">
+              <div class="section-head"><div><h2>Progreso por materia</h2><p class="muted compact">Preguntas únicas completadas.</p></div></div>
+              <div id="subjectProgressList" class="stack-list"></div>
+            </article>
+            <article class="card">
+              <div class="section-head"><div><h2>Estado del día</h2><p class="muted compact">Tus sesiones y ritmo de hoy.</p></div></div>
+              <div id="todaySummary" class="summary-grid"></div>
+              <div id="activeSessionCard" class="active-session-slot"></div>
+            </article>
+          </div>
+
+          <article class="card">
+            <div class="section-head">
+              <div><h2>Trayectoria hacia el objetivo</h2><p class="muted compact">Progreso real acumulado frente al ritmo lineal necesario.</p></div>
+              <select id="homeCurveSubject" class="select compact-select"></select>
+            </div>
+            <canvas id="homeProgressChart" class="chart" width="1200" height="360"></canvas>
+          </article>
+        </section>
+
+        <section id="view-session" class="view">
+          <div id="sessionLanding">
+            <div class="page-title-row">
+              <div><p class="eyebrow">SESSION BUILDER</p><h1>Nuevo bloque</h1><p class="muted">Selecciona una materia; Dr.Coach! asumirá <b>All Systems</b> y clasificarás cada pregunta al verla.</p></div>
+            </div>
+            <div class="two-col session-builder-grid">
+              <article class="card">
+                <label class="field"><span>Materia</span><select id="sessionSubject" class="select"></select></label>
+                <label class="field"><span>Número de preguntas</span><input id="sessionCount" class="input" type="number" min="1" max="100" value="5" inputmode="numeric" /></label>
+                <div class="quick-counts">
+                  <button class="chip-btn" data-count="1">1</button><button class="chip-btn active" data-count="5">5</button><button class="chip-btn" data-count="10">10</button><button class="chip-btn" data-count="20">20</button><button class="chip-btn" data-count="40">40</button>
+                </div>
+                <div class="info-box"><b>Modo:</b> All Systems. No se registran Tutor/Timed. El cronómetro de sesión inicia cuando pulses “Comenzar”.</div>
+                <button id="startSessionBtn" class="btn btn-primary btn-block">Comenzar bloque</button>
+              </article>
+              <article class="card">
+                <h2>Cómo se registra</h2>
+                <ol class="clean-list">
+                  <li>Resuelves la pregunta en tu QBank.</li>
+                  <li>En Dr.Coach! marcas System, resultado y confianza.</li>
+                  <li>Opcionalmente añades ID, tema, enfoque, caso clínico, causa del error, notas, capturas o pizarrón.</li>
+                  <li>Solo Correcta/Incorrecta cuentan como cobertura completada. Omitida entra a Review.</li>
+                </ol>
+              </article>
+            </div>
+          </div>
+
+          <div id="sessionWorkspaceMount" aria-hidden="true"></div>
+          <div id="sessionWorkspace" class="hidden">
+            <div class="workspace-head">
+              <div>
+                <p id="workspaceSubject" class="eyebrow"></p>
+                <h1><span id="workspaceQIndex">1</span> / <span id="workspaceQTotal">5</span></h1>
+                <p class="muted">All Systems · clasifica la pregunta real antes de guardar.</p>
+              </div>
+              <div class="timer-box">
+                <div id="sessionTimer" class="timer">00:00</div>
+                <button id="pauseSessionBtn" class="btn btn-secondary btn-small">Pausar</button>
+                <button id="endSessionEarlyBtn" class="text-btn danger-text">Cerrar bloque</button>
+              </div>
+            </div>
+
+            <div class="workspace-grid">
+              <article class="card question-card">
+                <div class="form-grid two">
+                  <label class="field"><span>Question ID <em>opcional</em></span><input id="qQuestionId" class="input" autocomplete="off" placeholder="Ej. 123456" /></label>
+                  <label class="field"><span>System</span><select id="qSystem" class="select"></select></label>
+                </div>
+
+                <div class="form-grid two topic-grid">
+                  <label class="field"><span>Tema clínico <em>opcional · rápido</em></span><input id="qTopic" class="input" autocomplete="off" placeholder="Ej. Trastornos de ansiedad" /></label>
+                  <label class="field"><span>Enfoque <em>opcional</em></span><input id="qFocus" class="input" autocomplete="off" placeholder="Ej. Farmacología / diagnóstico / manejo" /></label>
+                </div>
+                <label class="field"><span>Caso clínico / stem <em>opcional</em></span><textarea id="qStem" class="textarea stem-textarea" rows="4" placeholder="Pega aquí el caso o la parte útil del enunciado. No hace falta copiarlo si no aporta al repaso."></textarea></label>
+
+                <div class="field"><span>Resultado</span>
+                  <div class="segmented" id="resultSegment">
+                    <button data-value="correct" class="seg good">✓ Correcta</button>
+                    <button data-value="incorrect" class="seg bad">✕ Incorrecta</button>
+                    <button data-value="omitted" class="seg">○ Omitida</button>
+                  </div>
+                </div>
+
+                <div class="field"><span>Confianza <em>opcional</em></span>
+                  <div class="segmented" id="confidenceSegment">
+                    <button data-value="sure" class="seg">Segura</button>
+                    <button data-value="doubt" class="seg">Con duda</button>
+                  </div>
+                </div>
+
+                <div class="field" id="errorReasonField">
+                  <span>¿Por qué fallé / dudé? <em>puedes marcar varias</em></span>
+                  <div id="errorReasonChips" class="chips-wrap"></div>
+                </div>
+
+                <label class="field"><span>Concepto clave</span><textarea id="qConcept" class="textarea" rows="3" placeholder="La idea central que no quieres volver a perder."></textarea></label>
+                <label class="field"><span>¿Por qué fallé?</span><textarea id="qWhyFailed" class="textarea" rows="3" placeholder="Tu explicación libre; puede quedar vacío."></textarea></label>
+                <label class="field"><span>Regla que debo recordar</span><textarea id="qRule" class="textarea" rows="3" placeholder="Una regla corta y recuperable."></textarea></label>
+                <label class="field"><span>Notas libres</span><textarea id="qNotes" class="textarea" rows="5" placeholder="Razonamiento, diferenciales, farmacología, perlas, etc."></textarea></label>
+
+                <div class="question-actions">
+                  <button id="saveNextBtn" class="btn btn-primary">Guardar y siguiente</button>
+                  <span class="muted compact">Autosave de borrador activo.</span>
+                </div>
+              </article>
+
+              <aside class="card board-card evidence-card study-board-launch-card">
+                <div class="section-head board-head">
+                  <div><p class="eyebrow">STUDY BOARD</p><h2>Evidencias</h2><p class="muted compact">Una pregunta = un lienzo. Capturas, tinta, texto y esquemas viven juntos.</p></div>
+                  <span id="pointerIndicator" class="pointer-pill">Listo</span>
+                </div>
+
+                <button id="openStudyBoardBtn" type="button" class="study-board-launcher">
+                  <span class="study-board-launch-icon">↗</span>
+                  <span><b>Abrir Study Board</b><small>Pantalla completa · optimizado para lápiz y tacto</small></span>
+                </button>
+
+                <div id="evidenceDropzone" class="evidence-dropzone compact-dropzone" tabindex="0">
+                  <div class="dropzone-icon">＋</div>
+                  <div><b>Añadir capturas</b><span>Arrastra, pega o selecciona hasta 4 imágenes.</span></div>
+                  <label class="btn btn-secondary btn-small file-btn">Elegir<input id="screenshotInput" type="file" accept="image/*" multiple hidden /></label>
+                </div>
+                <div id="evidenceGallery" class="evidence-gallery hidden"></div>
+                <div class="attachment-row evidence-actions">
+                  <button id="pasteImageBtn" type="button" class="text-btn">Pegar imagen</button>
+                  <span id="attachmentStatus" class="muted compact">Sin capturas</span>
+                </div>
+                <p class="microcopy">Las imágenes se insertan como objetos movibles dentro del mismo board. El material marcado como Scratch no pasa a Review al guardar la pregunta.</p>
+
+                <div class="legacy-board-compat hidden" aria-hidden="true">
+                  <div class="board-toolbar">
+                    <button class="tool-btn active" data-tool="pen">✎ Lápiz</button>
+                    <button class="tool-btn" data-tool="highlight">▰ Resaltar</button>
+                    <button class="tool-btn" data-tool="eraser">⌫ Borrar</button>
+                    <button id="undoBoard" class="tool-btn">↶</button>
+                    <button id="redoBoard" class="tool-btn">↷</button>
+                    <button id="clearBoard" class="tool-btn">Limpiar</button>
+                    <button id="clearBoardBackground" class="tool-btn">Fondo blanco</button>
+                  </div>
+                  <div class="board-frame"><canvas id="boardCanvas" width="1200" height="700"></canvas></div>
+                </div>
+                <button id="removeScreenshot" class="hidden" type="button" aria-hidden="true"></button>
+              </aside>
+            </div>
+          </div>
+
+          <div id="sessionComplete" class="hidden">
+            <article class="card completion-card">
+              <p class="eyebrow">SESSION COMPLETE</p>
+              <h1 id="completeTitle">Bloque terminado</h1>
+              <div id="completeStats" class="summary-grid large"></div>
+              <div class="button-row"><button id="sameSubjectOneBtn" class="btn btn-secondary">+ 1 misma materia</button><button id="sameSubjectFiveBtn" class="btn btn-secondary">+ 5 misma materia</button><button class="btn btn-primary" data-view-target="today">Ir al dashboard</button></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="view-workspace" class="view workspace-view">
+          <div class="page-title-row integrated-title-row">
+            <div class="workspace-title-clean"><button id="workspaceSidebarToggle" class="workspace-menu-toggle" type="button" aria-label="Mostrar u ocultar menú" title="Mostrar u ocultar menú">☰</button><h1>Medicospira Workspace</h1></div>
+            <div class="integrated-top-actions">
+              <button id="workspaceReloadFrame" class="btn btn-secondary btn-small" type="button">Recargar</button>
+              <button id="workspaceTranslateChrome" class="btn btn-secondary btn-small workspace-translate-btn" type="button" title="Alternar idioma de Medicospira dentro del Workspace">Español</button>
+              <button id="workspaceToggleCoach" class="btn btn-primary btn-small" type="button">Ocultar Coach</button>
+            </div>
+          </div>
+
+          <div id="integratedWorkspaceShell" class="integrated-workspace-shell">
+            <article class="integrated-browser-card">
+              <div class="integrated-browser-bar">
+                <div class="browser-identity"><span class="browser-dot"></span><b>Medicospira QBank</b><small id="workspaceFrameStatus">usmle.medicospira.com</small></div>
+                <div class="browser-tools"><button id="workspaceHomeFrame" class="icon-btn" type="button" title="Volver al login">⌂</button><button id="workspaceFrameWide" class="icon-btn" type="button" title="Maximizar QBank">⤢</button></div>
+              </div>
+              <div class="integrated-frame-wrap">
+                <iframe id="medicospiraFrame" src="https://usmle.medicospira.com/s2/auth/login" title="Medicospira QBank" allow="translator; clipboard-read; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              </div>
+            </article>
+
+            <aside id="integratedCoachPanel" class="integrated-coach-panel">
+              <div class="coach-panel-head">
+                <div><p class="eyebrow">DR.COACH! CAPTURE</p><h2 id="workspaceCoachTitle">Registro rápido</h2><p id="workspaceCoachSub" class="muted compact">Inicia un bloque o continúa el que ya tienes.</p></div>
+                <div id="workspaceCaptureTabs" class="capture-tabs hidden"><button class="capture-tab active" data-capture-tab="log" type="button">Registro</button><button class="capture-tab" data-capture-tab="evidence" type="button">Evidencias</button></div>
+              </div>
+              <div id="workspaceSessionBuilder" class="workspace-session-builder">
+                <label class="field"><span>Materia</span><select id="workspaceSessionSubject" class="select"></select></label>
+                <div class="form-grid two"><label class="field"><span>Preguntas</span><input id="workspaceSessionCount" class="input" type="number" min="1" max="100" value="5" inputmode="numeric" /></label><div class="field"><span>Modo</span><div class="workspace-mode-pill">All Systems</div></div></div>
+                <button id="workspaceStartSession" class="btn btn-primary btn-block" type="button">Iniciar bloque aquí</button>
+              </div>
+              <div id="workspaceCaptureMount" class="workspace-capture-mount"></div>
+              <div id="workspaceCompleteCard" class="workspace-complete-card hidden"><div class="workspace-complete-mark">✓</div><h3>Bloque completado</h3><p class="muted">El progreso ya fue guardado. Puedes iniciar otro bloque sin salir del Workspace.</p><button id="workspaceNewSession" class="btn btn-primary btn-block" type="button">Nuevo bloque</button></div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="view-qbank" class="view">
+          <div class="page-title-row"><div><p class="eyebrow">QBank MAP</p><h1>Mapa de 4,085 preguntas</h1><p class="muted">La matriz Subject × System reconstruida de tu banco.</p></div></div>
+          <div id="qbankSubjectCards" class="subject-cards"></div>
+          <article class="card">
+            <div class="section-head"><div><h2>Matriz Subject × System</h2><p class="muted compact">Distribución original completa de las 4,085 preguntas.</p></div></div>
+            <div id="qbankMatrixContainer" class="table-wrap"></div>
+          </article>
+          <article class="card">
+            <div class="section-head"><div><h2>Systems</h2><p class="muted compact">Cobertura clasificada; los baselines sin System aparecen aparte.</p></div></div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>System</th><th>Total</th><th>Completadas</th><th>Restantes</th><th>Accuracy</th><th>Progreso</th></tr></thead><tbody id="systemTableBody"></tbody></table></div>
+          </article>
+        </section>
+
+        <section id="view-review" class="view">
+          <div class="page-title-row"><div><p class="eyebrow">STUDY LIBRARY</p><h1>Review</h1><p class="muted">Todo lo que has visto, en un solo lugar: correctas, incorrectas, dudas, omitidas y material ya dominado.</p></div></div>
+          <div class="card review-filter-card">
+            <div class="review-filters">
+              <select id="reviewSubjectFilter" class="select"><option value="">Todas las materias</option></select>
+              <select id="reviewSystemFilter" class="select"><option value="">Todos los Systems</option></select>
+              <select id="reviewKindFilter" class="select"><option value="">Todo el material</option><option value="pending">Pendientes de reforzar</option><option value="correct">Correctas</option><option value="sure">Correctas seguras</option><option value="doubt">Correctas con duda</option><option value="incorrect">Incorrectas</option><option value="omitted">Omitidas</option><option value="mastered">Dominadas</option></select>
+              <input id="reviewSearch" class="input" placeholder="Buscar ID, concepto o nota..." />
+            </div>
+            <div id="reviewStats" class="review-stats"></div>
+          </div>
+          <div id="reviewList" class="review-list"></div>
+        </section>
+
+        <section id="view-analytics" class="view">
+          <div class="page-title-row"><div><p class="eyebrow">ANALYTICS</p><h1>Rendimiento</h1><p class="muted">Cobertura, precisión, confianza y patrones de error.</p></div></div>
+          <div class="hero-grid analytics-cards">
+            <article class="card"><div class="card-label">First-pass accuracy</div><div class="metric"><span id="aAccuracy">—</span><small>%</small></div></article>
+            <article class="card"><div class="card-label">Correctas con duda</div><div class="metric"><span id="aDoubtCorrect">0</span><small>preg.</small></div></article>
+            <article class="card"><div class="card-label">Incorrectas seguras</div><div class="metric"><span id="aConfidentWrong">0</span><small>preg.</small></div></article>
+            <article class="card"><div class="card-label">Velocidad media</div><div class="metric"><span id="aPace">—</span><small>preg/h</small></div></article>
+          </div>
+          <div class="two-col">
+            <article class="card"><div class="section-head"><div><h2>Curva de progreso</h2></div><select id="analyticsCurveSubject" class="select compact-select"></select></div><canvas id="analyticsProgressChart" class="chart" width="900" height="360"></canvas></article>
+            <article class="card"><div class="section-head"><div><h2>Tipos de fallo</h2><p class="muted compact">Solo registros donde marcaste una causa.</p></div></div><div id="errorReasonBars" class="bar-list"></div></article>
+          </div>
+          <article class="card"><div class="section-head"><div><h2>Accuracy por System</h2><p class="muted compact">Solo Systems con respuestas calificables.</p></div></div><div id="accuracySystemBars" class="bar-list"></div></article>
+        </section>
+
+        <section id="view-history" class="view">
+          <div class="page-title-row"><div><p class="eyebrow">HISTORY</p><h1>Historial</h1><p class="muted">Puedes corregir System, resultado, confianza y notas antiguas.</p></div></div>
+          <div class="card filters-row">
+            <select id="historySubjectFilter" class="select"><option value="">Todas las materias</option></select>
+            <select id="historyResultFilter" class="select"><option value="">Todos los resultados</option><option value="correct">Correcta</option><option value="incorrect">Incorrecta</option><option value="omitted">Omitida</option></select>
+            <input id="historySearch" class="input" placeholder="Buscar ID o texto..." />
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+
+        <section id="view-data" class="view">
+          <div class="page-title-row"><div><p class="eyebrow">DATA & BACKUP</p><h1>Datos</h1><p class="muted">Local-first: tu progreso vive en este dispositivo hasta que lo exportes.</p></div></div>
+          <div class="two-col">
+            <article class="card">
+              <h2>Progreso previo / baseline</h2>
+              <p class="muted">Para una persona que ya lleva preguntas hechas. No hace falta conocer System ni accuracy.</p>
+              <label class="field"><span>Materia</span><select id="baselineSubject" class="select"></select></label>
+              <label class="field"><span>System <em>opcional</em></span><select id="baselineSystem" class="select"></select></label>
+              <label class="field"><span>Cantidad ya completada</span><input id="baselineCount" class="input" type="number" min="1" value="30" /></label>
+              <label class="field"><span>Correctas conocidas <em>opcional</em></span><input id="baselineCorrect" class="input" type="number" min="0" placeholder="Vacío = accuracy desconocida" /></label>
+              <button id="addBaselineBtn" class="btn btn-primary">Añadir baseline</button>
+              <div id="baselineList" class="mini-list"></div>
+            </article>
+            <article class="card">
+              <h2>Data Health</h2>
+              <div id="dataHealth" class="health-grid"></div>
+              <button id="requestPersistenceBtn" class="btn btn-secondary btn-block">Solicitar almacenamiento persistente</button>
+            </article>
+          </div>
+
+          <div class="two-col">
+            <article class="card">
+              <h2>Exportar</h2>
+              <p class="muted">El backup completo incluye capturas. El backup de datos excluye imágenes y es mucho más liviano.</p>
+              <div class="button-stack"><button id="exportFullBtn" class="btn btn-primary">Exportar backup completo (.zip)</button><button id="exportDataBtn" class="btn btn-secondary">Exportar solo datos (.json)</button></div>
+            </article>
+            <article class="card">
+              <h2>Importar</h2>
+              <p class="muted">Merge combina registros por ID interno. Replace borra lo local y restaura el archivo.</p>
+              <label class="field"><span>Modo</span><select id="importMode" class="select"><option value="merge">Merge</option><option value="replace">Replace</option></select></label>
+              <label class="btn btn-secondary file-btn btn-block">Seleccionar backup<input id="importFile" type="file" accept=".json,.zip,application/json,application/zip" hidden /></label>
+              <div id="importPreview" class="info-box hidden"></div>
+              <button id="confirmImportBtn" class="btn btn-primary btn-block hidden">Importar ahora</button>
+            </article>
+          </div>
+
+          <article class="card cloud-sync-card">
+            <div class="section-head">
+              <div><p class="eyebrow">CLOUD SYNC</p><h2>Sincronización con la nube</h2><p class="muted compact">Sube tu progreso local a tu cuenta de Supabase o descárgalo a este dispositivo.</p></div>
+              <span id="cloudSyncBadge" class="evidence-badge">Local-only</span>
+            </div>
+            <div id="cloudSyncStatus" class="cloud-sync-status">
+              <div class="cloud-sync-row"><span>Estado</span><b id="cloudSyncState">Sin sesión</b></div>
+              <div class="cloud-sync-row"><span>Usuario</span><b id="cloudSyncUser">—</b></div>
+              <div class="cloud-sync-row"><span>Cambios pendientes</span><b id="cloudSyncPending">0</b></div>
+              <div class="cloud-sync-row"><span>Última sincronización</span><b id="cloudSyncLast">—</b></div>
+            </div>
+            <div class="button-row">
+              <button id="cloudPushAllBtn" class="btn btn-primary">⬆ Subir todo a la nube</button>
+              <button id="cloudPullAllBtn" class="btn btn-secondary">⬇ Descargar de la nube</button>
+              <button id="cloudRefreshBtn" class="btn btn-secondary">↻ Actualizar estado</button>
+            </div>
+            <div id="cloudSyncLog" class="cloud-sync-log" aria-live="polite"></div>
+          </article>
+
+          <div class="two-col">
+            <article class="card ai-export-card dossier-card">
+              <div class="section-head"><div><p class="eyebrow">AI STUDY DOSSIER</p><h2>Manual personalizado + QBank para IA</h2><p class="muted compact">Exporta tus patrones de rendimiento en un prompt estructurado. La IA debe verificar la teoría clínica con evidencia actual antes de construir el manual y las preguntas.</p></div><span class="evidence-badge">EBM-FIRST</span></div>
+              <div class="form-grid two">
+                <label class="field"><span>Tipo de dossier</span><select id="aiExportScope" class="select"><option value="all">Dossier completo del módulo</option><option value="weak">Análisis focal de debilidades</option><option value="incorrect">Solo incorrectas</option></select></label>
+                <label class="field"><span>Módulo / materia</span><select id="aiExportSubject" class="select"><option value="">Todas las materias · separar por módulo</option></select></label>
+              </div>
+              <label class="check-row"><input id="aiIncludeStem" type="checkbox" checked /><span>Incluir stem completo en preguntas incorrectas, omitidas o con duda cuando exista</span></label>
+              <label class="check-row"><input id="aiIncludeCorrect" type="checkbox" checked /><span>Usar correctas seguras para el mapa de cobertura y el repaso corto</span></label>
+              <div class="dossier-note"><b>Regla clínica:</b> tus apuntes son señales pedagógicas, no fuentes médicas. El dossier ordena a la IA verificar diagnóstico, tratamiento, dosis y recomendaciones con guías y evidencia vigentes, y señalar cualquier discrepancia.</div>
+              <div id="aiExportPreview" class="info-box"></div>
+              <div class="button-row"><button id="copyAIReportBtn" class="btn btn-primary">Copiar AI Study Dossier</button><button id="downloadAIReportBtn" class="btn btn-secondary">Descargar dossier (.md)</button></div>
+            </article>
+            <article class="card install-card">
+              <div class="brand-showcase"><img src="assets/img/drcoach-logo.webp" alt="Logo Dr.Coach!" /></div>
+              <p class="eyebrow">MÓVIL / TABLET</p><h2>Instalar o compartir</h2>
+              <p class="muted">La forma más estable es publicar la carpeta una sola vez por HTTPS y compartir la URL. Cada dispositivo conserva su propia base local.</p>
+              <div id="runtimeModeInfo" class="info-box"></div>
+              <button id="installAppBtn" class="btn btn-primary btn-block hidden">Instalar Dr.Coach! en este dispositivo</button>
+              <p class="microcopy">El ZIP también incluye <b>DrCoach-Portable.html</b>, una versión autocontenida para compartir como un solo archivo. Es útil como respaldo, pero la PWA por HTTPS ofrece la experiencia más confiable.</p>
+            </article>
+          </div>
+
+          <article class="card danger-zone">
+            <h2>Zona de riesgo</h2><p class="muted">Borra todos los datos locales de Dr.Coach! en este dispositivo.</p><button id="resetAllBtn" class="btn btn-danger">Borrar todo</button>
+          </article>
+        </section>
+
+        <section id="view-themes" class="view">
+          <div class="page-title-row themes-title-row">
+            <div>
+              <p class="eyebrow">APARIENCIA</p>
+              <h1>Temas</h1>
+              <p class="muted">Personaliza el ambiente de Dr.Coach!. En <b>Auto</b>, la fecha y la hora de este dispositivo deciden el tema.</p>
+            </div>
+            <div class="theme-live-chip"><span id="themeLiveDot"></span><div><small>Activo ahora</small><b id="themeActiveLabel">Dr.Coach! Classic</b></div></div>
+          </div>
+
+          <article class="card theme-auto-card">
+            <div>
+              <p class="eyebrow">AUTOMÁTICO</p>
+              <h2>La interfaz acompaña tu momento</h2>
+              <p id="themeAutoStatus" class="muted compact">Calculando fecha y hora local…</p>
+            </div>
+            <button class="btn btn-primary" type="button" data-theme-mode="auto">Usar Auto</button>
+          </article>
+
+          <div id="themeGrid" class="theme-grid" aria-label="Temas de Dr.Coach!">
+            <button class="theme-card" type="button" data-theme-mode="default">
+              <span class="theme-preview preview-default"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><b>Classic</b><small>Marfil, azul tinta y salvia. Limpio y editorial.</small></span>
+              <span class="theme-check">✓</span>
+            </button>
+            <button class="theme-card" type="button" data-theme-mode="girl">
+              <span class="theme-preview preview-girl"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><b>Girl · Pink Rose</b><small>Rosas, corazones y pink rose. Dulce, limpio y con personalidad.</small></span>
+              <span class="theme-check">✓</span>
+            </button>
+            <button class="theme-card" type="button" data-theme-mode="night">
+              <span class="theme-preview preview-night"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><b>Noche</b><small>Azul carbón, tinta y luz fría para sesiones nocturnas.</small></span>
+              <span class="theme-check">✓</span>
+            </button>
+            <button class="theme-card" type="button" data-theme-mode="halloween">
+              <span class="theme-preview preview-halloween"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><b>Halloween</b><small>Medianoche violeta, ámbar y calabaza. Oscuro, nítido y festivo.</small></span>
+              <span class="theme-check">✓</span>
+            </button>
+            <button class="theme-card" type="button" data-theme-mode="patrias">
+              <span class="theme-preview preview-patrias"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><b>Fiestas Patrias · Panamá</b><small>Azul, rojo y blanco con banderas y detalles cívicos.</small></span>
+              <span class="theme-check">✓</span>
+            </button>
+            <button class="theme-card" type="button" data-theme-mode="christmas">
+              <span class="theme-preview preview-christmas"><i></i><i></i><i></i></span>
+              <span class="theme-card-copy"><b>Navidad</b><small>Verde bosque, borgoña, marfil y un toque de oro antiguo.</small></span>
+              <span class="theme-check">✓</span>
+            </button>
+          </div>
+
+          <div class="two-col themes-settings-grid">
+            <article class="card">
+              <div class="section-head"><div><p class="eyebrow">FOCUS RADIO</p><h2>Barra inferior</h2><p class="muted compact">Puedes conservar el reproductor flotante o dejarlo totalmente fuera de la vista.</p></div></div>
+              <label class="switch-row" for="focusDockVisibleToggle">
+                <span><b>Barra inferior de Focus Radio</b><small>ON: controles siempre visibles abajo. OFF: la música se controla únicamente entrando a Radio desde el menú lateral.</small></span>
+                <input id="focusDockVisibleToggle" type="checkbox" />
+                <span class="switch-ui" aria-hidden="true"></span>
+              </label>
+            </article>
+            <article class="card">
+              <p class="eyebrow">REGLAS DE AUTO</p>
+              <h2>Calendario local</h2>
+              <div class="season-rules">
+                <div><span>☾</span><b>Noche</b><small>19:00–06:59</small></div>
+                <div><span>🎃</span><b>Halloween</b><small>15–31 oct</small></div>
+                <div><span>🇵🇦</span><b>Fiestas Patrias</b><small>1–28 nov</small></div>
+                <div><span>✦</span><b>Navidad</b><small>29 nov–6 ene</small></div>
+              </div>
+              <p class="microcopy">Los temas estacionales tienen prioridad sobre Noche. <b>Girl · Pink Rose</b> se activa manualmente cuando quieras.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <aside id="focusDock" class="focus-dock" aria-label="Focus Radio">
+    <div id="focusPanel" class="focus-panel" aria-hidden="true">
+      <div class="focus-panel-head">
+        <div>
+          <p class="eyebrow">FOCUS RADIO</p>
+          <h3>Ambiente sin distracciones</h3>
+        </div>
+        <button id="focusPanelClose" class="icon-btn" type="button" aria-label="Contraer Focus Radio">×</button>
+      </div>
+      <div id="focusModeTabs" class="focus-mode-tabs" role="tablist" aria-label="Ambiente de estudio">
+        <button class="focus-mode active" data-focus-mode="auto" type="button">Auto</button>
+        <button class="focus-mode" data-focus-mode="lofi" type="button">Lofi</button>
+        <button class="focus-mode" data-focus-mode="boombap" type="button">Boom bap</button>
+        <button class="focus-mode" data-focus-mode="orchestral" type="button">Orquestal</button>
+        <button class="focus-mode" data-focus-mode="noise" type="button">Noise</button>
+        <button class="focus-mode" data-focus-mode="binaural" type="button">Binaural</button>
+        <button class="focus-mode" data-focus-mode="search" type="button">Buscar</button>
+        <button class="focus-mode" data-focus-mode="custom" type="button">Mis links</button>
+      </div>
+      <div class="focus-panel-body">
+        <div class="focus-media-stage">
+          <div id="focusPoster" class="focus-poster"><span class="focus-poster-mark">Dr.Coach!</span><small>Focus Radio</small></div>
+          <div id="focusYoutubeShell" class="focus-youtube-shell hidden">
+            <div id="focusYoutubeFrame" class="focus-youtube-player" aria-label="YouTube Focus Player"></div>
+          </div>
+          <div id="focusYoutubeLocalNotice" class="focus-youtube-local-notice hidden" role="status">
+            <div class="focus-local-mark">YT</div>
+            <div>
+              <strong>YouTube integrado necesita HTTP/HTTPS</strong>
+              <p>Estás abriendo Dr.Coach! como archivo local. YouTube bloquea este tipo de embed (Error 153).</p>
+              <div class="focus-local-actions">
+                <button id="focusOpenYoutubeBtn" class="btn btn-secondary btn-small" type="button">Abrir en YouTube ↗</button>
+                <button id="focusUseBrownBtn" class="text-btn" type="button">Usar Brown Noise</button>
+              </div>
+            </div>
+          </div>
+          <div id="focusOfflineVisual" class="focus-offline-visual hidden" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="focus-panel-copy">
+          <span id="focusSourceBadge" class="focus-source-badge">AUTO</span>
+          <h4 id="focusPanelTitle">Elige el ambiente y pulsa Play</h4>
+          <p id="focusPanelSubtitle">Dr.Coach! seleccionará una fuente apropiada. YouTube necesita conexión; Noise y Binaural funcionan offline.</p>
+          <div id="focusSearchPanel" class="focus-search-panel hidden">
+            <div class="focus-search-row">
+              <input id="focusSearchQuery" class="input" type="search" autocomplete="off" placeholder="Artista, canción, álbum o mood…" aria-label="Buscar música en YouTube" />
+              <button id="focusSearchBtn" class="btn btn-primary btn-small" type="button">Buscar</button>
+            </div>
+            <div class="focus-search-note microcopy">Sin configuración: Dr.Coach! busca mediante fuentes públicas y conserva resultados recientes para dar variedad incluso si una fuente falla.</div>
+            <div id="focusSearchActions" class="focus-search-actions hidden">
+              <button id="focusPlayTopResult" class="btn btn-secondary btn-small" type="button">▶ Mejor coincidencia</button>
+              <button id="focusStartSearchRadio" class="btn btn-primary btn-small" type="button">⌘ Radio aleatoria</button>
+            </div>
+            <div id="focusSearchStatus" class="microcopy focus-search-status"></div>
+            <div id="focusSearchResults" class="focus-search-results"></div>
+          </div>
+          <div class="focus-volume-row"><span>Volumen</span><input id="focusVolume" type="range" min="0" max="100" value="55" aria-label="Volumen Focus Radio"/><span id="focusVolumeLabel">55%</span></div>
+          <label class="focus-shuffle-row" for="focusShuffleToggle"><span><b>Smart Shuffle</b><small>Evita repeticiones y salta fuentes bloqueadas</small></span><input id="focusShuffleToggle" type="checkbox" checked /></label>
+          <button id="focusAddLinkToggle" class="text-btn focus-add-link-toggle" type="button">＋ Añadir video o playlist</button>
+          <div id="focusCustomEditor" class="focus-custom-editor hidden">
+            <input id="focusCustomName" class="input" placeholder="Nombre (opcional)" />
+            <input id="focusCustomUrl" class="input" inputmode="url" placeholder="Pega un link de YouTube o playlist" />
+            <button id="focusCustomSave" class="btn btn-secondary btn-small" type="button">Guardar en Mis links</button>
+          </div>
+          <div id="focusCustomList" class="focus-custom-list"></div>
+        </div>
+      </div>
+    </div>
+    <div class="focus-dock-bar">
+      <button id="focusExpandBtn" class="focus-brand-button" type="button" aria-expanded="false" aria-controls="focusPanel">
+        <span class="focus-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M5 13h2v7H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2Zm14 0h-2v7h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2Z"/></svg></span>
+        <span class="focus-brand-copy"><b>Focus Radio</b><small id="focusModeLabel">Auto</small></span>
+      </button>
+      <div id="focusMiniCover" class="focus-mini-cover"><span>DC</span></div>
+      <div class="focus-nowplaying">
+        <b id="focusTrackTitle">Listo para estudiar</b>
+        <small id="focusTrackMeta">Auto · online/offline</small>
+      </div>
+      <div class="focus-transport">
+        <button id="focusPrevBtn" class="focus-control secondary" type="button" aria-label="Anterior">‹</button>
+        <button id="focusPlayBtn" class="focus-control play" type="button" aria-label="Reproducir">▶</button>
+        <button id="focusNextBtn" class="focus-control secondary" type="button" aria-label="Siguiente">›</button>
+      </div>
+      <div class="focus-quick-actions">
+        <button id="focusQuickMode" class="focus-mode-pill" type="button">AUTO⌄</button>
+        <button id="focusMuteBtn" class="focus-control secondary" type="button" aria-label="Silenciar">⌁</button>
+      </div>
+    </div>
+  </aside>
+
+  <dialog id="reviewDetailDialog" class="modal review-modal">
+    <div class="review-detail-card">
+      <div class="review-detail-top">
+        <div><p class="eyebrow">REVIEW</p><span id="reviewDetailPosition" class="muted compact"></span></div>
+        <button type="button" id="closeReviewDetail" class="icon-btn" aria-label="Cerrar">×</button>
+      </div>
+      <div class="review-detail-header">
+        <div>
+          <div id="reviewDetailBadges" class="item-title"></div>
+          <h2 id="reviewDetailTitle">Pregunta de repaso</h2>
+          <div id="reviewDetailMeta" class="muted compact"></div>
+        </div>
+        <div class="review-mode-toggle" aria-label="Modo de repaso">
+          <button type="button" id="reviewReadMode" class="mode-btn active">Lectura</button>
+          <button type="button" id="reviewRecallMode" class="mode-btn">🧠 Active Recall</button>
+        </div>
+      </div>
+
+      <div id="reviewDetailGrid" class="review-detail-grid">
+        <div id="reviewStudyContent" class="review-study-content"></div>
+        <aside id="reviewVisualPanel" class="review-visual-panel hidden">
+          <div class="review-visual-head"><div><b>Evidencias visuales</b><div id="reviewVisualMeta" class="muted compact"></div></div></div>
+          <div id="reviewEvidenceGallery" class="review-evidence-gallery"></div>
+          <div id="reviewBoardComposite" class="review-board-composite hidden">
+            <div class="mini-section-title">Pizarrón / anotación</div>
+            <button type="button" id="openReviewVisualFull" class="review-visual-stage review-visual-button" aria-label="Ampliar pizarrón"><canvas id="reviewVisualCanvas" width="1200" height="700"></canvas></button>
+            <div class="review-zoom-row"><button type="button" id="reviewZoomOut" class="tool-btn">−</button><span id="reviewZoomLabel">100%</span><button type="button" id="reviewZoomIn" class="tool-btn">+</button><button type="button" id="reviewZoomReset" class="text-btn">Ajustar</button></div>
+          </div>
+        </aside>
+      </div>
+
+      <section id="reviewTimelineSection" class="review-timeline-section hidden">
+        <div class="section-head"><div><h3>Historial de revisión</h3><p class="muted compact">La respuesta original nunca se sobrescribe.</p></div></div>
+        <div id="reviewTimeline" class="review-timeline"></div>
+      </section>
+
+      <div class="review-detail-footer">
+        <div class="review-nav-actions"><button type="button" id="reviewPrevBtn" class="btn btn-secondary">← Anterior</button><button type="button" id="reviewEditBtn" class="btn btn-secondary">✏️ Editar</button></div>
+        <div class="review-assessment">
+          <span class="muted compact">¿Cómo está ahora?</span>
+          <button type="button" id="reviewForgotBtn" class="btn btn-secondary">No lo recuerdo</button>
+          <button type="button" id="reviewPartialBtn" class="btn btn-secondary">Parcial</button>
+          <button type="button" id="reviewMasterBtn" class="btn btn-primary">✓ Lo domino</button>
+        </div>
+        <button type="button" id="reviewNextBtn" class="btn btn-secondary">Siguiente →</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="reviewVisualDialog" class="modal visual-modal">
+    <div class="visual-modal-card">
+      <div class="section-head"><div><p class="eyebrow">VISUAL REVIEW</p><h2 id="reviewVisualDialogTitle">Evidencia visual</h2></div><button type="button" id="closeReviewVisualFull" class="icon-btn" aria-label="Cerrar">×</button></div>
+      <div class="review-visual-stage review-visual-stage-full"><canvas id="reviewVisualCanvasFull" width="1200" height="700"></canvas></div>
+      <div class="review-zoom-row"><button type="button" id="reviewFullZoomOut" class="tool-btn">−</button><span id="reviewFullZoomLabel">100%</span><button type="button" id="reviewFullZoomIn" class="tool-btn">+</button><button type="button" id="reviewFullZoomReset" class="text-btn">Ajustar</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="editAttemptDialog" class="modal">
+    <form method="dialog" class="modal-card edit-modal-card" id="editAttemptForm">
+      <div class="section-head"><div><p class="eyebrow">EDIT ATTEMPT</p><h2>Editar registro</h2><p class="muted compact">Editar texto o clasificación no modifica la captura guardada.</p></div><button class="icon-btn" value="cancel" aria-label="Cerrar">×</button></div>
+      <input id="editAttemptId" type="hidden" />
+      <div class="edit-layout">
+        <div class="edit-main">
+          <div class="form-grid two">
+            <label class="field"><span>Question ID</span><input id="editQuestionId" class="input" /></label>
+            <label class="field"><span>System</span><select id="editSystem" class="select"></select></label>
+          </div>
+          <div class="form-grid two">
+            <label class="field"><span>Tema clínico</span><input id="editTopic" class="input" placeholder="Ej. Trastornos de ansiedad" /></label>
+            <label class="field"><span>Enfoque</span><input id="editFocus" class="input" placeholder="Ej. Farmacología" /></label>
+          </div>
+          <label class="field"><span>Caso clínico / stem</span><textarea id="editStem" class="textarea" rows="4"></textarea></label>
+          <div class="form-grid two">
+            <label class="field"><span>Resultado</span><select id="editResult" class="select"><option value="correct">Correcta</option><option value="incorrect">Incorrecta</option><option value="omitted">Omitida</option></select></label>
+            <label class="field"><span>Confianza</span><select id="editConfidence" class="select"><option value="">Sin marcar</option><option value="sure">Segura</option><option value="doubt">Con duda</option></select></label>
+          </div>
+          <label class="field"><span>Concepto clave</span><textarea id="editConcept" class="textarea" rows="3"></textarea></label>
+          <label class="field"><span>¿Por qué fallé?</span><textarea id="editWhyFailed" class="textarea" rows="3"></textarea></label>
+          <label class="field"><span>Regla</span><textarea id="editRule" class="textarea" rows="3"></textarea></label>
+          <label class="field"><span>Notas</span><textarea id="editNotes" class="textarea" rows="5"></textarea></label>
+        </div>
+        <aside class="edit-side">
+          <div class="field"><span>Causas del fallo / duda</span><div id="editErrorReasonChips" class="chips-wrap"></div></div>
+          <div class="edit-visual-box">
+            <div class="section-head"><div><h3>Evidencias</h3><p id="editAttachmentStatus" class="muted compact">Sin material visual.</p></div></div>
+            <div id="editEvidenceGallery" class="evidence-gallery edit-evidence-gallery hidden"></div>
+            <div id="editVisualStage" class="review-visual-stage hidden"><canvas id="editVisualCanvas" width="1200" height="700"></canvas></div>
+            <div id="editAttachmentActions" class="button-row hidden"><button type="button" id="editViewAttachmentBtn" class="btn btn-secondary btn-small">⛶ Ver pizarrón</button><button type="button" id="editRemoveAttachmentBtn" class="text-btn danger-text hidden">Quitar fondo anotado</button></div>
+          </div>
+        </aside>
+      </div>
+      <div class="modal-actions"><button type="button" id="deleteAttemptBtn" class="btn btn-danger">Eliminar registro</button><div class="spacer"></div><button value="cancel" class="btn btn-secondary">Cancelar</button><button type="button" id="saveEditAttemptBtn" class="btn btn-primary">Guardar cambios</button></div>
+    </form>
+  </dialog>
+
+
+  <section id="studyBoardOverlay" class="study-board-overlay hidden" aria-label="Study Board" aria-hidden="true">
+    <header class="study-board-topbar">
+      <button id="closeStudyBoardBtn" type="button" class="study-board-back">← <span>Volver</span></button>
+      <div class="study-board-title">
+        <b id="studyBoardQuestionLabel">Pregunta actual</b>
+        <small id="studyBoardSubjectLabel">Dr.Coach! Study Board</small>
+      </div>
+      <div class="study-board-save-state"><span id="studyBoardSaveDot"></span><span id="studyBoardSaveLabel">Guardado local</span></div>
+    </header>
+
+    <div class="study-board-toolbar" role="toolbar" aria-label="Herramientas del Study Board">
+      <div class="study-board-tool-group">
+        <button type="button" class="sb-tool" data-sb-tool="select" title="Seleccionar / mover">↖ <span>Seleccionar</span></button>
+        <button type="button" class="sb-tool active" data-sb-tool="pen" title="Lápiz">✎ <span>Pen</span></button>
+        <button type="button" class="sb-tool" data-sb-tool="highlight" title="Resaltador">▰ <span>Highlighter</span></button>
+        <button type="button" class="sb-tool" data-sb-tool="eraser" title="Borrador">⌫ <span>Eraser</span></button>
+        <button type="button" class="sb-tool" data-sb-tool="lasso" title="Lasso">⌁ <span>Lasso</span></button>
+        <button type="button" class="sb-tool" data-sb-tool="text" title="Texto">T <span>Text</span></button>
+      </div>
+      <div class="study-board-tool-group">
+        <button id="studyBoardAddImage" type="button" class="sb-tool" title="Añadir imagen">▧ <span>Image</span></button><input id="studyBoardImageInput" type="file" accept="image/*" multiple hidden />
+        <button id="studyBoardCrop" type="button" class="sb-tool" title="Recortar imagen seleccionada">⌗ <span>Crop</span></button>
+        <button id="studyBoardUndo" type="button" class="sb-tool icon-only" title="Deshacer">↶</button>
+        <button id="studyBoardRedo" type="button" class="sb-tool icon-only" title="Rehacer">↷</button>
+      </div>
+      <div class="study-board-tool-group sb-view-tools">
+        <button id="studyBoardZoomOut" type="button" class="sb-tool icon-only" title="Alejar">−</button>
+        <button id="studyBoardZoomLabel" type="button" class="sb-tool sb-zoom-label" title="Ajustar">100%</button>
+        <button id="studyBoardZoomIn" type="button" class="sb-tool icon-only" title="Acercar">＋</button>
+        <button id="studyBoardFit" type="button" class="sb-tool"><span>Fit</span></button>
+      </div>
+    </div>
+
+    <div id="studyBoardContextBar" class="study-board-context hidden">
+      <button id="studyBoardContextCrop" type="button">Recortar</button>
+      <button id="studyBoardDuplicate" type="button">Duplicar</button>
+      <button id="studyBoardFront" type="button">Adelante</button>
+      <button id="studyBoardBack" type="button">Atrás</button>
+      <button id="studyBoardLayerToggle" type="button">Keep</button>
+      <button id="studyBoardDelete" type="button" class="danger-text">Eliminar</button>
+    </div>
+
+    <div id="studyBoardStage" class="study-board-stage">
+      <canvas id="studyBoardCanvas" aria-label="Lienzo de estudio"></canvas>
+      <div id="studyBoardEmptyHint" class="study-board-empty-hint">
+        <b>Tu Study Board está listo</b>
+        <span>Añade una captura o empieza a escribir con el lápiz. Dedo = mover · dos dedos = zoom.</span>
+      </div>
+    </div>
+
+    <footer class="study-board-footer">
+      <div class="study-board-layer-switch" aria-label="Capa de guardado">
+        <button type="button" data-sb-layer="scratch">Scratch</button>
+        <button type="button" data-sb-layer="keep" class="active">Keep</button>
+      </div>
+      <span id="studyBoardLayerHint">Keep se conserva en Review.</span>
+      <div class="study-board-footer-actions">
+        <span id="studyBoardPointerStatus">Pointer</span>
+        <button id="studyBoardClearScratch" type="button" class="text-btn">Limpiar Scratch</button>
+      </div>
+    </footer>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/db.js"></script>
+  <script src="js/zip.js"></script>
+  <!-- v3.0.0 Cloud Sync: config first (may be missing → falls back to local-only). -->
+  <script src="config/supabase.config.js" onerror="console.warn('[DrCoachCloud] supabase.config.js not found — running in local-only mode.')"></script>
+  <script src="cloud/supabase-client.js"></script>
+  <script src="cloud/auth.js"></script>
+  <script src="cloud/storage.js"></script>
+  <script src="cloud/sync.js"></script>
+  <script src="cloud/sync-indicator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

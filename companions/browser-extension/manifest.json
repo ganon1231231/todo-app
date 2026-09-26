@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Dr.Coach! Companion",
+  "version": "0.4.0",
+  "description": "Traducción inline de Medicospira + Copy Assist manual. Sin widget permanente: Dr.Coach! controla el idioma desde el Workspace.",
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://usmle.medicospira.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://usmle.medicospira.com/*"
+      ],
+      "js": [
+        "copy-assist.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://usmle.medicospira.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Dr.Coach! Companion"
+  }
+}
