@@ -3,6 +3,9 @@
 ## Sin publicar (herramientas y docs — la app no cambia)
 
 ### Añadido
+- **`docs/README.md`**: índice de toda la documentación ("¿cómo hago X?" → guía), visible al navegar la carpeta docs/ en GitHub.
+- **`docs/ESTRUCTURA.md`** ampliado: diagrama del ritual de publicación (check → release → push → Pages), entradas nuevas en el mapa (instalar en dispositivos, copia de seguridad) y pasos de check.sh integrados en el ritual manual.
+- **`scripts/check.sh` §9**: valida que los enlaces relativos del README y de docs/*.md apunten a archivos que existen (15 comprobados ahora; un renombre que rompa una guía se detecta antes de publicar).
 - **`docs/INSTALAR-APP.md`**: guía para instalar Dr.Coach! como aplicación (PWA) en iPad/iPhone (Safari), Android (Chrome), Mac y Windows (Chrome/Edge) — pasos, cómo se actualiza una instalada, dónde viven los datos por dispositivo y tabla de problemas frecuentes.
 - **Tarjeta social del repo** (`docs/img/social-preview.png`, 1280×640): imagen de marca con logo, funciones y captura real de la app, lista para subir en Settings → Social preview (pasos en `docs/GITHUB-PAGES.md` § 6).
 - **`.github/`**: plantillas de issues (bug e idea) y de pull request, en español y adaptadas a la app (piden el chip de versión, la vista afectada, errores de consola y el estado de la base de datos; recuerdan exportar el progreso antes de tocar nada y no pegar credenciales).

@@ -101,23 +101,42 @@ También: `docs/BD-MANTENIMIENTO.md` § 4 y § 6 (síntomas y ritual de cambios 
 → `companions/browser-extension/` y `companions/mobile-userscript/`.
 - Son proyectos independientes: se instalan por su cuenta y no afectan a la web.
 
+### 📲 "Instalar la app en un dispositivo" (iPad, Android, Mac, PC)
+→ **`docs/INSTALAR-APP.md`**
+- Pasos por plataforma, actualizaciones de la app instalada y dónde viven los datos.
+
+### 💾 "Quiero una copia de seguridad del proyecto"
+→ **`bash scripts/backup.sh`**
+- ZIP del código + bundle del historial git; conserva las 8 más recientes. Tu progreso de estudio se exporta desde la app (Datos → Exportar).
+
 ---
 
 ## 2. Publicar una nueva versión (ritual completo)
 
+```mermaid
+flowchart LR
+  A[Cambios en<br>css/ js/ docs/…] --> B[CHANGELOG.md<br>nueva entrada]
+  B --> C[scripts/check.sh<br>0 fallos]
+  C --> D[scripts/release.sh<br>patch/minor/major]
+  D --> E[git push origin<br>main --tags]
+  E --> F[GitHub Pages<br>~1 min]
+  F --> G[Dispositivos:<br>una recarga normal]
+```
+
 **Atajo (recomendado):** `bash scripts/release.sh patch` (o `minor` / `major`).
-Hace los pasos 2 y 4 automáticamente: sube la versión en `js/app.js`, renueva la caché en `sw.js`, hace commit y crea el tag `vX.Y.Z`. Tú solo escribes los cambios en `docs/CHANGELOG.md` y haces `git push origin main --tags`.
+Hace los pasos 3 y 5 automáticamente: sube la versión en `js/app.js`, renueva la caché en `sw.js`, actualiza la insignia del `README.md`, hace commit y crea el tag `vX.Y.Z`. Tú solo escribes los cambios en `docs/CHANGELOG.md`, confirmas y haces `git push origin main --tags`.
 
 Si prefieres hacerlo a mano:
 
 1. **Haz tus cambios** en la carpeta correspondiente.
-2. **Bump de versión** en 3 sitios:
+2. **Anota el cambio** en `docs/CHANGELOG.md` (entrada nueva arriba) y haz commit.
+3. **Chequeo**: `bash scripts/check.sh` → debe terminar en **0 fallos** (estructura, secretos, versiones, rutas, offline, PWA instalable, enlaces de docs).
+4. **Bump de versión** en 3 sitios:
    - `js/app.js` → `APP_VERSION = 'x.y.z'`
    - `sw.js` → `const CACHE = 'drcoach-x.y.z-<nota>'`
-   - `docs/CHANGELOG.md` → nueva entrada arriba describiendo el cambio.
-3. **Prueba en local**: `python3 scripts/serve.py` → revisa lo que tocaste.
-4. **Sube a GitHub**: `git add . && git commit -m "v x.y.z: <resumen>" && git push`.
-5. **En tus dispositivos**: una recarga forzada (Ctrl+Shift+R) para renovar el Service Worker.
+   - `README.md` → insignia de versión.
+5. **Sube a GitHub**: `git push origin main --tags`.
+6. **En tus dispositivos**: **una recarga normal basta** — el Service Worker renueva la caché él solo y borra la vieja (desde v3.0.2).
 
 > El progreso guardado (IndexedDB) sobrevive a cualquier actualización: el nombre de la base no cambia.
 

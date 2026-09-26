@@ -171,6 +171,25 @@ if [ -f manifest.webmanifest ]; then
   fi
 fi
 
+# 9. Documentación: enlaces relativos de README y docs/*.md apuntan a archivos reales
+echo "9) Enlaces de documentación"
+MD_MISS=0; MD_N=0
+while IFS= read -r -d '' f; do
+  dir=$(dirname "$f")
+  while IFS= read -r link || [ -n "$link" ]; do
+    [ -z "$link" ] && continue
+    case "$link" in
+      http*|\#*|mailto:*) continue ;;
+    esac
+    target="${link%%#*}"          # ignora la ancla interna
+    target="${target%\ }"         # por si quedó un espacio antes de un título
+    [ -z "$target" ] && continue
+    MD_N=$((MD_N+1))
+    [ -e "$dir/$target" ] || { bad "$f enlaza a '$link' y NO existe"; MD_MISS=1; }
+  done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//; s/ "[^"]*"$//')
+done < <(find . -maxdepth 2 -name "*.md" -not -path "./.git/*" -print0)
+[ "$MD_MISS" = "0" ] && ok "los $MD_N enlaces relativos del README y docs/ existen"
+
 echo "──────────────────────────────────────────────"
 echo "Resultado: $PASS ok · $WARN avisos · $FAIL fallos"
 if [ "$FAIL" -gt 0 ]; then
