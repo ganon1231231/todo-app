@@ -64,15 +64,18 @@ flowchart LR
   - `TARGET_TOTAL` / `DEADLINE` → meta de preguntas y fecha objetivo.
 
 ### 🗄 "Bug o cambio en la base de datos LOCAL" (progreso guardado en el navegador)
-→ **`js/db.js`**
+→ **`js/db.js`** · Runbook completo paso a paso: **`docs/BD-MANTENIMIENTO.md`**
 - IndexedDB (`mediospira-db`, versión 2). Stores: `attempts`, `sessions`, `settings`, `attachments`, `baselines`, `pending_syncs`.
 - Si algún día añades un store nuevo: súbelo en `DB_VERSION` y crea el store dentro de `onupgradeneeded` (ya hay un ejemplo con `pending_syncs`).
+- Síntomas típicos, cómo inspeccionar la base con DevTools y cómo reparar con export/import: ver el runbook.
 
 ### ☁️ "Bug o cambio en la base de datos de la NUBE (Supabase)"
 Tres sitios, por orden de sospecha:
 1. **`supabase/schema.sql`** → tablas, políticas RLS, bucket. Si cambias algo aquí, vuelve a ejecutarlo en Supabase Dashboard → SQL Editor.
 2. **`cloud/sync.js`** → cómo se empujan/jalen los datos, cola `pending_syncs`.
 3. **`cloud/storage.js`** → subida de imágenes al bucket `study-evidence`.
+
+También: `docs/BD-MANTENIMIENTO.md` § 4 y § 6 (síntomas y ritual de cambios de datos).
 
 ### 🔐 "Credenciales / login / usuarios"
 → **`config/supabase.config.js`** (URL + anon key + usuarios sugeridos).

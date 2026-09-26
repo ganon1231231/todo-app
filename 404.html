@@ -17,31 +17,56 @@
       display: grid;
       place-items: center;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f4f0;
+      background:
+        radial-gradient(720px 340px at 18% -10%, rgba(31, 79, 154, .09), transparent 62%),
+        radial-gradient(620px 320px at 88% 112%, rgba(31, 79, 154, .07), transparent 60%),
+        #f5f4f0;
       color: #1c2430;
       padding: 24px;
       text-align: center;
     }
     .card {
+      position: relative;
+      overflow: hidden;
       max-width: 460px;
+      width: 100%;
       background: #ffffff;
       border: 1px solid rgba(31, 79, 154, .14);
       border-radius: 18px;
       padding: 40px 32px 32px;
       box-shadow: 0 18px 50px rgba(28, 36, 48, .10);
+      animation: rise .5s cubic-bezier(.22, .9, .3, 1) both;
     }
-    .card img { width: 132px; height: auto; margin: 0 auto 14px; display: block; }
+    /* Línea superior de marca (degradado navy) */
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, #1f4f9a, #6ea0dd 55%, rgba(110, 160, 221, 0));
+    }
+    .card img {
+      width: 132px;
+      height: auto;
+      margin: 0 auto 14px;
+      display: block;
+      animation: float 4.5s ease-in-out infinite;
+    }
     .code {
       font-size: 64px;
       font-weight: 800;
       letter-spacing: .04em;
       color: #1f4f9a;
       line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
     h1 { font-size: 20px; margin: 10px 0 8px; }
     p  { font-size: 14.5px; line-height: 1.6; color: #5a6472; }
     .btn {
-      display: inline-block;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
       margin-top: 22px;
       padding: 12px 26px;
       border-radius: 12px;
@@ -50,17 +75,77 @@
       text-decoration: none;
       font-weight: 600;
       font-size: 15px;
-      transition: transform .15s ease, box-shadow .15s ease;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
     }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(31, 79, 154, .30); }
-    .count { margin-top: 14px; font-size: 12.5px; color: #8a93a1; }
-    .count b { color: #1f4f9a; }
+    .btn .arrow { transition: transform .18s ease; font-size: 17px; line-height: 1; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(31, 79, 154, .30); background: #1c477f; }
+    .btn:hover .arrow { transform: translateX(3px); }
+    .btn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(31, 79, 154, .25); }
+    /* Navegación por teclado visible */
+    .btn:focus-visible {
+      outline: 3px solid rgba(31, 79, 154, .45);
+      outline-offset: 2px;
+      border-radius: 12px;
+    }
+    /* Barra de progreso del cuenta atrás */
+    .meter {
+      margin-top: 18px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(31, 79, 154, .12);
+      overflow: hidden;
+    }
+    .meter i {
+      display: block;
+      height: 100%;
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1f4f9a, #6ea0dd);
+      animation: drain 5s linear forwards;
+    }
+    .count { margin-top: 10px; font-size: 12.5px; color: #8a93a1; }
+    .count b { color: #1f4f9a; font-variant-numeric: tabular-nums; }
+    .hint {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed rgba(31, 79, 154, .18);
+      font-size: 12px;
+      color: #8a93a1;
+    }
+    .hint b { color: #1f4f9a; font-weight: 600; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px) scale(.985); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-5px); }
+    }
+    @keyframes drain {
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
+    }
+    /* Movimiento reducido: sin animaciones, cuenta atrás intacta */
+    @media (prefers-reduced-motion: reduce) {
+      .card, .card img, .meter i { animation: none; }
+      .btn, .btn .arrow { transition: none; }
+    }
     @media (prefers-color-scheme: dark) {
-      body { background: #12161d; color: #e8ebf0; }
+      body {
+        background:
+          radial-gradient(720px 340px at 18% -10%, rgba(58, 109, 184, .14), transparent 62%),
+          radial-gradient(620px 320px at 88% 112%, rgba(58, 109, 184, .10), transparent 60%),
+          #12161d;
+        color: #e8ebf0;
+      }
       .card { background: #1a2029; border-color: rgba(122, 165, 224, .18); box-shadow: 0 18px 50px rgba(0,0,0,.45); }
       h1 { color: #e8ebf0; }
-      p, .count { color: #9aa4b2; }
+      p, .count, .hint { color: #9aa4b2; }
       .btn { background: #3a6db8; }
+      .btn:hover { background: #4378c4; }
+      .btn:focus-visible { outline-color: rgba(122, 165, 224, .55); }
+      .meter { background: rgba(122, 165, 224, .16); }
+      .hint { border-top-color: rgba(122, 165, 224, .22); }
     }
   </style>
 </head>
@@ -70,8 +155,10 @@
     <div class="code">404</div>
     <h1>Esta página no existe</h1>
     <p>La ruta que buscas no está en Dr.Coach! (quizá el enlace cambió o se escribió mal). Tu progreso está a salvo: vive en tu navegador.</p>
-    <a class="btn" href="./index.html">Volver a Dr.Coach!</a>
+    <a class="btn" href="./index.html">Volver a Dr.Coach! <span class="arrow" aria-hidden="true">→</span></a>
+    <div class="meter" role="presentation"><i></i></div>
     <p class="count">Te llevo al inicio en <b id="s">5</b> s…</p>
+    <p class="hint">¿Progreso de estudio? Todo sigue <b>guardado en tu dispositivo</b> (IndexedDB) — nada se pierde por un enlace roto.</p>
   </main>
   <script>
     // Redirección automática a la app (ruta relativa: funciona en la raíz

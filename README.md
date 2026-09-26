@@ -48,13 +48,17 @@ drcoach/
 │
 ├── scripts/
 │   ├── serve.py          ← Servidor local (python3 scripts/serve.py)
+│   ├── check.sh          ← Chequeo pre-publicación (bash scripts/check.sh)
+│   ├── release.sh        ← Publicar versión (bash scripts/release.sh patch)
 │   └── Abrir DrCoach.command  ← Doble clic en macOS para abrir la app
 │
 └── docs/
     ├── ESTRUCTURA.md     ← 📖 Mapa "¿dónde toco qué?" — EMPIEZA AQUÍ
+    ├── BD-MANTENIMIENTO.md ← 🗄️ Runbook de base de datos (diagnóstico y arreglos)
     ├── CHANGELOG.md      ← Historial de versiones
     ├── INSTALL-CLOUD.md  ← Guía de configuración de Supabase paso a paso
     ├── GITHUB-PAGES.md   ← Guía para publicar/actualizar tu web en GitHub
+    ├── GITHUB-ACTIONS-PAGES.md ← (Opcional) deploy automático con Actions
     └── DISTRIBUCION.md   ← Notas históricas de distribución (v2.6.7)
 ```
 
@@ -95,6 +99,8 @@ git push -u origin main   # (o master, según tu repo)
 
 Para futuras actualizaciones: cambia los archivos → `git add .` → `git commit -m "..."` → `git push`.
 
+> 🤖 ¿Quieres que cada push publique solo (sin tocar Settings)? Guía opcional: **`docs/GITHUB-ACTIONS-PAGES.md`**.
+
 > 🔒 `config/supabase.config.js` (tus credenciales) está en `.gitignore` y **nunca se sube**. Si tu repo es público y alguien lo clona, crea su propio config a partir de la plantilla.
 
 ---
@@ -105,14 +111,15 @@ Para futuras actualizaciones: cambia los archivos → `git add .` → `git commi
 |---|---|
 | Cambiar colores / estilos | `css/styles.css` |
 | Corregir un bug de la app | `js/app.js` |
-| Arreglar la base de datos local | `js/db.js` (stores de IndexedDB) |
-| Arreglar la base de datos de la nube | `supabase/schema.sql` + `cloud/sync.js` |
+| Arreglar la base de datos local | `js/db.js` (stores de IndexedDB) — runbook: `docs/BD-MANTENIMIENTO.md` |
+| Arreglar la base de datos de la nube | `supabase/schema.sql` + `cloud/sync.js` — runbook: `docs/BD-MANTENIMIENTO.md` |
 | Cambiar credenciales de Supabase | `config/supabase.config.js` |
 | Cambiar la interfaz (HTML) | `index.html` |
 | Actualizar logo / iconos | `assets/img/` y `assets/icons/` |
-| Publicar una nueva versión | Ver `docs/ESTRUCTURA.md` § "Publicar una nueva versión" |
+| Publicar una nueva versión | `bash scripts/release.sh patch` (o minor/major) |
+| Comprobar que todo está listo para publicar | `bash scripts/check.sh` |
 
-Guía completa: **`docs/ESTRUCTURA.md`** · Historial: **`docs/CHANGELOG.md`** · Nube: **`docs/INSTALL-CLOUD.md`**
+Guía completa: **`docs/ESTRUCTURA.md`** · Base de datos: **`docs/BD-MANTENIMIENTO.md`** · Historial: **`docs/CHANGELOG.md`** · Nube: **`docs/INSTALL-CLOUD.md`**
 
 ---
 

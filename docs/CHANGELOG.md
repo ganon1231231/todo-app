@@ -1,5 +1,16 @@
 # Dr.Coach! — Registro de cambios
 
+## Sin publicar (herramientas y docs — la app no cambia)
+
+### Añadido
+- **`scripts/check.sh`**: chequeo pre-publicación en un comando — estructura crítica, secretos fuera de git, consistencia de versiones (APP_VERSION ↔ CACHE del SW), rutas rotas en `index.html`, estado de git y permisos. `bash scripts/check.sh` antes de cada push.
+- **`docs/BD-MANTENIMIENTO.md`**: runbook de base de datos — mapa de la IndexedDB local (`mediospira-db`), cómo inspeccionarla con DevTools, tabla síntoma → causa → arreglo, backups export/import y ritual para corregir bugs de datos locales y de nube.
+- **`docs/GITHUB-ACTIONS-PAGES.md`**: guía OPCIONAL para deploy automático con GitHub Actions (workflow YAML listo para copiar; por defecto se sigue usando "Deploy from a branch").
+
+### Mejorado
+- **`404.html`** pulida: animación de entrada, logo flotante, barra de progreso del cuenta atrás, foco visible para teclado, flecha animada en el botón, nota de tranquilidad ("tu progreso está a salvo") y respeto a `prefers-reduced-motion`.
+- **`scripts/release.sh`** más seguro: rechaza publicar con cambios sin confirmar (con instrucciones), rechaza tags duplicados, verifica que el bump realmente se aplicó (y revierte si falla) y solo sube `js/app.js`/`sw.js` al commit de release.
+
 ## v3.0.2 · Fiabilidad de la nube + página 404
 
 ### Corregido
