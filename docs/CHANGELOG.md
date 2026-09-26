@@ -1,5 +1,25 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.1.0 · Recorte estilo Canva y cero imágenes estiradas
+
+> Síntoma que cierra esta versión: «el crop no lo hace como Canva u otra app — estira absurdamente las imágenes, no es funcional». Dos defectos de fondo en el motor del board, no en el botón.
+
+### Corregido
+- **Redimensionar estiraba las imágenes (raíz del «estira absurdamente»)**: arrastrar una esquina cambiaba ancho y alto por separado y sin bloqueo — la imagen quedaba deformada para siempre (una 800×400 arrastrada +100/+150 pasaba a razón 1.29). Ahora **la proporción está bloqueada** al estilo Canva: esquina grande = escala uniforme, la imagen NUNCA se deforma (verificado a píxel: 2.000 → 2.000).
+- **El crop heredaba y conservaba la deformación**: si el objeto ya estaba estirado, hornear el recorte mantenía la inconsistencia. Ahora el **marco de recorte usa la proporción REAL del archivo original** — entrar a recortar sana los objetos estirados de versiones anteriores, y al confirmar la nueva geometría sale con la proporción exacta de la región (rectAR == regiónAR, verificado 1.857/1.884/1.5).
+
+### Nuevo — Recorte de dos fases como Canva
+- **Ves la imagen COMPLETA atenuada** con la ventana de recorte nítida encima (antes el recorte se aplicaba en vivo y perdías la referencia de qué estabas cortando). Nada se mueve ni cambia de escala mientras ajustas: es geométricamente imposible deformar.
+- **8 mangos**: 4 esquinas + 4 bordes (antes solo 4 puntos medios), con rejilla de tercios, borde blanco y cursor contextual por dirección.
+- **Arrastrar desde dentro mueve la ventana** por la imagen original (tamaño constante), como en Canva.
+- **Recuperar lo cortado**: al volver a entrar en recorte puedes EXPANDIR la ventana hacia fuera y recuperar partes que habías eliminado (antes solo con Ctrl+Z).
+- **Confirmar/cancelar claro**: Enter, «Listo ✓» o clic fuera de la imagen APLICAN; Esc CANCELA sin tocar nada (y recupera la herramienta que tenías). Doble clic sobre una imagen entra directo al recorte.
+- **Al pegar una imagen, la herramienta pasa a Seleccionar**: la imagen llega seleccionada y manipulable al instante (antes seguía «Pen» y arrastrar dibujaba tinta encima de la foto).
+
+### Técnico
+- Estado nuevo: cropFrame (marco fijo, proporción del blob) + cropDraft (fracciones del borrador); el bake ocurre una sola vez al confirmar con nw=f.w·(r−l), nh=f.h·(b−t). Un dedo en tablet sigue recortando; dos dedos siguen haciendo zoom/pan; Undo/Redo intactos (1 entrada por sesión de recorte efectiva).
+- QA automatizado (12 pruebas, 0 errores de consola): pegado→selección, lock de proporción, doble clic, borde 1:1 con objeto congelado, bake sin estiramiento, re-expansión, Esc, touch de un dedo, recorte con objeto ROTADO 30° (borde exacto 0.0714==0.0714, centro y rotación preservados) y sanado de legados estirados.
+
 ## v3.0.6 · El recorte del Study Board funciona de verdad (corta, no estira)
 
 > Síntoma que cierra esta versión: al pegar una imagen en el Study Board y pulsar **Recortar**, arrastrar los bordes no recortaba (y en tablet era directamente imposible). Causas encontradas en el motor del canvas, no en el botón.
