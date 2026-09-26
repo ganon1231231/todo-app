@@ -3,13 +3,17 @@
 ## Sin publicar (herramientas y docs — la app no cambia)
 
 ### Añadido
-- **`scripts/check.sh`**: chequeo pre-publicación en un comando — estructura crítica, secretos fuera de git, consistencia de versiones (APP_VERSION ↔ CACHE del SW), rutas rotas en `index.html`, estado de git y permisos. `bash scripts/check.sh` antes de cada push.
+- **`.github/`**: plantillas de issues (bug e idea) y de pull request, en español y adaptadas a la app (piden el chip de versión, la vista afectada, errores de consola y el estado de la base de datos; recuerdan exportar el progreso antes de tocar nada y no pegar credenciales).
+- **`scripts/backup.sh`**: copia de seguridad en un comando — ZIP del proyecto tal cual está (incluye tu `config/supabase.config.js`: es copia local, no subirla a GitHub) + bundle del historial git completo (restaurable con `git clone archivo.bundle`). Conserva las 8 más recientes. `bash scripts/backup.sh [carpeta]`.
+- **Capturas del proyecto** en `docs/img/` (escritorio, móvil y acceso) mostradas en el README con texto alternativo descriptivo.
+- **`scripts/check.sh`**: chequeo pre-publicación en un comando — estructura crítica, secretos fuera de git, consistencia de versiones (APP_VERSION ↔ CACHE del SW ↔ insignia del README), rutas rotas en `index.html`, estado de git y permisos. `bash scripts/check.sh` antes de cada push.
 - **`docs/BD-MANTENIMIENTO.md`**: runbook de base de datos — mapa de la IndexedDB local (`mediospira-db`), cómo inspeccionarla con DevTools, tabla síntoma → causa → arreglo, backups export/import y ritual para corregir bugs de datos locales y de nube.
 - **`docs/GITHUB-ACTIONS-PAGES.md`**: guía OPCIONAL para deploy automático con GitHub Actions (workflow YAML listo para copiar; por defecto se sigue usando "Deploy from a branch").
 
 ### Mejorado
 - **`404.html`** pulida: animación de entrada, logo flotante, barra de progreso del cuenta atrás, foco visible para teclado, flecha animada en el botón, nota de tranquilidad ("tu progreso está a salvo") y respeto a `prefers-reduced-motion`.
-- **`scripts/release.sh`** más seguro: rechaza publicar con cambios sin confirmar (con instrucciones), rechaza tags duplicados, verifica que el bump realmente se aplicó (y revierte si falla) y solo sube `js/app.js`/`sw.js` al commit de release.
+- **`scripts/release.sh`** más seguro y multiplataforma: rechaza publicar con cambios sin confirmar (con instrucciones), rechaza tags duplicados, verifica que el bump realmente se aplicó (y revierte si falla) y solo sube `js/app.js`/`sw.js` (+README si cambia la insignia) al commit de release. **Corrige un bug de compatibilidad**: ya no usa `sed -i` (fallaba en macOS/BSD); edita vía archivo temporal, así que funciona igual en Mac y Linux. Además actualiza automáticamente la insignia de versión del README.
+- **README.md** renovado: insignias de versión/PWA, sección de capturas, `backup.sh` y `.github/` en el árbol de estructura, y fila de backup en la tabla de mantenimiento.
 
 ## v3.0.2 · Fiabilidad de la nube + página 404
 

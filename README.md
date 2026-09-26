@@ -1,8 +1,22 @@
-# Dr.Coach! v3.0.1
+# Dr.Coach!
+
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-v3.0.2-1f4f9a)](docs/CHANGELOG.md)
+[![PWA](https://img.shields.io/badge/PWA-offline--first-2e7d5b)](docs/ESTRUCTURA.md)
+[![Instalación](https://img.shields.io/badge/instalaci%C3%B3n-sin%20build%20ni%20dependencias-6b7280)](#)
 
 Workspace de estudio **local-first**: QBank tracking, Review, Study Board de evidencias, AI Study Dossier y Focus Radio. Funciona 100 % offline y, opcionalmente, sincroniza con **Supabase** (Cloud Sync multi-dispositivo).
 
 Es una web estática: **no necesita instalación, build ni dependencias**. Se abre `index.html` y listo.
+
+## 📸 Capturas
+
+| Panel de estudio (escritorio) |
+|---|
+| ![Panel de estudio de Dr.Coach! en escritorio: tarjetas de progreso del banco, meta diaria, ritmo requerido y racha de estudio](docs/img/escritorio-hoy.png) |
+
+| Acceso: elige tu modo | En el móvil |
+|---|---|
+| ![Pantalla de acceso: iniciar sesión con Supabase o entrar en modo local sin cuenta](docs/img/gate-login.png) | ![Vista móvil del panel con barra de navegación inferior y tarjetas apiladas](docs/img/movil-hoy.png) |
 
 ---
 
@@ -46,10 +60,13 @@ drcoach/
 │   ├── browser-extension/   Extensión de Chrome (DrCoach-Companion)
 │   └── mobile-userscript/   Script Tampermonkey para móvil
 │
+├── .github/              ← Plantillas de issues y PR (para el mantenimiento en GitHub)
+│
 ├── scripts/
 │   ├── serve.py          ← Servidor local (python3 scripts/serve.py)
 │   ├── check.sh          ← Chequeo pre-publicación (bash scripts/check.sh)
 │   ├── release.sh        ← Publicar versión (bash scripts/release.sh patch)
+│   ├── backup.sh         ← Copia de seguridad (bash scripts/backup.sh)
 │   └── Abrir DrCoach.command  ← Doble clic en macOS para abrir la app
 │
 └── docs/
@@ -59,6 +76,7 @@ drcoach/
     ├── INSTALL-CLOUD.md  ← Guía de configuración de Supabase paso a paso
     ├── GITHUB-PAGES.md   ← Guía para publicar/actualizar tu web en GitHub
     ├── GITHUB-ACTIONS-PAGES.md ← (Opcional) deploy automático con Actions
+    ├── img/              ← Capturas usadas en este README
     └── DISTRIBUCION.md   ← Notas históricas de distribución (v2.6.7)
 ```
 
@@ -92,7 +110,7 @@ Con git, desde esta carpeta:
 ```bash
 git init                  # solo la primera vez
 git add .
-git commit -m "Dr.Coach! v3.0.1"
+git commit -m "Dr.Coach! v3.0.2"
 git remote add origin https://github.com/TU-USUARIO/TU-REPO.git
 git push -u origin main   # (o master, según tu repo)
 ```
@@ -118,6 +136,7 @@ Para futuras actualizaciones: cambia los archivos → `git add .` → `git commi
 | Actualizar logo / iconos | `assets/img/` y `assets/icons/` |
 | Publicar una nueva versión | `bash scripts/release.sh patch` (o minor/major) |
 | Comprobar que todo está listo para publicar | `bash scripts/check.sh` |
+| Hacer una copia de seguridad | `bash scripts/backup.sh` (código + historial git; tu progreso se exporta desde la app) |
 
 Guía completa: **`docs/ESTRUCTURA.md`** · Base de datos: **`docs/BD-MANTENIMIENTO.md`** · Historial: **`docs/CHANGELOG.md`** · Nube: **`docs/INSTALL-CLOUD.md`**
 

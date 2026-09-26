@@ -7,7 +7,8 @@
 # Verifica, sin tocar nada:
 #   1. Estructura: los archivos críticos existen.
 #   2. Secretos: config/supabase.config.js NO está dentro de git.
-#   3. Versiones: APP_VERSION (js/app.js) coincide con CACHE (sw.js).
+#   3. Versiones: APP_VERSION (js/app.js) coincide con CACHE (sw.js)
+#      y con la insignia del README.
 #   4. Rutas: los href/src locales de index.html apuntan a archivos reales.
 #   5. Git: hay repo, sin cambios sin confirmar, tag de la versión actual.
 #   6. Permisos: scripts con bit de ejecución.
@@ -32,7 +33,8 @@ CRITICAL=(
   css/styles.css js/db.js js/app.js js/zip.js
   cloud/supabase-client.js cloud/auth.js cloud/storage.js cloud/sync.js cloud/sync-indicator.js
   config/supabase.config.example.js supabase/schema.sql
-  scripts/serve.py scripts/release.sh docs/ESTRUCTURA.md docs/CHANGELOG.md
+  scripts/serve.py scripts/check.sh scripts/release.sh scripts/backup.sh
+  docs/ESTRUCTURA.md docs/CHANGELOG.md
 )
 for f in "${CRITICAL[@]}"; do
   [ -f "$f" ] && ok "$f" || bad "falta $f"
@@ -63,6 +65,16 @@ elif [ -z "$APP_V" ]; then
   bad "No pude leer APP_VERSION en js/app.js"
 else
   bad "DESCUADRE: app.js=$APP_V vs sw.js=$SW_V — usa scripts/release.sh, no ediciones manuales"
+fi
+
+# 3b. Insignia de versión del README (aviso, no bloquea)
+if [ -f README.md ] && grep -q "versi%C3%B3n-v[0-9.]*-1f4f9a" README.md; then
+  README_V=$(grep -oE "versi%C3%B3n-v[0-9.]+-1f4f9a" README.md | head -1 | sed -E "s/versi%C3%B3n-v([0-9.]+)-1f4f9a/\1/")
+  if [ -n "$APP_V" ] && [ "$README_V" = "$APP_V" ]; then
+    ok "insignia del README = v$README_V"
+  else
+    warn "insignia del README (v$README_V) ≠ versión de la app (v$APP_V) — release.sh la actualiza al publicar"
+  fi
 fi
 
 # 4. Rutas locales de index.html apuntan a archivos reales
@@ -98,7 +110,7 @@ fi
 
 # 6. Permisos de ejecución
 echo "6) Permisos"
-for s in scripts/release.sh scripts/serve.py "scripts/Abrir DrCoach.command"; do
+for s in scripts/release.sh scripts/check.sh scripts/backup.sh scripts/serve.py "scripts/Abrir DrCoach.command"; do
   if [ -f "$s" ] && [ -x "$s" ]; then ok "$s ejecutable"
   elif [ -f "$s" ]; then warn "$s sin permiso de ejecución (chmod +x \"$s\")"
   fi
