@@ -75,6 +75,7 @@ drcoach/
     ├── CHANGELOG.md      ← Historial de versiones
     ├── INSTALL-CLOUD.md  ← Guía de configuración de Supabase paso a paso
     ├── GITHUB-PAGES.md   ← Guía para publicar/actualizar tu web en GitHub
+    ├── INSTALAR-APP.md   ← 📲 Instalar la PWA en iPad/Android/Mac/PC
     ├── GITHUB-ACTIONS-PAGES.md ← (Opcional) deploy automático con Actions
     ├── img/              ← Capturas usadas en este README
     └── DISTRIBUCION.md   ← Notas históricas de distribución (v2.6.7)
@@ -90,6 +91,7 @@ drcoach/
 **Opción A — Local (macOS):** doble clic en `scripts/Abrir DrCoach.command`.
 **Opción B — Local (cualquier sistema):** `python3 scripts/serve.py` → abre `http://localhost:8080`.
 **Opción C — GitHub Pages:** es la forma recomendada (HTTPS necesario para Focus Radio).
+**📲 Instalarla como app** (icono propio, pantalla completa, offline) en iPad/Android/Mac/PC: **`docs/INSTALAR-APP.md`**.
 
 > ⚠️ No abras `index.html` con doble clic como archivo (`file://`): el Service Worker y Focus Radio requieren HTTP/HTTPS.
 
@@ -138,6 +140,7 @@ Para futuras actualizaciones: cambia los archivos → `git add .` → `git commi
 | Actualizar logo / iconos | `assets/img/` y `assets/icons/` |
 | Publicar una nueva versión | `bash scripts/release.sh patch` (o minor/major) |
 | Comprobar que todo está listo para publicar | `bash scripts/check.sh` |
+| Instalar la app en un dispositivo | Guía: `docs/INSTALAR-APP.md` |
 | Hacer una copia de seguridad | `bash scripts/backup.sh` (código + historial git; tu progreso se exporta desde la app) |
 
 Guía completa: **`docs/ESTRUCTURA.md`** · Base de datos: **`docs/BD-MANTENIMIENTO.md`** · Historial: **`docs/CHANGELOG.md`** · Nube: **`docs/INSTALL-CLOUD.md`**

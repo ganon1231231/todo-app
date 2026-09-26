@@ -9,11 +9,12 @@
 #   2. Secretos: config/supabase.config.js NO está dentro de git.
 #   3. Versiones: APP_VERSION (js/app.js) coincide con CACHE (sw.js)
 #      y con la insignia del README.
-#   4. Rutas: los href/src locales de index.html apuntan a archivos reales.
+#   4. Rutas: los href/src locales de index.html y 404.html apuntan a archivos reales.
 #   5. Git: hay repo, sin cambios sin confirmar, tag de la versión actual.
 #   6. Permisos: scripts con bit de ejecución.
 #   7. Recursos offline: las URLs que cachea el Service Worker y los iconos
 #      del manifest existen en disco (si falta uno, el modo avión se rompe).
+#   8. PWA instalable: el manifest tiene los campos y tamaños de icono mínimos.
 #
 # Código de salida 0 = todo listo para publicar.
 # =====================================================================
@@ -79,13 +80,17 @@ if [ -f README.md ] && grep -q "versi%C3%B3n-v[0-9.]*-1f4f9a" README.md; then
   fi
 fi
 
-# 4. Rutas locales de index.html apuntan a archivos reales
-echo "4) Rutas de index.html"
+# 4. Rutas locales de index.html y 404.html apuntan a archivos reales
+echo "4) Rutas locales (index.html + 404.html)"
 BROKEN=0
-while IFS=':' read -r attr path; do
-  [ -f "$path" ] || { bad "index.html referencia '$path' y NO existe"; BROKEN=1; }
-done < <(grep -oE '(src|href)="\./[^"#?]+"' index.html | sed -E 's/(src|href)="\.\///; s/"$//')
-[ "$BROKEN" = "0" ] && ok "todas las rutas ./locales existen"
+for HTML in index.html 404.html; do
+  [ -f "$HTML" ] || continue
+  while IFS= read -r path || [ -n "$path" ]; do
+    [ -z "$path" ] && continue
+    [ -f "$path" ] || { bad "$HTML referencia '$path' y NO existe"; BROKEN=1; }
+  done < <(grep -oE '(src|href)="\./[^"#?]+"' "$HTML" | sed -E 's/(src|href)="\.\///; s/"$//')
+done
+[ "$BROKEN" = "0" ] && ok "todas las rutas ./locales de index.html y 404.html existen"
 
 # 5. Estado de git
 echo "5) Git"
@@ -145,6 +150,25 @@ if [ -f manifest.webmanifest ]; then
     if [ ! -f "$p" ]; then bad "icono del manifest '$p' NO existe"; M_MISS=1; fi
   done < <(grep -oE '"src"[[:space:]]*:[[:space:]]*"[^"]+"' manifest.webmanifest | sed -E 's/.*"([^"]+)"$/\1/')
   [ "$M_MISS" = "0" ] && ok "los $M_N iconos del manifest existen en disco"
+fi
+
+# 8. PWA instalable: campos mínimos y tamaños de icono del manifest
+echo "8) PWA instalable (manifest)"
+if [ -f manifest.webmanifest ]; then
+  MISS=""
+  for k in name short_name start_url display; do
+    grep -q "\"$k\"[[:space:]]*:" manifest.webmanifest || MISS="$MISS $k"
+  done
+  if [ -n "$MISS" ]; then
+    bad "manifest sin campos:$MISS — la instalación como app falla o se ve mal"
+  else
+    ok "manifest con campos mínimos (name, short_name, start_url, display)"
+  fi
+  if grep -q "192x192" manifest.webmanifest && grep -q "512x512" manifest.webmanifest; then
+    ok "iconos 192x192 y 512x512 declarados (Android/iOS los exigen)"
+  else
+    bad "manifest sin iconos 192x192/512x512 — Android/iOS no instalarán la app"
+  fi
 fi
 
 echo "──────────────────────────────────────────────"
