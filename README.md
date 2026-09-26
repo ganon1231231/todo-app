@@ -121,6 +121,8 @@ Para futuras actualizaciones: cambia los archivos → `git add .` → `git commi
 
 > 🔒 `config/supabase.config.js` (tus credenciales) está en `.gitignore` y **nunca se sube**. Si tu repo es público y alguien lo clona, crea su propio config a partir de la plantilla.
 
+> 🖼️ ¿Vas a compartir el enlace de tu repo? Sube `docs/img/social-preview.png` como tarjeta social (Settings → Social preview) — pasos en `docs/GITHUB-PAGES.md` § 6.
+
 ---
 
 ## 🧰 Mantenimiento rápido

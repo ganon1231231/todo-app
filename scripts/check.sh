@@ -12,6 +12,8 @@
 #   4. Rutas: los href/src locales de index.html apuntan a archivos reales.
 #   5. Git: hay repo, sin cambios sin confirmar, tag de la versión actual.
 #   6. Permisos: scripts con bit de ejecución.
+#   7. Recursos offline: las URLs que cachea el Service Worker y los iconos
+#      del manifest existen en disco (si falta uno, el modo avión se rompe).
 #
 # Código de salida 0 = todo listo para publicar.
 # =====================================================================
@@ -115,6 +117,35 @@ for s in scripts/release.sh scripts/check.sh scripts/backup.sh scripts/serve.py 
   elif [ -f "$s" ]; then warn "$s sin permiso de ejecución (chmod +x \"$s\")"
   fi
 done
+
+# 7. Recursos offline: lo que el SW cachea y lo que nombra el manifest deben existir
+echo "7) Recursos offline (SW + manifest)"
+if [ -f sw.js ]; then
+  SW_LINE=$(grep -m1 '^const ASSETS=' sw.js)
+  if [ -n "$SW_LINE" ]; then
+    SW_MISS=0; SW_N=0
+    while IFS= read -r p || [ -n "$p" ]; do
+      [ -z "$p" ] && continue
+      SW_N=$((SW_N+1))
+      if [ ! -f "$p" ]; then bad "el SW cachea '$p' y el archivo NO existe (rompería el modo avión)"; SW_MISS=1; fi
+    done < <(printf '%s\n' "$SW_LINE" \
+      | sed -E "s/^const ASSETS=\[//; s/\];[[:space:]]*$//; s/^'//; s/'[[:space:]]*$//" \
+      | sed "s/','/\n/g" \
+      | sed "s#^\./##")
+    [ "$SW_MISS" = "0" ] && ok "las $SW_N URLs del ASSETS del Service Worker existen en disco"
+  else
+    bad "no encuentro la lista ASSETS en sw.js"
+  fi
+fi
+if [ -f manifest.webmanifest ]; then
+  M_MISS=0; M_N=0
+  while IFS= read -r p; do
+    [ -z "$p" ] && continue
+    M_N=$((M_N+1))
+    if [ ! -f "$p" ]; then bad "icono del manifest '$p' NO existe"; M_MISS=1; fi
+  done < <(grep -oE '"src"[[:space:]]*:[[:space:]]*"[^"]+"' manifest.webmanifest | sed -E 's/.*"([^"]+)"$/\1/')
+  [ "$M_MISS" = "0" ] && ok "los $M_N iconos del manifest existen en disco"
+fi
 
 echo "──────────────────────────────────────────────"
 echo "Resultado: $PASS ok · $WARN avisos · $FAIL fallos"

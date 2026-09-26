@@ -77,7 +77,19 @@ git push
 
 ---
 
-## 6. Problemas frecuentes
+## 6. Tarjeta social del repo (opcional, 1 minuto)
+
+Cuando compartas el enlace de tu repo (WhatsApp, X, LinkedIn…), GitHub muestra una tarjeta de vista previa. Puedes poner una personalizada con la marca Dr.Coach! — ya está generada en **`docs/img/social-preview.png`** (1280×640):
+
+1. En tu repo: **Settings → General** (pestaña General, baja hasta **Social preview**).
+2. Pulsa **Edit → Upload a new image** y elige `docs/img/social-preview.png`.
+3. Guarda. A partir de ahora, todo enlace a tu repo lleva la tarjeta con el logo, las funciones y una captura real de la app.
+
+> Esta imagen vive en el repo (docs/img/) pero GitHub la usa solo como tarjeta social; no forma parte de la web ni la descarga el Service Worker.
+
+---
+
+## 7. Problemas frecuentes
 
 | Síntoma | Causa y solución |
 |---|---|
