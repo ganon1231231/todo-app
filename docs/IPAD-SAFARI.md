@@ -2,7 +2,19 @@
 
 **Sí, se puede.** Safari en iPadOS no admite Tampermonkey directamente, pero hay tres formas de ejecutar userscripts que dejan el flujo igual al de tu PC/Mac: el botón **«Español / Original»** del Workspace traduce el QBank dentro del iframe, y al seleccionar texto aparece la barrita **«Copiar / → Stem»**.
 
-El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.5.0, multi-gestor, motor por lotes).
+El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.5.1, multi-gestor, motor por lotes).
+
+---
+
+## Si la píldora aparece pero NO traduce: diagnóstico en 10 segundos
+
+**Mantén pulsada la píldora DC (0,7 s)** — se abre un panel que prueba en vivo los 4 motores de traducción (Google clients5, Google gtx, MyMemory, Bing) y muestra ✅/❌ con latencia y motivo:
+
+- **Todo ✅ menos Bing** → normal (Bing necesita gestor con GM.xmlHttpRequest); el resto traduce.
+- **❌ en Google gtx con «HTTP 200» o «google-parse»** → Google bloqueó tu IP contra el endpoint clásico; desde v0.5.1 el script usa clients5 primero y funciona igual.
+- **❌ en clients5 Y gtx** → Google bloqueó ambas vías para tu IP: usa «Copiar resultado», pégame el informe en el chat y añadimos una vía nueva.
+- **❌ MyMemory «cuota agotada»** → límite diario del servicio alcanzado; el motor ya reintenta solo al renovarse.
+- El toque corto sigue alternando Español/Original; el long-press solo abre el diagnóstico.
 
 ---
 

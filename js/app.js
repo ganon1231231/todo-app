@@ -801,7 +801,7 @@ function setWorkspaceCaptureTab(tab){
 }
 function reloadMedicospiraFrame(home=false){const f=$('#medicospiraFrame');if(!f)return;$('#workspaceFrameStatus').textContent='Cargando…';f.src=home?MEDICOSPIRA_URL:(f.src||MEDICOSPIRA_URL);setTimeout(()=>{$('#workspaceFrameStatus').textContent='usmle.medicospira.com';pingMedicospiraCompanion()},1200)}
 const MEDICOSPIRA_ORIGIN='https://usmle.medicospira.com';
-const COMPANION_VERSION='0.5.0';
+const COMPANION_VERSION='0.5.1';
 const COMPANION_INSTALL_URL='https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js';
 let medicospiraCompanionReady=false;
 let medicospiraTranslationMode='en';

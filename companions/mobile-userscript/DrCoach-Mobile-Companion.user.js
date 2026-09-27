@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.5.0
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. Red a prueba de Orion: fetch+CORS primero y aviso visible si la traducción falla.
+// @version      0.5.1
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. v0.5.1: clients5 primero (gtx bloqueado por Google), reintentos automáticos tras rate-limit y diagnóstico de proveedores con pulsación larga en la píldora.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.5.0';
+  const SCRIPT_VERSION = '0.5.1';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
@@ -91,6 +91,10 @@
   const SINGLE_WORKERS = 2;
   const RETRIES = 1;
   const PENALTY_MS = 60000;
+  // v0.5.1: HTTP 200 con HTML de bloqueo («Sorry…») también rompe el JSON.parse → tras N fallos de parse
+  // seguidos el proveedor se penaliza igual que un 429 (no martillar un host que Google ya nos cerró).
+  const PARSE_STREAK_PENALTY = 2;
+  const LONGPRESS_MS = 700;
   const CACHE_PERSIST_KEY = 'drcoach-trans-cache-v1';
   const CACHE_PERSIST_MAX = 400;
 
@@ -111,6 +115,10 @@
   // Circuit breaker (v0.5.0): si un proveedor da 429 se esquiva 60 s en vez de pagar su cascada en CADA texto
   let gtxPenaltyUntil = 0;
   let dictPenaltyUntil = 0;
+  // v0.5.1: racha de fallos de parse por proveedor + reintento único al expirar el circuit breaker
+  let gtxParseStreak = 0;
+  let dictParseStreak = 0;
+  let pendingRetryTimer = null;
   let persistTimer = null;
   let cacheDirty = false;
 
@@ -282,19 +290,22 @@
   }
 
   // Traduce un lote con cascada de proveedores + circuit breaker; devuelve Map texto→traducción
+  // v0.5.1: clients5 (dict-chrome-ex) PRIMERO — es la vía que hoy no está bloqueada; gtx pasa a respaldo
+  // (desde muchas IPs Google responde con HTTP 200 + HTML «Sorry…» al gtx clásico).
   async function translateBatchInto(texts) {
     let lastErr = null;
     const gtxOk = Date.now() >= gtxPenaltyUntil;
     const dictOk = Date.now() >= dictPenaltyUntil;
     const plans = [];
-    if (gtxOk)  plans.push([() => googleBatchTranslate(texts), 1]);
-    if (dictOk) plans.push([() => googleDictBatchTranslate(texts), 1]);
-    if (!gtxOk)  plans.push([() => googleBatchTranslate(texts), 0]);
-    if (!dictOk) plans.push([() => googleDictBatchTranslate(texts), 0]);
-    for (const [fn, retries] of plans) {
+    if (dictOk) plans.push(['dict', () => googleDictBatchTranslate(texts), 1]);
+    if (gtxOk)  plans.push(['gtx',  () => googleBatchTranslate(texts),  1]);
+    if (!dictOk) plans.push(['dict', () => googleDictBatchTranslate(texts), 0]);
+    if (!gtxOk)  plans.push(['gtx',  () => googleBatchTranslate(texts),  0]);
+    for (const [name, fn, retries] of plans) {
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
           const parts = await fn();
+          if (name === 'dict') { dictParseStreak = 0; } else { gtxParseStreak = 0; }
           const out = new Map();
           texts.forEach((t, i) => out.set(t, parts[i]));
           return out;
@@ -303,6 +314,8 @@
           const m = String((e && e.message) || e);
           if (/google-http-429/.test(m)) gtxPenaltyUntil = Date.now() + PENALTY_MS;
           if (/dict-http-429/.test(m)) dictPenaltyUntil = Date.now() + PENALTY_MS;
+          if (/google-parse/.test(m) && name === 'gtx' && ++gtxParseStreak >= PARSE_STREAK_PENALTY) gtxPenaltyUntil = Date.now() + PENALTY_MS;
+          if (/^dict-(parse|batch-incomplete)$/.test(m) && name === 'dict' && ++dictParseStreak >= PARSE_STREAK_PENALTY) dictPenaltyUntil = Date.now() + PENALTY_MS;
         }
         if (attempt < retries) await new Promise(r => setTimeout(r, 350));
       }
@@ -337,14 +350,33 @@
   }
 
   // Último recurso con CORS: MyMemory (memoria de traducción pública, límite ~500 car/petición)
-  async function myMemoryTranslate(text) {
-    const url = 'https://api.mymemory.translated.net/get?langpair=en|' + encodeURIComponent(TARGET_LANG) + '&q=' + encodeURIComponent(text.slice(0, 480));
+  // v0.5.1: trocea textos largos por frases (antes se recortaban a 480 chars) y detecta cuota agotada.
+  async function myMemoryChunk(chunk) {
+    const url = 'https://api.mymemory.translated.net/get?langpair=en|' + encodeURIComponent(TARGET_LANG) + '&q=' + encodeURIComponent(chunk);
     const res = await netRequest({ url });
     if (res.status !== 200) throw new Error('mymemory-http-' + res.status);
-    const data = JSON.parse(res.responseText);
+    let data; try { data = JSON.parse(res.responseText); } catch (_) { throw new Error('mymemory-parse'); }
     const tr = data && data.responseData && data.responseData.translatedText;
+    if (data && data.quotaFinished) throw new Error('mymemory-quota-agotada');
     if (!tr || /MYMEMORY WARNING/i.test(String(tr))) throw new Error('mymemory-parse');
     return String(tr).trim();
+  }
+  async function myMemoryTranslate(text) {
+    const clean = String(text || '').slice(0, 1500);
+    if (clean.length <= 480) return myMemoryChunk(clean);
+    const pieces = [];
+    let rest = clean;
+    while (rest.length) {
+      if (rest.length <= 480) { pieces.push(rest); break; }
+      let cut = rest.lastIndexOf('. ', 480);
+      if (cut < 200) cut = rest.lastIndexOf(' ', 480);
+      if (cut < 120) cut = 480;
+      pieces.push(rest.slice(0, cut + 1));
+      rest = rest.slice(cut + 1).replace(/^\s+/, '');
+    }
+    const out = [];
+    for (const p of pieces) out.push(await myMemoryChunk(p));
+    return out.join(' ').trim();
   }
 
   async function getBingAuth(force=false) {
@@ -354,7 +386,8 @@
     const html = res.responseText || '';
     const ig = /IG:"([^"]+)"/.exec(html);
     const iid = /data-iid="([^"]+)"/.exec(html);
-    const p = /params_AbusePreventionHelper\s*=\s*\[\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*\]/.exec(html);
+    const p = /params_AbusePreventionHelper\s*=\s*\[\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*\]/.exec(html)
+      || /params_AbusePreventionHelper\s*=\s*\[\s*'(\d+)'\s*,\s*'([^']+)'\s*,\s*(\d+)\s*\]/.exec(html);
     if (!ig || !p) throw new Error('bing-auth-parse');
     bingAuthCache = { ig: ig[1], iid: iid ? iid[1] : 'translator.5028', key: p[1], token: p[2], ttl: Number(p[3]) || 3600000, at: Date.now() };
     return bingAuthCache;
@@ -376,17 +409,18 @@
     const key = text.trim();
     if (cache.has(key)) return cache.get(key);
     // Orden dinámico según circuit breaker: no repetir el proveedor que acaba de darnos 429
+    // v0.5.1: clients5 (dict) SIEMPRE primero — gtx está siendo bloqueado por Google en muchas IPs
     const gtxOk = Date.now() >= gtxPenaltyUntil;
     const providers = gtxOk ? [
-      ['google',     () => googleTranslate(key),     RETRIES],
-      ['google-alt', () => googleDictTranslate(key), 0],
-      ['mymemory',   () => myMemoryTranslate(key),   0],
-      ['bing',       () => bingTranslate(key),       0]
-    ] : [
       ['google-alt', () => googleDictTranslate(key), RETRIES],
       ['google',     () => googleTranslate(key),     0],
       ['mymemory',   () => myMemoryTranslate(key),   0],
       ['bing',       () => bingTranslate(key),       0]
+    ] : [
+      ['google-alt', () => googleDictTranslate(key), RETRIES],
+      ['mymemory',   () => myMemoryTranslate(key),   0],
+      ['bing',       () => bingTranslate(key),       0],
+      ['google',     () => googleTranslate(key),     0]
     ];
     let lastErr;
     for (const [, fn, retries] of providers) {
@@ -458,6 +492,18 @@
       } catch (_) {}
     }
     return true;
+  }
+
+  // v0.5.1: cuando falló por rate-limit/bloqueo, reintenta solo cuando el circuit breaker expire —
+  // el usuario ya no tiene que re-tocar la píldora ni recargar la pregunta.
+  function scheduleRetryAfterPenalty() {
+    if (pendingRetryTimer) return;
+    const wait = Math.max(gtxPenaltyUntil, dictPenaltyUntil) - Date.now();
+    if (wait <= 0) return;
+    pendingRetryTimer = setTimeout(() => {
+      pendingRetryTimer = null;
+      if (currentLanguage === 'es' && !translating) scheduleScan(0);
+    }, wait + 1500);
   }
 
   async function translateAll() {
@@ -533,6 +579,7 @@
         if (netFailures > 0) {
           postStatus('error', { message: lastError || 'error del traductor' });
           showNetErrorToast(lastError || 'error desconocido');
+          scheduleRetryAfterPenalty();
         } else {
           lastError = null;
           postStatus('ready');
@@ -599,6 +646,66 @@
     } catch (_) {}
   }
 
+  // ==================== Diagnóstico de proveedores (v0.5.1) ====================
+  // Long-press en la píldora DC: prueba en vivo las 4 vías (clients5 lotes, gtx lotes, MyMemory, Bing)
+  // y muestra ✅/❌ + latencia + motivo. El botón «Copiar resultado» permite pegarme el informe en el chat.
+  function runProviderDiagnostics() {
+    try {
+      injectStyle(DIAG_STYLE);
+      const old = document.getElementById('drcoach-mobile-diag');
+      if (old) old.remove();
+      const d = document.createElement('div');
+      d.id = 'drcoach-mobile-diag';
+      d.setAttribute('role', 'dialog');
+      d.setAttribute('aria-label', 'Dr.Coach: diagnóstico del traductor');
+      d.innerHTML = '<b>Diagnóstico del traductor</b> — probando proveedores…';
+      const list = document.createElement('div');
+      list.style.margin = '6px 0';
+      d.appendChild(list);
+      const close = document.createElement('button');
+      close.type = 'button'; close.className = 'dc-diag-close'; close.textContent = 'Cerrar';
+      close.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); d.remove(); }, true);
+      const copy = document.createElement('button');
+      copy.type = 'button'; copy.className = 'dc-diag-close'; copy.style.marginRight = '8px'; copy.textContent = 'Copiar resultado';
+      copy.addEventListener('click', async e => {
+        e.preventDefault(); e.stopPropagation();
+        const ok = await copyText(list.dataset.report || '(vacío)');
+        copy.textContent = ok ? 'Copiado ✓' : 'No se pudo copiar';
+        setTimeout(() => { copy.textContent = 'Copiar resultado'; }, 1600);
+      }, true);
+      const bar = document.createElement('div'); bar.style.marginTop = '8px';
+      bar.appendChild(copy); bar.appendChild(close);
+      d.appendChild(bar);
+      (document.body || document.documentElement).appendChild(d);
+
+      const report = [];
+      const test = async (label, fn) => {
+        const el = document.createElement('div');
+        el.textContent = '⏳ ' + label + ' — probando…';
+        list.appendChild(el);
+        const t0 = Date.now();
+        try {
+          const out = await fn();
+          const ms = Date.now() - t0;
+          el.textContent = '✅ ' + label + ' — OK (' + ms + ' ms)' + (out ? ' → «' + String(out).slice(0, 40) + '»' : '');
+          report.push(label + ': OK (' + ms + ' ms)');
+        } catch (err) {
+          const ms = Date.now() - t0;
+          el.textContent = '❌ ' + label + ' — FALLO (' + ms + ' ms): ' + describeNetError(err);
+          report.push(label + ': FALLO — ' + describeNetError(err));
+        }
+      };
+      const SAMPLES = ['Chest pain', 'Fever and cough', 'Hypertension'];
+      (async () => {
+        await test('Google clients5 (lotes)', () => googleDictBatchTranslate(SAMPLES).then(p => p[0]));
+        await test('Google gtx (lotes)', () => googleBatchTranslate(SAMPLES).then(p => p[0]));
+        await test('MyMemory', () => myMemoryTranslate('Chest pain'));
+        await test('Bing', () => bingTranslate('Chest pain'));
+        list.dataset.report = 'Diagnóstico Dr.Coach Companion v' + SCRIPT_VERSION + ' — ' + new Date().toLocaleString() + '\n' + report.join('\n');
+      })();
+    } catch (_) {}
+  }
+
   // --- Aviso visible cuando la traducción falla (p. ej. Orion con permisos limitados) ---
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
@@ -615,7 +722,8 @@
       t.setAttribute('role', 'alert');
       t.title = 'Toca para cerrar';
       t.innerHTML = '<b>⚠ La traducción falló</b> — ' + escapeHtml(reason) + '.<br>' +
-        'Orion: mantén pulsado el icono de Tampermonkey → <b>Permitir siempre en este sitio</b> y reinstala el script desde la guía iPad (su auto-actualización está rota).';
+        'Mantén pulsada la píldora <b>DC</b> para ver qué proveedor falla. ' +
+        'Orion: reinstala el script desde la guía iPad y dale «Permitir siempre en este sitio».';
       t.addEventListener('click', () => { try { t.remove(); } catch (_) {} }, true);
       (document.body || document.documentElement).appendChild(t);
       setTimeout(() => { try { t.remove(); } catch (_) {} }, 12000);
@@ -629,9 +737,20 @@
     pill = document.createElement('button');
     pill.type = 'button';
     pill.id = 'drcoach-mobile-pill';
-    pill.setAttribute('aria-label', 'Dr.Coach Companion: alternar traducción Español/Original');
+    pill.setAttribute('aria-label', 'Dr.Coach Companion: alternar traducción Español/Original. Mantener pulsada: diagnóstico del traductor.');
+    // v0.5.1: pulsación larga (700 ms) = diagnóstico de proveedores; toque corto = alternar idioma
+    let lpTimer = null;
+    let lpFired = false;
+    const cancelLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+    pill.addEventListener('pointerdown', () => {
+      lpFired = false;
+      cancelLP();
+      lpTimer = setTimeout(() => { lpTimer = null; lpFired = true; runProviderDiagnostics(); }, LONGPRESS_MS);
+    }, true);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => pill.addEventListener(t, cancelLP, true));
     pill.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
+      if (lpFired) { lpFired = false; return; }
       setLanguage(currentLanguage === 'es' ? 'en' : 'es');
     }, true);
     (document.body || document.documentElement).appendChild(pill);
@@ -648,6 +767,7 @@
       const dot = document.createElement('span'); dot.className = 'dc-dot';
       p.appendChild(dot);
       p.appendChild(document.createTextNode(progress ? 'DC · ' + progress : 'DC · ' + target));
+      p.title = lastError ? ('Último error: ' + lastError + ' — mantén pulsada la píldora para diagnóstico') : 'Mantén pulsada la píldora para diagnóstico del traductor';
       p.setAttribute('aria-pressed', currentLanguage === 'es' ? 'true' : 'false');
     } catch (_) {}
   }

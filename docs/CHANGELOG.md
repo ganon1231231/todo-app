@@ -1,5 +1,17 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.8 · Userscript v0.5.1: el traductor vuelve a traducir (Google bloquea gtx) + diagnóstico desde el iPad
+
+- **Reporte real del usuario**: «ya no funciona el traductor en Safari. Sí lo detecta el script pero no está traduciendo».
+- **Causa raíz — Google endureció el bloqueo anti-abuso**: el endpoint clásico `translate.googleapis.com/translate_a/single?client=gtx` responde con **HTTP 200 + HTML «Sorry…»** (página de bloqueo) en muchas IPs — lo que rompe el `JSON.parse` pero **no dispara el circuit breaker del 429**, así que la v0.5.0 gastaba 2-4 peticiones muertas por lote contra gtx y degradaba al respaldo cada vez. Validación en vivo: gtx bloqueado (curl), `clients5.google.com/translate_a/t?client=dict-chrome-ex` multi-q **funcionando** (última vía de lotes viva), MyMemory OK, Bing OK.
+- **Fix #1 — clients5 primero**: la cascada de lotes y la por-texto ahora prueban **clients5 (dict-chrome-ex) antes que gtx** (lotes: `dict → gtx`; textos: `google-alt → mymemory → bing → google`). Menos peticiones, menos latencia, y el proveedor sano atiende primero.
+- **Fix #2 — penalty por HTML de bloqueo**: los fallos de parse (`google-parse` / `dict-parse` / `dict-batch-incomplete`) cuentan racha por proveedor; a los 2 seguidos se penaliza **60 s igual que un 429** → un host cerrado por Google deja de martillarse en cada lote.
+- **Fix #3 — reintento automático tras rate-limit**: si una pasada acaba con fallos de red, el motor **reintenta solo** cuando el circuit breaker expira (~60 s); ya no hay que re-tocar la píldora ni recargar la pregunta.
+- **Fix #4 — MyMemory por trozos**: los textos largos ya no se recortaban a 480 caracteres: se dividen por frases/espacios en piezas seguras y se concatenan; y detecta `quotaFinished` (cuota agotada) con un error claro. Bing: parse de `params_AbusePreventionHelper` tolerante a comillas simples.
+- **DIAGNÓSTICO DESDE EL iPAD — pulsación larga (0,7 s) en la píldora DC**: abre un panel que prueba **en vivo las 4 vías** (clients5 lotes, gtx lotes, MyMemory, Bing) con ✅/❌, latencia y motivo de cada fallo, y un botón **«Copiar resultado»** para pegar el informe en el chat. El toque corto sigue alternando Español/Original (el long-press no altera el idioma). El toast de error ahora remite al long-press, y la píldora muestra la causa del último error en su title.
+- **App**: `COMPANION_VERSION` esperada pasa a **0.5.1** (tarjeta «Instalar v0.5.1» si el iPad sigue con la vieja).
+- **QA (navegador real, harness con usuarioscript inyectado)**: traducción completa EN→ES con el motor nuevo («Un hombre de 68 años presenta dolor en el pecho…») ✓; toggle bidireccional ✓; long-press → panel con results reales (clients5 ✅ 450 ms · gtx ✅ 1.6 s · MyMemory ✅ 1.7 s · Bing ❌ «red bloqueada» sin gestor, esperado) ✓; el long-press no alterna idioma ✓; `node --check` OK ✓.
+
 ## v3.3.7 · Study Board Canva (colores + texto en caja) + fin del «limbo» de sync + retrato sin solapes + UI más limpia
 
 - **Reporte real del usuario**: «en posición vertical algunas cosas se sobreponen»; «en el Study Board quiero cambiar de colores para mis apuntes y que el texto sea en forma de box, como Canva»; «revisa la UI, hay redundancias y mucho texto generado por IA»; «en Datos, un bloque en curso queda en un limbo hasta terminar la sesión (parece error de sync)». Encargo explícito: no tocar la lógica del traductor.
