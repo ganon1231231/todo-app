@@ -470,6 +470,7 @@
   function bootDiagnostics() {
     // badge efímero: confirma que el gestor EJECUTA el script en la página de Dr.Coach!
     try {
+      injectStyle(DIAG_STYLE);
       const b = document.createElement('div');
       b.id = 'drcoach-top-badge';
       b.textContent = '🧩 Companion v' + SCRIPT_VERSION + ' activo';
