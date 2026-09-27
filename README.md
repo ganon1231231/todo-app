@@ -1,6 +1,6 @@
 # Dr.Coach!
 
-[![Versión](https://img.shields.io/badge/versi%C3%B3n-v3.2.3-1f4f9a)](docs/CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-v3.2.4-1f4f9a)](docs/CHANGELOG.md)
 [![PWA](https://img.shields.io/badge/PWA-offline--first-2e7d5b)](docs/ESTRUCTURA.md)
 [![Instalación](https://img.shields.io/badge/instalaci%C3%B3n-sin%20build%20ni%20dependencias-6b7280)](#)
 
