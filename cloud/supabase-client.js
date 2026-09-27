@@ -40,7 +40,17 @@
       if (state.ready) return state.supabase;
       try {
         // 1. Load user config (script tag points at config/supabase.config.js)
-        const cfg = await loadUserConfig();
+        let cfg = await loadUserConfig();
+        // v3.2.5: si no hay archivo de config (p. ej. en GitHub Pages, donde el
+        // config real nunca se publica por seguridad), usar las credenciales que
+        // el usuario guardó desde la propia app (localStorage del dispositivo).
+        if (!cfg || PLACEHOLDER.test(cfg.url || '') || PLACEHOLDER.test(cfg.anonKey || '')) {
+          const saved = readSetupFromLS();
+          if (saved) {
+            cfg = saved;
+            log('Usando credenciales guardadas en este dispositivo (sin archivo de config).');
+          }
+        }
         if (!cfg || PLACEHOLDER.test(cfg.url || '') || PLACEHOLDER.test(cfg.anonKey || '')) {
           warn('Config missing or contains placeholders — running in local-only mode.');
           api.error = 'no-config';
@@ -118,6 +128,19 @@
       };
       tick();
     });
+  }
+
+  // v3.2.5 — credenciales guardadas desde el panel «⚙ Conectar nube» del gate.
+  // Viven SOLO en el localStorage del dispositivo: nunca en el repositorio.
+  const SETUP_KEY = 'dcSupabaseSetup';
+  function readSetupFromLS() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SETUP_KEY) || 'null');
+      if (raw && typeof raw.url === 'string' && typeof raw.anonKey === 'string') {
+        return { url: raw.url.trim(), anonKey: raw.anonKey.trim() };
+      }
+    } catch (_) {}
+    return null;
   }
 
   window.DrCoachCloud = api;

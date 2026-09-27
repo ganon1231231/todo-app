@@ -1,5 +1,13 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.2.5 · Conectar tu Supabase desde la propia app (fix del login en GitHub Pages)
+
+- **Problema**: en el sitio publicado (`usuario.github.io/...`) no aparecía la puerta de login — el archivo `config/supabase.config.js` con credenciales reales **nunca se publica en el repositorio** (regla de seguridad), y sin él la app arrancaba en modo local silencioso.
+- **Solución**: nueva pestaña **«⚙ Conectar nube»** en la puerta de entrada — pegas tu **Project URL** y tu **clave anónima (anon public)** → se guardan **solo en el localStorage del dispositivo** → la app arranca en modo nube con login normal. Una vez por dispositivo, sin tocar el repositorio.
+- Validaciones con mensajes claros (URL https, clave eyJ… completa, modo privado del navegador), aviso de no pegar la `service_role`, y el botón «Iniciar sesión» redirige al panel si aún no hay conexión.
+- `cloud/supabase-client.js`: fallback automático archivo → localStorage; prioridad siempre al archivo local si existe (desarrollo).
+- Resultado en cada dispositivo: Mac/Windows/Lenovo/iPad pegan las credenciales una vez → después login + Cloud Sync en todos, con el mismo usuario de Supabase.
+
 ## v3.2.4 · Publicación: el link de siempre actualizado (Pages por rama)
 
 - **El repo publica en GitHub Pages por «Deploy from a branch» (main / raíz)** — configuración real del repo `ganon1231231/todo-app`: cada `git push` a `main` reconstruye el sitio en 1-2 minutos, sin Actions ni permisos extra.

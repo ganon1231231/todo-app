@@ -48,6 +48,9 @@
 
   function buildOverlay() {
     const cfg = CLOUD.config || {};
+    // v3.2.5: si no hay credenciales en ningún sitio (repo sin config, p. ej. GitHub
+    // Pages), la puerta se muestra igual con la pestaña «⚙ Conectar nube» activa.
+    const needsSetup = CLOUD.error === 'no-config';
 
     const overlay = el('div', { id: 'dcAuthOverlay', class: 'dc-auth-overlay' });
     overlay.innerHTML = `
@@ -59,11 +62,12 @@
         </div>
 
         <div class="dc-auth-mode-switch" id="dcAuthModeSwitch">
-          <button type="button" class="dc-auth-tab active" data-mode="login">Iniciar sesión</button>
+          <button type="button" class="dc-auth-tab${needsSetup ? '' : ' active'}" data-mode="login">Iniciar sesión</button>
           <button type="button" class="dc-auth-tab" data-mode="local">Solo local</button>
+          ${needsSetup ? '<button type="button" class="dc-auth-tab active" data-mode="setup">⚙ Conectar nube</button>' : ''}
         </div>
 
-        <form id="dcAuthLoginForm" class="dc-auth-form">
+        <form id="dcAuthLoginForm" class="dc-auth-form"${needsSetup ? ' hidden' : ''}>
           <label class="dc-auth-field">
             <span>Correo</span>
             <input id="dcAuthEmail" type="email" autocomplete="username" required
@@ -91,6 +95,24 @@
           <button type="button" class="dc-auth-submit" id="dcAuthLocalEnter">Entrar en modo local</button>
         </div>
 
+        ${needsSetup ? `
+        <div id="dcAuthSetupPanel" class="dc-auth-form dc-auth-local">
+          <p>Este sitio no incluye el archivo de credenciales de Supabase (no se publica por seguridad). Pégalas aquí y quedarán guardadas <b>solo en este dispositivo</b>: la app entrará en modo nube con tu cuenta siempre.</p>
+          <label class="dc-auth-field">
+            <span>Project URL</span>
+            <input id="dcSetupUrl" type="url" autocomplete="off" spellcheck="false"
+                   placeholder="https://TU-PROYECTO.supabase.co" />
+          </label>
+          <label class="dc-auth-field">
+            <span>Clave anónima (anon public)</span>
+            <input id="dcSetupKey" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" />
+          </label>
+          <p class="dc-auth-hint">En Supabase: <b>Project Settings → API &amp; Keys</b> → «Project URL» y «anon public». La anon key es la clave pública del navegador — nunca pegues la <i>service_role</i>.</p>
+          <button type="button" class="dc-auth-submit" id="dcSetupSave">Guardar y conectar</button>
+          <p class="dc-auth-error" id="dcSetupError" hidden></p>
+        </div>` : ''}
+
         <p class="dc-auth-footer">
           El registro público está deshabilitado. Las cuentas se crean manualmente
           desde el panel de Supabase.
@@ -107,6 +129,7 @@
     const switchEl = $('#dcAuthModeSwitch', overlay);
     const loginForm = $('#dcAuthLoginForm', overlay);
     const localPanel = $('#dcAuthLocalPanel', overlay);
+    const setupPanel = $('#dcAuthSetupPanel', overlay);
     const errorEl = $('#dcAuthError', overlay);
     const submitBtn = $('#dcAuthSubmit', overlay);
     const submitLabel = $('.dc-auth-submit-label', submitBtn);
@@ -119,11 +142,51 @@
       const mode = btn.dataset.mode;
       loginForm.hidden = mode !== 'login';
       localPanel.hidden = mode !== 'local';
+      if (setupPanel) setupPanel.hidden = mode !== 'setup';
       errorEl.hidden = true;
     });
 
+    // v3.2.5 — guardar credenciales desde la propia app (solo localStorage)
+    const setupSave = $('#dcSetupSave', overlay);
+    if (setupSave) {
+      setupSave.addEventListener('click', () => {
+        const errEl = $('#dcSetupError', overlay);
+        const url = ($('#dcSetupUrl', overlay).value || '').trim().replace(/\/+$/, '');
+        const key = ($('#dcSetupKey', overlay).value || '').trim();
+        errEl.hidden = true;
+        if (!/^https:\/\/[a-z0-9.-]+/i.test(url) || /YOUR-PROJECT/i.test(url)) {
+          errEl.textContent = 'La URL debe ser https://… (ej: https://xxxx.supabase.co).';
+          errEl.hidden = false;
+          return;
+        }
+        if (key.length < 30 || /YOUR-PUBLISHABLE/i.test(key)) {
+          errEl.textContent = 'Pega la clave anónima completa (anon public), empieza por eyJ…';
+          errEl.hidden = false;
+          return;
+        }
+        try {
+          localStorage.setItem('dcSupabaseSetup', JSON.stringify({ url, anonKey: key }));
+        } catch (_) {
+          errEl.textContent = 'Este navegador no permite guardar (modo privado).';
+          errEl.hidden = false;
+          return;
+        }
+        setupSave.disabled = true;
+        setupSave.textContent = 'Conectando…';
+        location.reload();
+      });
+    }
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      // v3.2.5: sin credenciales todavía → llevar al panel de conexión
+      if (!CLOUD.enabled && CLOUD.error === 'no-config' && setupPanel) {
+        errorEl.textContent = 'Conecta tu Supabase primero en «⚙ Conectar nube».';
+        errorEl.hidden = false;
+        const tab = switchEl.querySelector('[data-mode="setup"]');
+        if (tab) tab.click();
+        return;
+      }
       errorEl.hidden = true;
       submitBtn.disabled = true;
       submitLabel.textContent = 'Entrando…';
@@ -213,7 +276,18 @@
     return new Promise(async (resolve) => {
       await CLOUD.ensureClient();
       if (!CLOUD.enabled) {
-        // No config / offline → skip overlay, proceed locally
+        // v3.2.5: sin credenciales pero conectables → puerta con «⚙ Conectar nube».
+        if (CLOUD.error === 'no-config') {
+          STATE.gateDeferred = resolve;
+          window.DrCoachOnAuth = (user) => {
+            STATE.gateDeferred = null;
+            if (user) resolve({ user, mode: 'cloud' });
+            else resolve({ user: null, mode: 'local' });
+          };
+          buildOverlay();
+          return;
+        }
+        // Sin config Y sin conexión → modo local directo (comportamiento previo)
         resolve({ user: null, mode: 'local' });
         return;
       }
