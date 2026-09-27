@@ -835,8 +835,38 @@ function toggleMedicospiraInlineTranslation(){
   try{frame.contentWindow.postMessage({type:'DRCOACH_TRANSLATE_REQUEST',targetLanguage:target},MEDICOSPIRA_ORIGIN)}catch(_){ }
   clearTimeout(medicospiraTranslateRequestTimer);
   medicospiraTranslateRequestTimer=setTimeout(()=>{
-    if(!medicospiraCompanionReady)toast('Instala Dr.Coach! Companion para traducir Medicospira dentro del Workspace.');
+    if(medicospiraCompanionReady)return;
+    if(isIOSHomeScreenApp()){toast('📱 Estás en la app de pantalla de inicio: iPadOS no ejecuta extensiones ahí. Abre Dr.Coach! en Safari para traducir.');return}
+    if(window.__dcMobileProbe){toast('El Companion está activo pero el QBank no respondió: sigue el aviso de diagnóstico en pantalla.');return}
+    showCompanionDiag();
   },1200);
+}
+function isIOSHomeScreenApp(){
+  try{
+    if(navigator.standalone===true)return true;
+    const ios=/iPad|iPhone|iPod/.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    return ios&&window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: browser)').matches;
+  }catch(_){return false}
+}
+let companionDiagOpen=false;
+function showCompanionDiag(){
+  if(companionDiagOpen)return;companionDiagOpen=true;
+  try{
+    if(!$('#dcDiagStyle')){
+      const st=document.createElement('style');st.id='dcDiagStyle';
+      st.textContent='#companionDiag{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:2147483000;max-width:min(92vw,560px);background:#0f1826;color:#fff;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 16px 40px rgba(0,0,0,.35);font:500 13px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#companionDiag b{color:#fbbf24}#companionDiag ol{margin:6px 0 8px;padding-left:20px}#companionDiag li{margin:2px 0}#companionDiag a{color:#fbbf24;text-decoration:underline;word-break:break-all}#companionDiag .dc-diag-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:6px}#companionDiag button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:6px 12px;font:700 12px system-ui;cursor:pointer}';
+      document.head.appendChild(st);
+    }
+    const old=$('#companionDiag');if(old)old.remove();
+    const d=document.createElement('div');d.id='companionDiag';d.setAttribute('role','alertdialog');d.setAttribute('aria-label','Diagnóstico del traductor del QBank');
+    d.innerHTML='<b>El QBank no respondió al traductor</b> (Companion no inyectado).<ol><li>Actualiza el userscript a v0.4+: abre su URL en Safari y acepta la instalación.</li><li>Permisos: Ajustes → Safari → Extensiones → tu gestor → «Todos los sitios web»: Permitir.</li><li>Usa Safari, no el icono de pantalla de inicio. En Orion/Tampermonkey: Dashboard → Settings → Page Filter Mode: Blacklist.</li></ol>';
+    const actions=document.createElement('div');actions.className='dc-diag-actions';
+    const guide=document.createElement('a');guide.href='https://ganon1231231.github.io/todo-app/docs/IPAD-SAFARI.md';guide.target='_blank';guide.rel='noopener';guide.textContent='Guía iPad';
+    const ok=document.createElement('button');ok.type='button';ok.textContent='Entendido';ok.addEventListener('click',()=>{d.remove();companionDiagOpen=false});
+    actions.append(guide,ok);d.appendChild(actions);
+    (document.body||document.documentElement).appendChild(d);
+    setTimeout(()=>{try{if(d.isConnected){d.remove();companionDiagOpen=false}}catch(_){ }},25000);
+  }catch(_){companionDiagOpen=false}
 }
 function toggleIntegratedCoach(){const shell=$('#integratedWorkspaceShell');if(!shell)return;const collapsed=shell.classList.toggle('coach-collapsed');$('#workspaceToggleCoach').textContent=collapsed?'Mostrar Coach':'Ocultar Coach'}
 function toggleWorkspaceFrameWide(){const shell=$('#integratedWorkspaceShell');if(!shell)return;const wide=shell.classList.toggle('frame-wide');$('#workspaceFrameWide').textContent=wide?'↙':'⤢'}

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.4.0
+// @version      0.4.1
 // @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Muestra píldora «DC · Español/Original» para confirmar que está activo y autodiagnostica si el gestor no inyecta en iframes.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
@@ -78,6 +78,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
+  const SCRIPT_VERSION = '0.4.1';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   const MAX_CONCURRENCY = 4;
@@ -127,6 +128,16 @@
     }
     #drcoach-mobile-pill .dc-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex: 0 0 auto; }
     #drcoach-mobile-pill[data-lang="es"] .dc-dot { background: #fbbf24; }
+    #drcoach-mobile-hello {
+      position: fixed !important; z-index: 2147483647 !important;
+      left: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+      padding: 9px 13px !important; border-radius: 999px !important;
+      background: rgba(15,24,38,.92) !important; color: #fff !important;
+      border: 1px solid rgba(255,255,255,.18) !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important;
+      font: 700 12.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+      pointer-events: none !important; opacity: .95; transition: opacity .6s ease;
+    }
+    #drcoach-mobile-hello.dc-fade { opacity: 0; }
   `;
 
   function post(type, payload={}) {
@@ -137,7 +148,7 @@
     post('DRCOACH_TRANSLATOR_STATUS', { status, language: currentLanguage, ...extra });
   }
   function postReady() {
-    post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v0.4' });
+    post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v' + SCRIPT_VERSION });
   }
 
   function gmRequest(opts) {
@@ -306,8 +317,20 @@
     observer = new MutationObserver(() => scheduleScan(260));
     if (document.documentElement) observer.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
     renderPill();
+    showHello();
     postReady();
     if (currentLanguage === 'es') setTimeout(() => translateAll(), 350);
+  }
+
+  // --- Aviso efímero «Companion vX activo»: prueba inequívoca de que el gestor inyectó el script ---
+  function showHello() {
+    try {
+      const t = document.createElement('div');
+      t.id = 'drcoach-mobile-hello';
+      t.textContent = '🧩 Companion v' + SCRIPT_VERSION + ' activo';
+      (document.body || document.documentElement).appendChild(t);
+      setTimeout(() => { t.classList.add('dc-fade'); setTimeout(() => { try { t.remove(); } catch (_) {} }, 700); }, 3200);
+    } catch (_) {}
   }
 
   // --- Píldora visible «DC · Español/Original» (confirmación de que el script está vivo) ---
@@ -386,6 +409,16 @@
   // Vigila el botón «Español» del Workspace: si tras pulsarlo el QBank no responde,
   // muestra un aviso con los pasos exactos para arreglarlo en iPad (permisos, Safari, etc.).
   const DIAG_STYLE = `
+    #drcoach-top-badge {
+      position: fixed !important; z-index: 2147483647 !important;
+      left: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+      padding: 9px 13px !important; border-radius: 999px !important;
+      background: rgba(15,24,38,.92) !important; color: #fff !important;
+      border: 1px solid rgba(255,255,255,.18) !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important;
+      font: 700 12.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+      pointer-events: none !important; opacity: .95; transition: opacity .7s ease;
+    }
+    #drcoach-top-badge.dc-fade { opacity: 0; }
     #drcoach-mobile-diag {
       position: fixed !important; z-index: 2147483647 !important;
       left: 50% !important; transform: translateX(-50%) !important;
@@ -435,6 +468,14 @@
     } catch (_) {}
   }
   function bootDiagnostics() {
+    // badge efímero: confirma que el gestor EJECUTA el script en la página de Dr.Coach!
+    try {
+      const b = document.createElement('div');
+      b.id = 'drcoach-top-badge';
+      b.textContent = '🧩 Companion v' + SCRIPT_VERSION + ' activo';
+      (document.body || document.documentElement).appendChild(b);
+      setTimeout(() => { b.classList.add('dc-fade'); setTimeout(() => { try { b.remove(); } catch (_) {} }, 800); }, 5200);
+    } catch (_) {}
     window.addEventListener('message', ev => {
       try {
         const d = ev && ev.data;

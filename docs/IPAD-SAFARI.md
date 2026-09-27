@@ -2,7 +2,7 @@
 
 **Sí, se puede.** Safari en iPadOS no admite Tampermonkey directamente, pero hay tres formas de ejecutar userscripts que dejan el flujo igual al de tu PC/Mac: el botón **«Español / Original»** del Workspace traduce el QBank dentro del iframe, y al seleccionar texto aparece la barrita **«Copiar / → Stem»**.
 
-El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.3.0, multi-gestor).
+El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.4.1, multi-gestor).
 
 ---
 
@@ -24,7 +24,7 @@ Es el «Tampermonkey de Safari». Pasos en el iPad (5 minutos):
 5. **Sincronizar**: abre la app Userscripts → pulsa **↻** → debe aparecer `Dr.Coach! Mobile Companion` con el **interruptor en verde**.
 6. **Usar**: recarga Dr.Coach! en Safari → entra al Workspace → pulsa **Español**. El QBank se traduce dentro del marco; al seleccionar texto verás la barrita **«Copiar / → Stem»**.
 
-> Consejo: añade Dr.Coach! a la pantalla de inicio (Compartir → «Añadir a pantalla de inicio») para usarla como app. Los userscripts funcionan igual dentro del WebView de la PWA cuando la extensión tiene permiso global.
+> ⚠️ **Importante**: usa Dr.Coach **dentro de Safari**. El icono de «pantalla de inicio» (PWA instalada) es cómodo para estudiar, pero **iPadOS nunca ejecuta extensiones en las web-apps instaladas** → ahí los userscripts no funcionan y no habrá traducción. Para traducir: Safari siempre.
 
 ## Opción B — «Stay» (compatible con Tampermonkey)
 
@@ -43,6 +43,17 @@ Orion (de Kagi) es el único navegador en iPadOS que instala **extensiones reale
 4. Entrar a Dr.Coach! desde Orion → Workspace → «Español».
 
 Experiencia 1:1 con tu Mac/PC (incluye el menú de Tampermonkey con «Traducir a español / Ver original»).
+
+### Orion dice «Some URLs are restricted…»
+
+Si Tampermonkey muestra algo como *«Some URLs are restricted by your browser or an extension»* y ningún script se ejecuta, es un problema conocido de **Tampermonkey 5.5.x** (le pasa también en otros navegadores), no de tu script ni de Orion. Dos soluciones, prueba primero la 1:
+
+1. **Page Filter Mode → Blacklist**:
+   - Toca el icono de Tampermonkey → **Dashboard** → pestaña **Settings**.
+   - En *Config mode* elige **Advanced** (para ver todas las opciones).
+   - Baja a **Security** → **Page Filter Mode** → cámbialo de `Both` a **`Blacklist`** → **Save**.
+2. Si sigue igual: en Settings (Advanced) → **Content Script API** → cambia `UserScripts API` a **`UserScripts API Dynamic`** → Save → cierra Orion por completo y reabre.
+3. ¿Nada? Usa la **Opción A** (Safari + app Userscripts), que es la vía más estable en iPadOS.
 
 ---
 
@@ -68,14 +79,14 @@ Experiencia 1:1 con tu Mac/PC (incluye el menú de Tampermonkey con «Traducir a
 
 ## 🛠️ Solución de problemas — «no se activa / no reconoce la página»
 
-### Cómo saber si el script está vivo (v0.4.0)
+### Cómo saber si el script está vivo (v0.4.1)
 El script ahora **siempre deja señal visible**:
 
 | Dónde miras | Señal de vida |
 |---|---|
-| Dentro del QBank (Workspace) | Píldora fija abajo a la derecha: **«DC · Español»** (o «DC · Original» si ya está traduciendo). Tocándola alternas español/original sin usar el botón del Workspace. |
-| En la página de Dr.Coach | El popup del gestor (ícono ᴀA → Userscripts/Tampermonkey) ahora **sí lista el script** (antes solo matcheaba el QBank y parecía «no reconocer» la página). |
-| Si pulsas «Español» y el QBank no responde | Aparece un **aviso de diagnóstico** con los pasos de abajo, automáticamente. |
+| Dentro del QBank (Workspace) | Aviso efímero **«🧩 Companion v0.4.1 activo»** (3 s) + píldora fija abajo a la derecha: **«DC · Español»** (o «DC · Original» si ya está traduciendo). Tocando la píldora alternas español/original sin usar el botón del Workspace. |
+| En la página de Dr.Coach | Aviso efímero **«🧩 Companion v0.4.1 activo»** abajo a la izquierda (5 s) y el popup del gestor (ícono ᴀA → Userscripts/Tampermonkey) **sí lista el script**. |
+| Si pulsas «Español» y el QBank no responde | La **propia app Dr.Coach! (v3.3.4+) muestra una tarjeta de diagnóstico** con los pasos exactos — funciona aunque el userscript no se haya inyectado. |
 
 ### Causas típicas (en orden de probabilidad)
 
@@ -87,7 +98,8 @@ El script ahora **siempre deja señal visible**:
    - **Plan B**: abre el QBank en pestaña propia — la píldora «DC · Español» funciona igual (el script es autónomo), y con iPadOS **Split View** tienes QBank traducido a un lado y Dr.Coach al otro.
    - **Plan C**: Orion + Tampermonkey (extensión real de escritorio).
 6. **El script no se sincronizó en la app Userscripts.** Abre la app → ↻ → el interruptor del script debe estar verde. Si usas iCloud Drive, espera a que la sincronización termine (puede tardar).
-7. **Caché del script viejo (v0.3 o anterior).** Abre el enlace del script en Safari y acepta la actualización, o repite la instalación. La versión correcta es **0.4.0** (visible en el popup del gestor).
+7. **Caché del script viejo (v0.3/v0.4.0).** Abre el enlace del script en Safari y acepta la actualización, o repite la instalación. La versión correcta es **0.4.1** (visible en el popup del gestor y en el aviso «🧩 Companion»). Si instalaste pegando el código a mano, el script **no se actualiza solo**: bórralo y vuelve a instalarlo desde la URL.
+8. **Orion: «Some URLs are restricted…».** Es el fallo conocido de Tampermonkey 5.5.x — solución en la sección de la Opción C de arriba (Page Filter Mode → Blacklist, o Content Script API → UserScripts API Dynamic).
 
 ### Señales rápidas de diagnóstico
 
