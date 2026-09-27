@@ -2,7 +2,7 @@
 
 **Sí, se puede.** Safari en iPadOS no admite Tampermonkey directamente, pero hay tres formas de ejecutar userscripts que dejan el flujo igual al de tu PC/Mac: el botón **«Español / Original»** del Workspace traduce el QBank dentro del iframe, y al seleccionar texto aparece la barrita **«Copiar / → Stem»**.
 
-El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.5.1, multi-gestor, motor por lotes).
+El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.5.2, multi-gestor, motor por lotes auto-reparable).
 
 ---
 
@@ -15,6 +15,20 @@ El userscript es el mismo para todos los casos: [`companions/mobile-userscript/D
 - **❌ en clients5 Y gtx** → Google bloqueó ambas vías para tu IP: usa «Copiar resultado», pégame el informe en el chat y añadimos una vía nueva.
 - **❌ MyMemory «cuota agotada»** → límite diario del servicio alcanzado; el motor ya reintenta solo al renovarse.
 - El toque corto sigue alternando Español/Original; el long-press solo abre el diagnóstico.
+
+**Nota v0.5.2**: mientras traduce, la píldora muestra el progreso real contando hacia arriba («DC · 13/82»); con la v0.5.1 o anterior el contador se quedaba clavado en «0/N» hasta terminar — si ves el número moverse, está traduciendo aunque la página tarde unos segundos en repintar. Y si un lote falla, ahora se parte y se reintenta solo (split-retry), así que un bloqueo puntual de Google ya no hace que toda la página caiga al modo lento.
+
+## Reinstalación limpia en Safari (cuando la app Userscripts no toma la actualización)
+
+Si actualizaste y la píldora sigue mostrando la versión vieja (o el script «no se detecta»):
+
+1. Abre la app **Userscripts** → pestaña de scripts instalados → **borra** «Dr.Coach! Mobile Companion» (desliza / botón borrar).
+2. Cierra la pestaña de Dr.Coach!/Medicospira en Safari (para descargar la pestaña con el script viejo en memoria).
+3. Abre en Safari el enlace de instalación de arriba → la app ofrece **instalar de nuevo** → acepta y comprueba que dice **v0.5.2**.
+4. Ajustes → Safari → Extensiones → Userscripts sigue en **«Todos los sitios web» → Permitir**.
+5. Recarga la página 1-2 veces → dentro del QBank debe aparecer la píldora **«DC · Español»**.
+
+En **Orion** la auto-actualización sigue rota: borrar y reinstalar por URL es siempre el camino.
 
 ---
 

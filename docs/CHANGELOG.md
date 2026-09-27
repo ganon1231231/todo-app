@@ -1,5 +1,18 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.9 · Userscript v0.5.2: progreso REAL en la píldora + lotes auto-reparables (split-retry) + watchdog de arranque
+
+- **Reporte real del usuario**: «¿qué rayos pasó? ahora tampoco hace la traducción… no detecta el nuevo script y tampoco funciona. Soluciónalo como cuando funcionaba y traducía súper rápido».
+- **Diagnóstico con navegador real + harness instrumentado** (fetch espiado, `console.debug` interceptado, caché limpiada y escenarios repetidos):
+  - El motor **SÍ traducía** — pero el contador de la píldora estaba **roto desde v0.5.0**: `done` nunca se incrementa en ninguna de las dos fases ⇒ la píldora mostraba **«DC · 0/332» congelado durante TODA la traducción** y saltaba a «DC · Original» al final. El usuario ve «0/332» quieto y concluye, con toda razón, que «no está traduciendo».
+  - **Fallo intermitente de lotes capturado en vivo**: en una de las corridas, los 14 lotes multi-q a clients5 recibieron HTTP 200 (y al re-petir la URL exacta por curl la respuesta era perfecta), pero **todos fallaron dentro del script** y los ~333 textos cayeron en bloque a la cascada lenta por-texto (~15 s en vez de ~2 s). En otras corridas los mismos lotes pasaban sin problema. Fallo del edge de Google imposible de reproducir a demanda ⇒ hay que auto-repararlo en el cliente.
+  - Estado de los endpoints (validado con curl): **gtx sigue bloqueado** («Sorry…» HTML), **clients5 multi-q perfecto** (25 textos en ~100 ms, incluso con CORS desde navegador plano), MyMemory OK.
+- **Fix #1 — progreso real (v0.5.2)**: `done++` por texto en la fase de lotes (éxitos y en el rescate del split-retry) y en la fase individual (cuenta también fallos, para que el contador llegue siempre al total) ⇒ la píldora ahora muestra **«DC · 13/82 → 30/84 → …»** avanzando en vivo. Verificado en harness: `0/84 → 30/84 → Original` con 84 textos y 0 fallos de lote.
+- **Fix #2 — split-retry (lotes auto-reparables)**: si un lote completo falla (salvo 429, que manda al circuit breaker), se **parte por la mitad y cada mitad se reintenta** recursivamente hasta aislarse el subconjunto que de verdad falla; lo rescatado se cachea y se aplica, y solo los irrecuperables van a la cascada individual. **Verificado forzando HTTP 500 en todos los lotes ≥10 textos**: la página quedó traducida igual («Término médico Dolor en el pecho») con el contador avanzando — antes ese escenario dejaba 84 textos traduciéndose uno a uno.
+- **Fix #3 — watchdog de arranque**: si a los 4 s la píldora no existe en el DOM (arranque colgado a medias / excepción temprana), se crea igualmente; `bootMedicospira` queda envuelto en try/catch y el arranque deja traza en consola (`[DrCoach Companion] v0.5.2 boot → medicospira`) para diagnóstico remoto.
+- **App**: `APP_VERSION` **3.3.9**, SW `drcoach-3.3.9-release`, `COMPANION_VERSION` esperada **0.5.2** (tarjeta de actualización si el iPad sigue con la vieja).
+- **QA**: `node --check` OK · harness 84 textos: traducción completa, contador real, toggle bidireccional y auto-boot por caché instantáneo ✓ · harness saboteado (500 en lotes grandes): traducción completa vía split-retry ✓.
+
 ## v3.3.8 · Userscript v0.5.1: el traductor vuelve a traducir (Google bloquea gtx) + diagnóstico desde el iPad
 
 - **Reporte real del usuario**: «ya no funciona el traductor en Safari. Sí lo detecta el script pero no está traduciendo».

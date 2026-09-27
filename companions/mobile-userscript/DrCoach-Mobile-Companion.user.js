@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.5.1
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. v0.5.1: clients5 primero (gtx bloqueado por Google), reintentos automáticos tras rate-limit y diagnóstico de proveedores con pulsación larga en la píldora.
+// @version      0.5.2
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. v0.5.1: clients5 primero (gtx bloqueado por Google), reintentos automáticos tras rate-limit y diagnóstico de proveedores con pulsación larga en la píldora. v0.5.2: progreso REAL en la píldora (antes se clavaba en 0/N y parecía rota), lotes auto-reparables (split-retry: un lote que falla se parte y reintenta en vez de degradar 25 textos al modo lento) y watchdog de arranque.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.5.1';
+  const SCRIPT_VERSION = '0.5.2';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
@@ -287,6 +287,29 @@
     const parts = joinedOut.split(/\s*@@@\s*/).map(s => s.trim()).filter(Boolean);
     if (parts.length !== texts.length) throw new Error('google-batch-mismatch-' + parts.length + '-' + texts.length);
     return parts;
+  }
+
+  // v0.5.2: split-retry — si un lote completo falla (p.ej. bloqueo intermitente del edge de Google),
+  // se parte por la mitad y cada mitad se reintenta una vez. Así 25 textos no caen en bloque al modo
+  // lento individual: el fallo se aísla en el subconjunto que de verdad falla.
+  async function retrySplitInto(texts) {
+    const out = new Map();
+    const queue = [texts];
+    while (queue.length) {
+      const cur = queue.shift();
+      try {
+        const parts = await translateBatchInto(cur);
+        cur.forEach((t, i) => out.set(t, parts[i] || null));
+      } catch (_) {
+        if (cur.length > 1) {
+          const mid = Math.ceil(cur.length / 2);
+          queue.push(cur.slice(0, mid), cur.slice(mid));
+        } else {
+          out.set(cur[0], null);
+        }
+      }
+    }
+    return out;
   }
 
   // Traduce un lote con cascada de proveedores + circuit breaker; devuelve Map texto→traducción
@@ -550,14 +573,24 @@
             const parts = await translateBatchInto(texts);
             texts.forEach((t, i) => { if (parts[i]) cache.set(t, parts[i]); });
             for (const t of texts) {
-              if (cache.has(t)) applyTranslation(t, byText.get(t) || []);
+              if (cache.has(t)) { applyTranslation(t, byText.get(t) || []); done++; } // v0.5.2: progreso real
               else failedTexts.push(t);
             }
             schedulePersistCache();
           } catch (e) {
-            failedTexts.push(...texts);
+            // v0.5.2: split-retry (salvo 429: ahí no se insiste, manda el circuit breaker)
             lastError = lastError || describeNetError(e);
-            console.debug('[DrCoach Mobile Translate] batch failed', e);
+            console.debug('[DrCoach Mobile Translate] batch failed → split-retry', e);
+            if (/429/.test(String((e && e.message) || e))) {
+              failedTexts.push(...texts);
+            } else {
+              const salvaged = await retrySplitInto(texts);
+              salvaged.forEach((tr, t) => {
+                if (tr) { cache.set(t, tr); applyTranslation(t, byText.get(t) || []); done++; }
+                else failedTexts.push(t);
+              });
+              schedulePersistCache();
+            }
           }
           tick();
         }
@@ -569,8 +602,8 @@
       async function singleWorker() {
         while (si < singles.length && currentLanguage === 'es') {
           const t = singles[si++];
-          try { await translateText(t); applyTranslation(t, byText.get(t) || []); schedulePersistCache(); }
-          catch (e) { markError(e); }
+          try { await translateText(t); applyTranslation(t, byText.get(t) || []); done++; schedulePersistCache(); }
+          catch (e) { markError(e); done++; } // v0.5.2: cuenta aunque falle, si no el contador nunca llega al total
           tick();
         }
       }
@@ -938,8 +971,13 @@
   }
 
   function boot() {
+    try { console.log('[DrCoach Companion] v' + SCRIPT_VERSION + ' boot →', IS_MEDICOSPIRA ? 'medicospira' : (IS_DRcoach_TOP ? 'drcoach-top' : 'otra página')); } catch (_) {}
     if (IS_MEDICOSPIRA) {
-      bootMedicospira();
+      try { bootMedicospira(); } catch (e) { console.error('[DrCoach Companion] boot error', e); }
+      // v0.5.2: watchdog — si en 4 s la píldora no existe (arranque colgado a medias), se crea igualmente
+      setTimeout(() => {
+        try { if (!document.getElementById('drcoach-mobile-pill')) renderPill(); } catch (_) {}
+      }, 4000);
     } else if (IS_DRcoach_TOP) {
       bootDiagnostics();
     }
