@@ -1,12 +1,12 @@
 # Dr.Coach! — Registro de cambios
 
-## v3.2.4 · Publicación: deploy automático a GitHub Pages incluido
+## v3.2.4 · Publicación: el link de siempre actualizado (Pages por rama)
 
-- **Workflow oficial de Pages** (`.github/workflows/deploy-pages.yml`): cada `git push` a `main` publica la PWA en `https://TU-USUARIO.github.io/TU-REPO/` en 1-2 minutos, sin configurar nada más (primera vez: Settings → Pages → Source: «GitHub Actions»).
-- Guía `docs/GITHUB-PAGES.md` actualizada con las dos vías de activación (workflow recomendado / Deploy from a branch) y el checklist de verificación post-publicación.
-- Verificado para subcarpeta de Pages: `index.html` sin rutas absolutas, Service Worker con `register('./sw.js')`, manifest con `start_url`/`scope`/iconos relativos — la PWA se instala igual desde `usuario.github.io/drcoach/`.
+- **El repo publica en GitHub Pages por «Deploy from a branch» (main / raíz)** — configuración real del repo `ganon1231231/todo-app`: cada `git push` a `main` reconstruye el sitio en 1-2 minutos, sin Actions ni permisos extra.
+- El workflow `deploy-pages.yml` (v3.2.4 inicial) se retiró del repo: el despliegue por rama no lo necesita y exigía permiso adicional de Workflows para subirlo. Guía `docs/GITHUB-PAGES.md` actualizada (rama = recomendado, Actions = alternativa documentada).
+- Verificado para subcarpeta de Pages: `index.html` sin rutas absolutas, Service Worker con `register('./sw.js')`, manifest con `start_url`/`scope`/iconos relativos — la PWA se instala igual desde `usuario.github.io/todo-app/`.
 - Verificado que `config/supabase.config.js` (credenciales) sigue ignorado por git: al repo solo sube la plantilla `example.js`.
-- `git bundle` con historial completo y tags disponible para restaurar el repo con memoria en cualquier máquina.
+- Respaldo del contenido anterior del repo en la rama `backup/version-anterior`.
 
 ## v3.2.3 · El ↗ no sustituye al flujo integrado (y pista de pegado en iOS)
 
