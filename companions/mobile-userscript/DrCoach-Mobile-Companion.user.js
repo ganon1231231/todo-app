@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.3.0
-// @description  Habilita selección/copia en Medicospira y traducción Español/Original dentro del iframe de Dr.Coach! — para Tampermonkey/Violentmonkey (Android/Edge/PC), Safari iOS/iPadOS con las apps «Userscripts» o «Stay», y Tampermonkey dentro de Orion.
-// @match        https://usmle.medicospira.com/*
+// @version      0.4.0
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Muestra píldora «DC · Español/Original» para confirmar que está activo y autodiagnostica si el gestor no inyecta en iframes.
+// @match        *://*.medicospira.com/*
+// @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
@@ -14,6 +15,7 @@
 // @grant        GM_setValue
 // @grant        GM.setValue
 // @grant        GM_addStyle
+// @grant        GM.addStyle
 // @grant        GM_registerMenuCommand
 // @connect      translate.googleapis.com
 // @connect      www.bing.com
@@ -53,6 +55,9 @@
         : (typeof GM_setClipboard === 'function')
           ? t => { try { GM_setClipboard(t, 'text'); return true; } catch (_) { return false; } }
           : null,
+      addStyle: hasDotted('addStyle')
+        ? css => Promise.resolve().then(() => dotted.addStyle(css)).catch(() => {})
+        : null,
       xhr: hasDotted('xmlHttpRequest') ? xhrVia(dotted.xmlHttpRequest)
         : (typeof GM_xmlhttpRequest === 'function') ? xhrVia(GM_xmlhttpRequest)
         : null,
@@ -66,12 +71,22 @@
   function gmSetValue(key, val) {
     try { const r = GMX.set(key, val); if (r && typeof r.catch === 'function') r.catch(() => {}); } catch (_) {}
   }
+  function injectStyle(css) {
+    try { if (typeof GM_addStyle === 'function') { GM_addStyle(css); return; } } catch (_) {}
+    try { if (GMX.addStyle) { GMX.addStyle(css); return; } } catch (_) {}
+    try { const s = document.createElement('style'); s.textContent = css; (document.head || document.documentElement).appendChild(s); } catch (_) {}
+  }
 
   const LANG_KEY = 'drcoach-mobile-language';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   const MAX_CONCURRENCY = 4;
   const RETRIES = 2;
+
+  const IS_MEDICOSPIRA = /(^|\.)medicospira\.com$/i.test(location.hostname);
+  const IS_DRcoach_TOP = (window.parent === window) && /(^|\.)github\.io$/i.test(location.hostname) && location.pathname.indexOf('/todo-app') === 0;
+
+  // ==================== Motor de traducción (solo Medicospira) ====================
   const records = new Map(); // Text -> { original, translated }
   const cache = new Map();
   let currentLanguage = 'en';
@@ -83,7 +98,7 @@
   const EXCLUDED = new Set(['SCRIPT','STYLE','NOSCRIPT','TEMPLATE','TEXTAREA','INPUT','SELECT','OPTION','CODE','PRE','KBD','SAMP','SVG','MATH','CANVAS','IFRAME','VIDEO','AUDIO']);
   const INTERACTIVE = 'a,button,input,textarea,select,option,label,summary,[role="button"],[role="link"],[contenteditable="true"]';
 
-  const COPY_STYLE = `
+  const MED_STYLE = `
     html.drcoach-copy-enabled body,
     html.drcoach-copy-enabled body *:not(input):not(textarea):not(select):not(option):not([contenteditable="true"]) {
       -webkit-user-select: text !important;
@@ -99,15 +114,20 @@
     }
     #drcoach-mobile-copybar button { border:0; border-radius:9px; padding:8px 10px; font:inherit; cursor:pointer; background:#eef5ff; color:#173d70; }
     #drcoach-mobile-copybar button.secondary { background:rgba(255,255,255,.10); color:#fff; }
+    #drcoach-mobile-pill {
+      position: fixed !important; z-index: 2147483647 !important;
+      right: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+      display: flex; gap: 7px; align-items: center;
+      padding: 10px 14px !important; border-radius: 999px !important;
+      background: rgba(15,24,38,.92) !important; border: 1px solid rgba(255,255,255,.18) !important;
+      color: #fff !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important; backdrop-filter: blur(10px);
+      font: 700 12.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+      cursor: pointer !important; opacity: .93; -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
+    }
+    #drcoach-mobile-pill .dc-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex: 0 0 auto; }
+    #drcoach-mobile-pill[data-lang="es"] .dc-dot { background: #fbbf24; }
   `;
-
-  function addStyle(css) {
-    try { if (typeof GM_addStyle === 'function') return GM_addStyle(css); } catch (_) {}
-    try { if (GMX && typeof GMX.addStyle === 'function') return GMX.addStyle(css); } catch (_) {}
-    const s = document.createElement('style'); s.textContent = css; (document.head || document.documentElement).appendChild(s);
-  }
-  addStyle(COPY_STYLE);
-  document.documentElement.classList.add('drcoach-copy-enabled');
 
   function post(type, payload={}) {
     if (window.parent === window) return;
@@ -117,7 +137,7 @@
     post('DRCOACH_TRANSLATOR_STATUS', { status, language: currentLanguage, ...extra });
   }
   function postReady() {
-    post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v0.3' });
+    post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v0.4' });
   }
 
   function gmRequest(opts) {
@@ -191,7 +211,7 @@
     if (!node || node.nodeType !== Node.TEXT_NODE || !node.parentElement) return false;
     if (records.has(node)) return false;
     let el = node.parentElement;
-    if (el.closest?.('#drcoach-mobile-copybar')) return false;
+    if (el.closest?.('#drcoach-mobile-copybar') || el.closest?.('#drcoach-mobile-pill')) return false;
     if (el.closest?.('[contenteditable="true"]')) return false;
     while (el) {
       if (EXCLUDED.has(el.tagName)) return false;
@@ -234,6 +254,7 @@
     if (translating || currentLanguage !== 'es') return;
     translating = true;
     postStatus('translating');
+    renderPill();
     try {
       const nodes = collectTextNodes();
       let index = 0;
@@ -249,6 +270,7 @@
       postStatus('error', { message: String(e?.message || e) });
     } finally {
       translating = false;
+      renderPill();
     }
   }
 
@@ -263,6 +285,7 @@
       currentLanguage = 'es';
       gmSetValue(LANG_KEY, 'es');
       document.documentElement.setAttribute('data-drcoach-mobile-lang','es');
+      renderPill();
       await translateAll();
     } else {
       currentLanguage = 'en';
@@ -272,6 +295,7 @@
       }
       records.clear();
       document.documentElement.setAttribute('data-drcoach-mobile-lang','en');
+      renderPill();
       postStatus('ready');
     }
     postReady();
@@ -281,11 +305,41 @@
     try { currentLanguage = (await gmGetValue(LANG_KEY, 'en')) === 'es' ? 'es' : 'en'; } catch (_) { currentLanguage = 'en'; }
     observer = new MutationObserver(() => scheduleScan(260));
     if (document.documentElement) observer.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
+    renderPill();
     postReady();
     if (currentLanguage === 'es') setTimeout(() => translateAll(), 350);
   }
 
-  // --- Copy assist ---
+  // --- Píldora visible «DC · Español/Original» (confirmación de que el script está vivo) ---
+  let pill = null;
+  function ensurePill() {
+    if (pill && pill.isConnected) return pill;
+    pill = document.createElement('button');
+    pill.type = 'button';
+    pill.id = 'drcoach-mobile-pill';
+    pill.setAttribute('aria-label', 'Dr.Coach Companion: alternar traducción Español/Original');
+    pill.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      setLanguage(currentLanguage === 'es' ? 'en' : 'es');
+    }, true);
+    (document.body || document.documentElement).appendChild(pill);
+    return pill;
+  }
+  function renderPill() {
+    if (!IS_MEDICOSPIRA) return;
+    try {
+      const p = ensurePill();
+      const target = currentLanguage === 'es' ? 'Original' : 'Español';
+      p.dataset.lang = currentLanguage;
+      p.textContent = '';
+      const dot = document.createElement('span'); dot.className = 'dc-dot';
+      p.appendChild(dot);
+      p.appendChild(document.createTextNode('DC · ' + target));
+      p.setAttribute('aria-pressed', currentLanguage === 'es' ? 'true' : 'false');
+    } catch (_) {}
+  }
+
+  // --- Copy assist (solo Medicospira) ---
   let lastText = '';
   let bar = null;
   function selectionText() {
@@ -328,38 +382,123 @@
     b.style.left=x+'px'; b.style.top=y+'px'; b.style.display='flex';
   }
 
-  window.addEventListener('pointerdown',stopPageBlocker,true);
-  window.addEventListener('touchstart',stopPageBlocker,true);
-  window.addEventListener('mousedown',stopPageBlocker,true);
-  window.addEventListener('selectstart',stopPageBlocker,true);
-  window.addEventListener('copy',ev=>{ const text=selectionText(); if(!text)return; try{ev.stopImmediatePropagation();if(ev.clipboardData){ev.clipboardData.setData('text/plain',text);ev.preventDefault()}}catch(_){} },true);
-  window.addEventListener('selectionchange',()=>{clearTimeout(window.__drcoachSelTimer);window.__drcoachSelTimer=setTimeout(showBar,140)},true);
-  window.addEventListener('scroll',hideBar,{passive:true,capture:true});
-
-  // --- Dr.Coach parent bridge ---
-  window.addEventListener('message', (event) => {
-    if (event.source !== window.parent || !event.data || typeof event.data !== 'object') return;
-    const d=event.data;
-    if (d.type==='DRCOACH_COMPANION_PING') { postReady(); return; }
-    if (d.type==='DRCOACH_TRANSLATE_REQUEST') {
-      const lang=d.targetLanguage==='es'?'es':'en';
-      setLanguage(lang);
+  // ==================== Autodiagnóstico en Dr.Coach! (página superior) ====================
+  // Vigila el botón «Español» del Workspace: si tras pulsarlo el QBank no responde,
+  // muestra un aviso con los pasos exactos para arreglarlo en iPad (permisos, Safari, etc.).
+  const DIAG_STYLE = `
+    #drcoach-mobile-diag {
+      position: fixed !important; z-index: 2147483647 !important;
+      left: 50% !important; transform: translateX(-50%) !important;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+      max-width: min(92vw, 560px) !important;
+      background: rgba(15,24,38,.96) !important; color: #fff !important;
+      padding: 12px 14px !important; border-radius: 14px !important;
+      border: 1px solid rgba(255,255,255,.16) !important; box-shadow: 0 16px 40px rgba(0,0,0,.35) !important;
+      font: 500 13px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
     }
-  });
-
-  try {
-    if (GMX.menu) {
-      GMX.menu('Dr.Coach: Traducir a español',()=>setLanguage('es'));
-      GMX.menu('Dr.Coach: Ver original',()=>setLanguage('en'));
+    #drcoach-mobile-diag b { color: #fbbf24; }
+    #drcoach-mobile-diag ol { margin: 6px 0 8px; padding-left: 20px; }
+    #drcoach-mobile-diag li { margin: 2px 0; }
+    #drcoach-mobile-diag .dc-diag-close {
+      border: 0 !important; background: rgba(255,255,255,.14) !important; color: #fff !important;
+      border-radius: 8px !important; padding: 6px 12px !important; font: 700 12px system-ui !important; cursor: pointer;
     }
-  } catch (_) {}
+  `;
+  let lastSignalAt = 0;
+  let diagShown = false;
+  function showDiag() {
+    if (diagShown) return;
+    diagShown = true;
+    try {
+      injectStyle(DIAG_STYLE);
+      const old = document.getElementById('drcoach-mobile-diag');
+      if (old) old.remove();
+      const d = document.createElement('div');
+      d.id = 'drcoach-mobile-diag';
+      d.setAttribute('role', 'alertdialog');
+      d.setAttribute('aria-label', 'Dr.Coach Companion móvil: diagnóstico del QBank');
+      d.innerHTML =
+        '<b>Dr.Coach! Companion móvil</b> — el QBank no contestó al botón «Español».' +
+        '<ol>' +
+        '<li>Ajustes → Safari → Extensiones → tu gestor → <b>«Todos los sitios web»: Permitir</b>.</li>' +
+        '<li>Cierra Safari por completo (desliza fuera) y vuelve a abrir. <b>No uses el icono de pantalla de inicio</b>: las extensiones solo corren en Safari.</li>' +
+        '<li>Abre el Workspace: dentro del QBank debe verse la píldora <b>«DC · Español»</b>. Si no aparece, abre el QBank en pestaña propia (ahí sí funciona) o usa Orion + Tampermonkey.</li>' +
+        '</ol>';
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'dc-diag-close';
+      close.textContent = 'Entendido';
+      close.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); d.remove(); }, true);
+      d.appendChild(close);
+      (document.body || document.documentElement).appendChild(d);
+      setTimeout(() => { try { d.remove(); } catch (_) {} }, 20000);
+    } catch (_) {}
+  }
+  function bootDiagnostics() {
+    window.addEventListener('message', ev => {
+      try {
+        const d = ev && ev.data;
+        if (!d || typeof d !== 'object') return;
+        if (d.type === 'DRCOACH_TRANSLATOR_STATUS' || d.type === 'DRCOACH_COMPANION_READY') lastSignalAt = Date.now();
+      } catch (_) {}
+    });
+    document.addEventListener('click', ev => {
+      let btn = null;
+      try { btn = ev.target && ev.target.closest ? ev.target.closest('#workspaceTranslateChrome') : null; } catch (_) {}
+      if (!btn) return;
+      setTimeout(() => {
+        if (Date.now() - lastSignalAt < 15000) return;
+        showDiag();
+      }, 4000);
+    }, true);
+    try { window.__dcMobileProbe = { get lastSignalAt() { return lastSignalAt; }, get diagShown() { return diagShown; } }; } catch (_) {}
+  }
 
-  function boot() {
+  // ==================== Arranque por rama ====================
+  function bootMedicospira() {
+    injectStyle(MED_STYLE);
+    document.documentElement.classList.add('drcoach-copy-enabled');
+    // puente con el padre (Workspace de Dr.Coach!)
+    window.addEventListener('message', (event) => {
+      if (event.source !== window.parent || !event.data || typeof event.data !== 'object') return;
+      const d=event.data;
+      if (d.type==='DRCOACH_COMPANION_PING') { postReady(); return; }
+      if (d.type==='DRCOACH_TRANSLATE_REQUEST') {
+        const lang=d.targetLanguage==='es'?'es':'en';
+        setLanguage(lang);
+      }
+    });
+    // bloqueadores de copia fuera
     clearInlineBlocks();
     const copyObs=new MutationObserver(muts=>{for(const m of muts)for(const n of m.addedNodes||[])if(n.nodeType===1)clearInlineBlocks(n)});
     if(document.documentElement)copyObs.observe(document.documentElement,{childList:true,subtree:true});
     setInterval(clearInlineBlocks,2500);
+    // barrita de selección
+    window.addEventListener('pointerdown',stopPageBlocker,true);
+    window.addEventListener('touchstart',stopPageBlocker,true);
+    window.addEventListener('mousedown',stopPageBlocker,true);
+    window.addEventListener('selectstart',stopPageBlocker,true);
+    window.addEventListener('copy',ev=>{ const text=selectionText(); if(!text)return; try{ev.stopImmediatePropagation();if(ev.clipboardData){ev.clipboardData.setData('text/plain',text);ev.preventDefault()}}catch(_){} },true);
+    window.addEventListener('selectionchange',()=>{clearTimeout(window.__drcoachSelTimer);window.__drcoachSelTimer=setTimeout(showBar,140)},true);
+    window.addEventListener('scroll',hideBar,{passive:true,capture:true});
+    // traductor + píldora
     bootTranslator();
   }
+
+  function boot() {
+    if (IS_MEDICOSPIRA) {
+      bootMedicospira();
+    } else if (IS_DRcoach_TOP) {
+      bootDiagnostics();
+    }
+    // otras páginas bajo @match: nada (sin efectos secundarios)
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+
+  try {
+    if (GMX.menu && IS_MEDICOSPIRA) {
+      GMX.menu('Dr.Coach: Traducir a español',()=>setLanguage('es'));
+      GMX.menu('Dr.Coach: Ver original',()=>setLanguage('en'));
+    }
+  } catch (_) {}
 })();

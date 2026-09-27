@@ -1,5 +1,15 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.3 · Userscript v0.4.0: visible, autónomo y autodiagnóstico (fix «no se activa en iPad»)
+
+- **Reporte real**: con Userscripts/Tampermonkey activados en iPad, «no se activa, como que no reconoce la página». Diagnóstico: el script solo matcheaba `usmle.medicospira.com` (el iframe del QBank) — en la página de Dr.Coach el popup del gestor muestra únicamente los scripts del dominio actual, así que parecía que no corría nada; y si el gestor no tenía permiso sobre el dominio del QBank (o se usaba la PWA instalada, donde las extensiones no corren), nada se ejecutaba en ningún sitio.
+- **Match ampliado**: ahora también `https://ganon1231231.github.io/todo-app/*` → el popup del gestor **siempre lista el script** en Dr.Coach, en cualquier dispositivo.
+- **Píldora «DC · Español/Original»** (solo Medicospira): botón flotante fijo abajo a la derecha con punto de estado (verde=original, ámbar=traducido). Sirve de **confirmación visual de que el script está vivo** y permite alternar el idioma con un toque — funciona incluso sin el puente del Workspace y con el QBank abierto en pestaña propia (iPadOS Split View: QBank traducido a un lado, Dr.Coach al otro).
+- **Autodiagnóstico en Dr.Coach!**: si pulsas el botón «Español» del Workspace y el QBank no responde en 4 s (sin señal READY/STATUS), aparece un aviso con los pasos exactos: permiso «Todos los sitios web» → Permitir, cerrar Safari por completo, no usar la PWA instalada (las extensiones solo corren en Safari), planes B/C. Se muestra una vez por carga; si el Companion o el userscript contestan, jamás aparece.
+- **Aislamiento por rama**: el motor de traducción/copia SOLO arranca en Medicospira; en Dr.Coach el script únicamente escucha señales y vigila el botón (cero efectos secundarios en PC/Mac con Companion).
+- `GM.addStyle` añadido a los grants (doc oficial Userscripts: `@grant` es imperativo); `renderPill()` integrado al ciclo de traducción; probe interno `window.__dcMobileProbe` para QA.
+- Docs: **docs/IPAD-SAFARI.md** con sección completa «🛠️ Solución de problemas» (7 causas típicas + señales rápidas); README del userscript actualizado; instalación por URL ahora usa el aviso nativo de la app Userscripts.
+
 ## v3.3.2 · iPad con Safari: userscripts al estilo Tampermonkey
 
 - **Pedido directo**: «¿se podría hacer algo como Tampermonkey en mi iPad usando userscript?» → **Sí**. Nueva guía completa **`docs/IPAD-SAFARI.md`** con las tres vías: app **Userscripts** (gratis, open source, nativa de Safari — recomendada), **Stay** (compatible Tampermonkey) y **Orion** (Tampermonkey real vía extensiones de Chrome/Firefox).
