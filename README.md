@@ -46,8 +46,8 @@ drcoach/
 │   └── sync-indicator.js    Indicador "☁ Guardado / 💾 Solo local"
 │
 ├── config/
-│   ├── supabase.config.example.js  ← Plantilla de credenciales (SÍ se sube a GitHub)
-│   └── supabase.config.js          ← Tus credenciales reales (NO se sube: .gitignore)
+│   ├── supabase.config.example.js  ← Plantilla de credenciales
+│   └── supabase.config.js          ← Project URL + anon key (SÍ se sube desde v3.2.6: clave pública por diseño)
 │
 ├── supabase/
 │   └── schema.sql        ← 🗄 Base de datos en la NUBE (tablas + seguridad RLS)
@@ -121,7 +121,7 @@ Para futuras actualizaciones: cambia los archivos → `git add .` → `git commi
 
 > 🤖 ¿Quieres que cada push publique solo (sin tocar Settings)? Guía opcional: **`docs/GITHUB-ACTIONS-PAGES.md`**.
 
-> 🔒 `config/supabase.config.js` (tus credenciales) está en `.gitignore` y **nunca se sube**. Si tu repo es público y alguien lo clona, crea su propio config a partir de la plantilla.
+> 🔒 `config/supabase.config.js` solo contiene la Project URL y la **anon public key** — la clave pública del navegador, diseñada por Supabase para viajar en toda app frontend (cualquier visitante ya puede verla en DevTools al usar la web). La protección real son **RLS** + cuentas email/contraseña creadas a mano (ver `docs/INSTALL-CLOUD.md §10`). **Nunca** pongas ahí la `service_role` key.
 
 > 🖼️ ¿Vas a compartir el enlace de tu repo? Sube `docs/img/social-preview.png` como tarjeta social (Settings → Social preview) — pasos en `docs/GITHUB-PAGES.md` § 6.
 

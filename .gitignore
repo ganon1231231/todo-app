@@ -1,8 +1,9 @@
 # Dr.Coach! — archivos que NO se deben subir a GitHub
 
-# Config con credenciales reales de Supabase
-# (la plantilla config/supabase.config.example.js SÍ se sube)
-config/supabase.config.js
+# NOTA v3.2.6: config/supabase.config.js SÍ se sube al repo desde v3.2.6 —
+# solo contiene la Project URL y la anon public key (públicas por diseño:
+# la protección real son RLS + las cuentas). NUNCA añadas ahí la
+# service_role key ni ningún secreto de servidor.
 
 # Datos locales de desarrollo
 node_modules/

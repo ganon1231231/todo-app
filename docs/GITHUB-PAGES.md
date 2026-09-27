@@ -101,5 +101,5 @@ Cuando compartas el enlace de tu repo (WhatsApp, X, LinkedIn…), GitHub muestra
 | `404` al abrir la URL del sitio | El deploy aún no termina (espera 1–2 min) o el repo es privado (Pages requiere repo público o plan Pro). |
 | La página carga "fea", sin estilos | Alguien movió `css/styles.css`; revísalo en `docs/ESTRUCTURA.md` § arquitectura. |
 | La app no se actualiza en la tablet | Recarga forzada una vez. El SW viejo queda reemplazado por el nuevo caché. |
-| El login de Supabase falla solo en la web publicada | Revisa `config/supabase.config.js` (no se sube a GitHub). En el dispositivo, la app funciona igual en modo local; para la nube sigue `docs/INSTALL-CLOUD.md`. |
+| El login de Supabase falla solo en la web publicada | Desde v3.2.6 el config (URL + anon key) **se publica con el repo** → tras el push el login aparece solo, en todos los dispositivos. Si no aparece: verifica que `config/supabase.config.js` esté commiteado (ya no está en `.gitignore`), espera 1-2 min de rebuild y recarga 2 veces (Service Worker). Plan B por dispositivo: pestaña «⚙ Conectar nube» (v3.2.5). |
 | Cambié el repo pero no veo cambios | GitHub Pages tarda ~1 min; refresca con Ctrl+Shift+R. |

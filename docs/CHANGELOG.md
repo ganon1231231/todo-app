@@ -1,5 +1,12 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.2.6 · Cero pasos por dispositivo: el config viaja con la web
+
+- **Pedida por el uso real**: en lugar de pegar Project URL + anon key en cada dispositivo (pestaña «⚙ Conectar nube» de v3.2.5), ahora `config/supabase.config.js` **se sube al repo** y viaja con la web publicada — Mac/Windows/Lenovo/iPad entran con login y Cloud Sync **sin configurar absolutamente nada**.
+- **¿Por qué es seguro?** La anon key es la clave **pública** del navegador: Supabase la diseña para ir dentro de toda app frontend y cualquier visitante ya puede verla en DevTools al usar la web. La protección real sigue intacta: **RLS** por fila, cuentas email+contraseña creadas a mano y registro público deshabilitado. La `service_role` key sigue siendo el único secreto y **nunca** entra en este archivo (documentado en el propio config, README, INSTALL-CLOUD y .gitignore).
+- **Sin regresión**: quien ya guardó credenciales con «⚙ Conectar nube» sigue funcionando; el archivo tiene prioridad y la pestaña desaparece sola cuando el config está presente. La pestaña queda como plan B (repo clonado sin config, o datos del navegador borrados).
+- Docs al día: README (estructura + nota de seguridad), INSTALL-CLOUD (§4, §6, §8), GITHUB-PAGES (resolución de problemas).
+
 ## v3.2.5 · Conectar tu Supabase desde la propia app (fix del login en GitHub Pages)
 
 - **Problema**: en el sitio publicado (`usuario.github.io/...`) no aparecía la puerta de login — el archivo `config/supabase.config.js` con credenciales reales **nunca se publica en el repositorio** (regla de seguridad), y sin él la app arrancaba en modo local silencioso.

@@ -53,7 +53,8 @@ window.DRCOACH_SUPABASE_CONFIG = {
 
 > ⚠️ NUNCA uses la **service_role** key. Esa es para servidores. Dr.Coach! solo expone la anon key desde el frontend, y la seguridad la garantizan las políticas RLS del schema.
 
-3. Guarda el archivo. Súbelo al mismo servidor donde sirves `index.html`.
+3. Guarda el archivo y súbelo al repo. Desde v3.2.6 este archivo **SÍ se sube** a GitHub (la anon key es pública por diseño): al publicar en GitHub Pages, todos los dispositivos tienen login y Cloud Sync sin configurar nada.
+   - ¿Prefieres NO subirlo? Quítalo del control de versiones (`git rm --cached config/supabase.config.js` + vuelve a ignorarlo) y usa la pestaña **«⚙ Conectar nube»** de la puerta (v3.2.5): pegas URL + anon key una vez por dispositivo y quedan en su localStorage.
 
 ---
 
@@ -69,9 +70,9 @@ window.DRCOACH_SUPABASE_CONFIG = {
 
 ## 6. Modo local (sin Supabase)
 
-Si `supabase.config.js` no existe o contiene los placeholders `YOUR-PROJECT` / `YOUR-PUBLISHABLE-ANON-KEY`, la app arranca automáticamente en **modo local** (idéntico a v2.6.7):
-- No aparece overlay de login (o aparece con la pestaña "Solo local" como default).
-- El indicador muestra `💾 Solo local`.
+Si `supabase.config.js` no existe (ni hay credenciales guardadas en el dispositivo), la app sigue funcionando (v3.2.5+):
+- La puerta muestra la pestaña **«⚙ Conectar nube»**: pegas Project URL + anon key una vez y quedan en el localStorage del dispositivo; o entras con **Solo local**.
+- Sin conexión configurada el indicador muestra `💾 Solo local`.
 - Todo sigue funcionando con IndexedDB, Service Worker y offline.
 
 Esto es lo que permite distribuir el mismo ZIP a un colega que aún no configura Supabase: la app nunca falla por falta de config.
@@ -96,7 +97,7 @@ supabase/
   schema.sql                    # Ejecuta esto en Supabase SQL editor
 config/
   supabase.config.example.js    # Plantilla — copia y renombra
-  supabase.config.js            # Tu config real (NO subir a un repo público)
+  supabase.config.js            # Tu config real (SÍ se sube desde v3.2.6 — solo URL + anon key)
 cloud/
   supabase-client.js            # Carga dinámica del SDK + fallback offline
   auth.js                       # Overlay de login (2 usuarios + Solo local)
