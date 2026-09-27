@@ -1153,20 +1153,59 @@ function setupEvidenceDropzone(){
     const sessionContext=$('#view-session')?.classList.contains('active-view')||$('#view-workspace')?.classList.contains('active-view')||boardOpen;
     if(!sessionContext||!state.activeSession)return;
     if(['TEXTAREA','INPUT'].includes(document.activeElement?.tagName))return;
-    const files=[...(e.clipboardData?.items||[])].filter(x=>x.kind==='file').map(x=>x.getAsFile()).filter(Boolean);if(files.length){e.preventDefault();processImageFiles(files)}
+    const files=[...(e.clipboardData?.items||[])].filter(x=>x.kind==='file').map(x=>x.getAsFile()).filter(Boolean);
+    if(files.length){e.preventDefault();processImageFiles(files);return}
+    // v3.3.1: texto del portapapeles (Cmd/Ctrl+V fuera de un campo) → caso clínico
+    const text=(e.clipboardData?.getData('text')||'').trim();
+    const stem=$('#qStem');
+    if(text&&stem){e.preventDefault();stem.value=text;saveDraftSoon();toast('Caso pegado.')}
   });
 }
-async function pasteImageFromClipboard(){
+// ---- Portapapeles multiplataforma (macOS/Windows/Linux/iPad) — v3.3.1 ----
+function isApplePlatform(){return /Mac|iPhone|iPad|iPod/i.test(navigator.platform||navigator.userAgent||'')}
+function pasteShortcutHint(){return isApplePlatform()?'Cmd+V':'Ctrl+V'}
+async function copyTextToClipboard(text){
+  // 1) API moderna (https/localhost, con gesto de usuario). 2) Fallback clásico
+  //    para file:// (modo portable), navegadores viejos y permisos denegados.
+  if(navigator.clipboard?.writeText){try{await navigator.clipboard.writeText(text);return true}catch(_){}}
   try{
-    if(!navigator.clipboard?.read)throw new Error('clipboard-read unavailable');
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:-999px;left:-999px;opacity:0';
+    document.body.appendChild(ta);
+    const sel=document.getSelection();const prev=sel&&sel.rangeCount?sel.getRangeAt(0):null;
+    ta.select();ta.setSelectionRange(0,text.length);
+    const ok=document.execCommand('copy');
+    ta.remove();
+    if(prev&&sel){sel.removeAllRanges();sel.addRange(prev)}
+    return ok===true;
+  }catch(_){return false}
+}
+async function pasteImageFromClipboard(){
+  const hint=`Usa ${pasteShortcutHint()} sobre la vista de sesión (fuera de un campo de texto).`;
+  try{
+    if(!navigator.clipboard?.read)throw Object.assign(new Error('clipboard-read unavailable'),{name:'UnsupportedClipboard'});
     const items=await navigator.clipboard.read();const files=[];
     for(const item of items){for(const type of item.types){if(type.startsWith('image/')){const blob=await item.getType(type);files.push(new File([blob],`clipboard-${Date.now()}.png`,{type}))}}}
-    if(!files.length)return toast('El portapapeles no contiene una imagen.');await processImageFiles(files);
-  }catch{toast('El navegador no permitió leer imágenes del portapapeles. Usa Ctrl/Cmd+V sobre el área de evidencias.');}
+    if(!files.length)return toast('El portapapeles no contiene una imagen.');
+    await processImageFiles(files);
+  }catch(err){
+    const name=err?.name||'';
+    if(name==='UnsupportedClipboard'||/clipboard-read unavailable/i.test(String(err?.message||err)))toast(`Este navegador no permite leer imágenes con un botón. ${hint}`);
+    else if(name==='NotAllowedError')toast(`Permiso de portapapeles denegado. ${hint}`);
+    else toast(`No pude leer imágenes del portapapeles. ${hint}`);
+  }
 }
 async function pasteStemFromClipboard(){
-  try{const text=await navigator.clipboard.readText();if(!text)return toast('El portapapeles no contiene texto.');$('#qStem').value=text;saveDraftSoon();toast('Caso pegado.');}
-  catch{toast('No pude leer el portapapeles. Pega manualmente con Ctrl/Cmd+V.');}
+  try{
+    const text=await navigator.clipboard.readText();
+    if(!text)return toast('El portapapeles no contiene texto.');
+    $('#qStem').value=text;saveDraftSoon();toast('Caso pegado.');
+  }catch(_){
+    const stem=$('#qStem');
+    if(stem){stem.focus();stem.setSelectionRange&&stem.setSelectionRange(stem.value.length,stem.value.length)}
+    toast(`No pude leer el portapapeles. Pega manualmente con ${pasteShortcutHint()} en el caso clínico (el cursor ya quedó listo).`);
+  }
 }
 
 function renderQBank(){
@@ -1506,7 +1545,7 @@ function buildAIReport(){
 }
 async function exportAIReport(copyOnly=false){
   const report=buildAIReport();if(!report.trim())return toast('No hay datos para exportar con esos filtros.');
-  if(copyOnly){try{await navigator.clipboard.writeText(report);toast('Informe para IA copiado al portapapeles.');return}catch{const ta=document.createElement('textarea');ta.value=report;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Informe copiado.')}}
+  if(copyOnly){const ok=await copyTextToClipboard(report);toast(ok?'Informe para IA copiado al portapapeles.':'No pude copiar automáticamente: selecciona el texto y cópialo manualmente.');return}
   else downloadBlob(new Blob([report],{type:'text/markdown;charset=utf-8'}),`drcoach-ai-study-dossier-${dayKey()}.md`);
 }
 function renderRuntimeModeInfo(){

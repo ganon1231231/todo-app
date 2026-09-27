@@ -1,5 +1,15 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.1 · Copiar y pegar robusto en macOS y Windows
+
+- **Auditoría completa del portapapeles** (pedido del uso real: «a veces no funcionan bien» entre Mac y Windows):
+  - Nuevo helper **`copyTextToClipboard()`** con doble vía: API moderna (`navigator.clipboard.writeText`) → fallback clásico (`textarea` + `execCommand('copy')`) para modo portable (`file://`), navegadores viejos y permisos denegados. Verifica el resultado y preserva la selección previa del usuario.
+  - **«Pegar imagen»**: errores clasificados (navegador sin API / permiso denegado / portapapeles sin imagen) con instrucciones según plataforma: **«Cmd+V» en Apple, «Ctrl+V» en Windows/Linux** (detección automática).
+  - **«Pegar caso»**: si el navegador bloquea la lectura, ahora **enfoca el campo del caso clínico y deja el cursor listo** para pegar manualmente con el atajo correcto de tu sistema.
+  - **Nueva vía de pegado**: en sesión/Workspace, `Cmd/Ctrl+V` fuera de un campo de texto **pega texto directamente al caso clínico** (las imágenes ya funcionaban igual); sin pelear con permisos del navegador.
+- **Informe para IA (copiar)**: usa el helper con fallback — el «Copiar AI Study Dossier» ya no falla en silencio.
+- Los atajos del Study Board (Cmd/Ctrl+Z deshacer, etc.) ya contemplaban ambas plataformas; sin cambios.
+
 ## v3.3.0 · De vuelta al traductor simple: Companion y Tampermonkey como camino principal
 
 - **Pedido del uso real**: el traductor integrado de v3.2.x (panel con copiar/pegar, burbuja 🌐, botón ↗) agobiaba en lugar de ayudar. Se retira por completo y el Workspace vuelve al flujo de siempre: **un solo botón «Español / Original»** que alterna el idioma de Medicospira dentro del Workspace.
