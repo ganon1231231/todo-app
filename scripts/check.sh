@@ -34,7 +34,7 @@ echo "────────────────────────�
 echo "1) Estructura"
 CRITICAL=(
   index.html sw.js manifest.webmanifest 404.html .nojekyll
-  css/styles.css js/db.js js/app.js js/translator.js js/zip.js
+  css/styles.css js/db.js js/app.js js/zip.js
   cloud/supabase-client.js cloud/auth.js cloud/storage.js cloud/sync.js cloud/sync-indicator.js
   config/supabase.config.example.js supabase/schema.sql
   scripts/serve.py scripts/check.sh scripts/release.sh scripts/backup.sh

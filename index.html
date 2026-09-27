@@ -302,8 +302,7 @@
             <div class="workspace-title-clean"><button id="workspaceSidebarToggle" class="workspace-menu-toggle" type="button" aria-label="Mostrar u ocultar menú" title="Mostrar u ocultar menú">☰</button><h1>Medicospira Workspace</h1></div>
             <div class="integrated-top-actions">
               <button id="workspaceReloadFrame" class="btn btn-secondary btn-small" type="button">Recargar</button>
-              <button id="workspaceTranslateChrome" class="btn btn-secondary btn-small workspace-translate-btn" type="button" title="Alternar idioma de Medicospira dentro del Workspace">Español</button>
-              <button id="workspaceTranslator" class="btn btn-secondary btn-small" type="button" title="Traductor integrado: funciona en iPad, Safari y cualquier navegador, sin instalar extensiones">Traductor</button>
+              <button id="workspaceTranslateChrome" class="btn btn-secondary btn-small workspace-translate-btn" type="button" title="Alternar idioma de Medicospira dentro del Workspace (requiere Dr.Coach! Companion)">Español</button>
               <button id="workspaceToggleCoach" class="btn btn-primary btn-small" type="button">Ocultar Coach</button>
             </div>
           </div>
@@ -312,7 +311,7 @@
             <article class="integrated-browser-card">
               <div class="integrated-browser-bar">
                 <div class="browser-identity"><span class="browser-dot"></span><b>Medicospira QBank</b><small id="workspaceFrameStatus">usmle.medicospira.com</small></div>
-                <div class="browser-tools"><button id="workspaceHomeFrame" class="icon-btn" type="button" title="Volver al login">⌂</button><button id="workspaceFrameWide" class="icon-btn" type="button" title="Maximizar QBank">⤢</button><button id="workspaceOpenTab" class="icon-btn" type="button" title="Abrir QBank en pestaña nueva — así Safari (aA → Traducir página) o Chrome pueden traducir la página completa">↗</button></div>
+                <div class="browser-tools"><button id="workspaceHomeFrame" class="icon-btn" type="button" title="Volver al login">⌂</button><button id="workspaceFrameWide" class="icon-btn" type="button" title="Maximizar QBank">⤢</button></div>
               </div>
               <div class="integrated-frame-wrap">
                 <iframe id="medicospiraFrame" src="https://usmle.medicospira.com/s2/auth/login" title="Medicospira QBank" allow="translator; clipboard-read; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -815,7 +814,6 @@
   <script src="cloud/storage.js"></script>
   <script src="cloud/sync.js"></script>
   <script src="cloud/sync-indicator.js"></script>
-  <script src="js/translator.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,5 +1,13 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.0 · De vuelta al traductor simple: Companion y Tampermonkey como camino principal
+
+- **Pedido del uso real**: el traductor integrado de v3.2.x (panel con copiar/pegar, burbuja 🌐, botón ↗) agobiaba en lugar de ayudar. Se retira por completo y el Workspace vuelve al flujo de siempre: **un solo botón «Español / Original»** que alterna el idioma de Medicospira dentro del Workspace.
+- **Cómo funciona (como en v2.x)**: el botón manda `postMessage` al QBank y el **Dr.Coach! Companion** (extensión de Chrome en PC/Mac) hace la traducción inline con la API local del navegador. Sin Companion instalado, un toast lo recuerda: «Instala Dr.Coach! Companion para traducir Medicospira dentro del Workspace.»
+- **Tampermonkey / móvil**: el usuario-script `companions/mobile-userscript/DrCoach-Mobile-Companion.user.js` sigue operativo (envío de selecciones del QBank al caso clínico con `DRCOACH_MOBILE_SELECTION`). Para iPad, la vía manual queda a criterio del usuario (p. ej. abrir el QBank en pestaña propia y usar la traducción de página de Safari/Chrome cuando toque).
+- **Eliminado**: `js/translator.js` (panel, burbuja 🌐, flujos iOS de pegado), botones «Traductor» y «↗» de la barra, y el fallback que abría el panel sin Companion. Barra limpia: **Recargar · Español · Ocultar Coach · ⌂ · ⤢** — idéntica a la de la versión anterior a v3.2.0.
+- **Conservado**: `allow="translator"` en el iframe (permiso que el Companion necesita para traducir dentro del frame), todo el protocolo Companion (ping/READY/STATUS), el envío de selecciones y los dos companions en `companions/` intactos.
+
 ## v3.2.6 · Cero pasos por dispositivo: el config viaja con la web
 
 - **Pedida por el uso real**: en lugar de pegar Project URL + anon key en cada dispositivo (pestaña «⚙ Conectar nube» de v3.2.5), ahora `config/supabase.config.js` **se sube al repo** y viaja con la web publicada — Mac/Windows/Lenovo/iPad entran con login y Cloud Sync **sin configurar absolutamente nada**.
