@@ -205,10 +205,12 @@
       <div id="dcTrPanel" class="dc-tr-panel" hidden>
         <div class="dc-tr-head">
           <b>Traductor integrado</b>
-          <span class="dc-tr-dir" id="dcTrDir">EN → ES</span>
-          <span class="dc-tr-engine" id="dcTrEngine">listo</span>
-          <button id="dcTrSwap" class="dc-tr-mini" type="button" title="Intercambiar idiomas">⇄</button>
-          <button id="dcTrClose" class="dc-tr-mini" type="button" aria-label="Cerrar traductor">✕</button>
+          <div class="dc-tr-head-right">
+            <span class="dc-tr-dir" id="dcTrDir">EN → ES</span>
+            <span class="dc-tr-engine" id="dcTrEngine">listo</span>
+            <button id="dcTrSwap" class="dc-tr-mini" type="button" title="Intercambiar idiomas">⇄</button>
+            <button id="dcTrClose" class="dc-tr-mini" type="button" aria-label="Cerrar traductor">✕</button>
+          </div>
         </div>
         <textarea id="dcTrSource" class="dc-tr-area" placeholder="Pega aquí el texto del QBank (pregunta, opciones, explicación)…" aria-label="Texto original"></textarea>
         <div class="dc-tr-actions">
@@ -263,7 +265,10 @@
   function setBusy(busy, label) {
     if (!panel) return;
     panel.busy = busy;
-    refreshEngineBadge(label || (busy ? '… traduciendo' : undefined), busy ? 'busy' : undefined);
+    // Solo toca el badge al ENTRAR en busy: al salir, el try/catch ya dejó
+    // puesto el resultado (motor que respondió / ✗ sin conexión) y no hay
+    // que sobreescribirlo con «listo».
+    if (busy) refreshEngineBadge(label || '… traduciendo', 'busy');
   }
 
   async function runPanelTranslation() {
