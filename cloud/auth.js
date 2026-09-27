@@ -181,10 +181,12 @@
       e.preventDefault();
       // v3.2.5: sin credenciales todavía → llevar al panel de conexión
       if (!CLOUD.enabled && CLOUD.error === 'no-config' && setupPanel) {
-        errorEl.textContent = 'Conecta tu Supabase primero en «⚙ Conectar nube».';
-        errorEl.hidden = false;
+        // v3.2.6: cambiar de pestaña ANTES de mostrar el aviso (el handler de
+        // pestañas oculta los errores; así el mensaje queda visible).
         const tab = switchEl.querySelector('[data-mode="setup"]');
         if (tab) tab.click();
+        errorEl.textContent = 'Conecta tu Supabase primero en «⚙ Conectar nube».';
+        errorEl.hidden = false;
         return;
       }
       errorEl.hidden = true;

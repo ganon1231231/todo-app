@@ -6,7 +6,8 @@
 #
 # Verifica, sin tocar nada:
 #   1. Estructura: los archivos críticos existen.
-#   2. Secretos: config/supabase.config.js NO está dentro de git.
+#   2. Secretos: config/supabase.config.js sin service_role (desde v3.2.6 SÍ
+#      va en git — solo URL + anon key, públicas por diseño).
 #   3. Versiones: APP_VERSION (js/app.js) coincide con CACHE (sw.js)
 #      y con la insignia del README.
 #   4. Rutas: los href/src locales de index.html y 404.html apuntan a archivos reales.
@@ -43,18 +44,25 @@ for f in "${CRITICAL[@]}"; do
   [ -f "$f" ] && ok "$f" || bad "falta $f"
 done
 
-# 2. Secretos fuera de git
+# 2. Secretos: el config puede ir en git (v3.2.6 — anon key pública por diseño),
+#    pero NUNCA debe contener la service_role key ni secretos de servidor.
 echo "2) Secretos"
 if [ -f config/supabase.config.js ]; then
   if git ls-files --error-unmatch config/supabase.config.js >/dev/null 2>&1; then
-    bad "config/supabase.config.js está DENTRO de git (¡no lo publiques!)"
+    ok "config/supabase.config.js viaja en git (v3.2.6: URL + anon key, públicas por diseño)"
   else
-    ok "config/supabase.config.js con tus credenciales NO viaja en git"
+    warn "config/supabase.config.js existe pero git no lo rastrea (¿sin add? plan B «⚙ Conectar nube» activo)"
+  fi
+  # Examina el código SIN comentarios (el propio config documenta la regla
+  # «aquí NUNCA va la service_role», y ese aviso no debe dar falso positivo).
+  if sed 's|//.*||; s|^\s*[*/].*||' config/supabase.config.js | grep -qi "service_role\|service-role\|sb_secret_"; then
+    bad "config/supabase.config.js contiene service_role/secret — ¡NUNCA lo publiques!"
+  else
+    ok "config sin service_role ni secretos de servidor"
   fi
 else
-  warn "config/supabase.config.js no existe en este equipo (solo modo local)"
+  warn "config/supabase.config.js no existe en este equipo (plan B: ⚙ Conectar nube por dispositivo)"
 fi
-git ls-files | grep -q "supabase.config.js$" && bad "git sigue un supabase.config.js" || ok "git no rastrea ningún supabase.config.js real"
 
 # 3. Consistencia de versiones (app ↔ sw)
 echo "3) Versiones"
