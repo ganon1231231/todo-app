@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.4.2
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Red a prueba de Orion: fetch+CORS primero (no depende de GM_xmlhttpRequest) y aviso visible si la traducción falla.
+// @version      0.5.0
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. Red a prueba de Orion: fetch+CORS primero y aviso visible si la traducción falla.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,11 +80,19 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.4.2';
+  const SCRIPT_VERSION = '0.5.0';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
-  const MAX_CONCURRENCY = 4;
-  const RETRIES = 2;
+  // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
+  const GOOGLE_DICT_URL = 'https://clients5.google.com/translate_a/t';
+  const BATCH_MAX_TEXTS = 25;
+  const BATCH_MAX_CHARS = 1600;
+  const BATCH_WORKERS = 3;
+  const SINGLE_WORKERS = 2;
+  const RETRIES = 1;
+  const PENALTY_MS = 60000;
+  const CACHE_PERSIST_KEY = 'drcoach-trans-cache-v1';
+  const CACHE_PERSIST_MAX = 400;
 
   const IS_MEDICOSPIRA = /(^|\.)medicospira\.com$/i.test(location.hostname);
   const IS_DRcoach_TOP = (window.parent === window) && /(^|\.)github\.io$/i.test(location.hostname) && location.pathname.indexOf('/todo-app') === 0;
@@ -100,9 +108,44 @@
   let lastError = null;
   let netFailures = 0;
   let lastNetToastAt = 0;
+  // Circuit breaker (v0.5.0): si un proveedor da 429 se esquiva 60 s en vez de pagar su cascada en CADA texto
+  let gtxPenaltyUntil = 0;
+  let dictPenaltyUntil = 0;
+  let persistTimer = null;
+  let cacheDirty = false;
 
   const EXCLUDED = new Set(['SCRIPT','STYLE','NOSCRIPT','TEMPLATE','TEXTAREA','INPUT','SELECT','OPTION','CODE','PRE','KBD','SAMP','SVG','MATH','CANVAS','IFRAME','VIDEO','AUDIO']);
   const INTERACTIVE = 'a,button,input,textarea,select,option,label,summary,[role="button"],[role="link"],[contenteditable="true"]';
+
+  // --- Caché persistente (v0.5.0): revisitar una pregunta ya traducida = instantáneo ---
+  async function loadPersistedCache() {
+    try {
+      const raw = await gmGetValue(CACHE_PERSIST_KEY, '');
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (!obj || typeof obj !== 'object') return;
+      for (const [k, v] of Object.entries(obj)) {
+        if (typeof k === 'string' && k.length <= 1500 && typeof v === 'string' && v) cache.set(k, v);
+      }
+      while (cache.size > CACHE_PERSIST_MAX) cache.delete(cache.keys().next().value);
+    } catch (_) {}
+  }
+  function schedulePersistCache() {
+    cacheDirty = true;
+    if (persistTimer) return;
+    persistTimer = setTimeout(persistCacheNow, 3000);
+  }
+  function persistCacheNow() {
+    clearTimeout(persistTimer); persistTimer = null;
+    if (!cacheDirty) return;
+    cacheDirty = false;
+    try {
+      while (cache.size > CACHE_PERSIST_MAX) cache.delete(cache.keys().next().value);
+      const obj = {};
+      for (const [k, v] of cache) obj[k] = v;
+      gmSetValue(CACHE_PERSIST_KEY, JSON.stringify(obj));
+    } catch (_) {}
+  }
 
   const MED_STYLE = `
     html.drcoach-copy-enabled body,
@@ -194,6 +237,79 @@
     })();
   }
 
+  // --- Motor por lotes (v0.5.0): agrupa N textos en muy pocas peticiones ---
+  function buildBatches(texts) {
+    const batches = [];
+    let cur = [], len = 0;
+    for (const t of texts) {
+      if (cur.length && (cur.length >= BATCH_MAX_TEXTS || len + t.length > BATCH_MAX_CHARS)) {
+        batches.push(cur); cur = []; len = 0;
+      }
+      cur.push(t); len += t.length;
+    }
+    if (cur.length) batches.push(cur);
+    return batches;
+  }
+
+  // clients5 (dict-chrome-ex) acepta MÚLTIPLES q= y devuelve una entrada por texto en orden — mapeo nativo 1:1
+  async function googleDictBatchTranslate(texts) {
+    const qs = texts.map(t => '&q=' + encodeURIComponent(t)).join('');
+    const res = await netRequest({ url: GOOGLE_DICT_URL + '?client=dict-chrome-ex&sl=auto&tl=' + encodeURIComponent(TARGET_LANG) + qs });
+    if (res.status !== 200) throw new Error('dict-http-' + res.status);
+    let data; try { data = JSON.parse(res.responseText); } catch (_) { throw new Error('dict-parse'); }
+    if (!Array.isArray(data)) throw new Error('dict-parse');
+    const parts = texts.map((_, i) => {
+      const e = data[i];
+      if (typeof e === 'string') return e.trim();
+      if (Array.isArray(e) && typeof e[0] === 'string') return e[0].trim();
+      return '';
+    });
+    if (parts.some(p => !p)) throw new Error('dict-batch-incomplete');
+    return parts;
+  }
+
+  // gtx clásico con delimitador @@@ (los símbolos sobreviven a la traducción)
+  async function googleBatchTranslate(texts) {
+    const joined = texts.join('\n@@@\n');
+    const res = await netRequest({ url: GOOGLE_URL + '?client=gtx&sl=auto&tl=' + encodeURIComponent(TARGET_LANG) + '&dt=t&q=' + encodeURIComponent(joined) });
+    if (res.status !== 200) throw new Error('google-http-' + res.status);
+    let data; try { data = JSON.parse(res.responseText); } catch (_) { throw new Error('google-parse'); }
+    if (!data || !Array.isArray(data[0])) throw new Error('google-parse');
+    const joinedOut = data[0].map(seg => (seg && seg[0]) || '').join('');
+    const parts = joinedOut.split(/\s*@@@\s*/).map(s => s.trim()).filter(Boolean);
+    if (parts.length !== texts.length) throw new Error('google-batch-mismatch-' + parts.length + '-' + texts.length);
+    return parts;
+  }
+
+  // Traduce un lote con cascada de proveedores + circuit breaker; devuelve Map texto→traducción
+  async function translateBatchInto(texts) {
+    let lastErr = null;
+    const gtxOk = Date.now() >= gtxPenaltyUntil;
+    const dictOk = Date.now() >= dictPenaltyUntil;
+    const plans = [];
+    if (gtxOk)  plans.push([() => googleBatchTranslate(texts), 1]);
+    if (dictOk) plans.push([() => googleDictBatchTranslate(texts), 1]);
+    if (!gtxOk)  plans.push([() => googleBatchTranslate(texts), 0]);
+    if (!dictOk) plans.push([() => googleDictBatchTranslate(texts), 0]);
+    for (const [fn, retries] of plans) {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const parts = await fn();
+          const out = new Map();
+          texts.forEach((t, i) => out.set(t, parts[i]));
+          return out;
+        } catch (e) {
+          lastErr = e;
+          const m = String((e && e.message) || e);
+          if (/google-http-429/.test(m)) gtxPenaltyUntil = Date.now() + PENALTY_MS;
+          if (/dict-http-429/.test(m)) dictPenaltyUntil = Date.now() + PENALTY_MS;
+        }
+        if (attempt < retries) await new Promise(r => setTimeout(r, 350));
+      }
+    }
+    throw lastErr || new Error('batch-failed');
+  }
+
   async function googleTranslate(text) {
     const url = GOOGLE_URL + '?client=gtx&sl=auto&tl=' + encodeURIComponent(TARGET_LANG) + '&dt=t&q=' + encodeURIComponent(text);
     const res = await netRequest({ url });
@@ -259,9 +375,16 @@
   async function translateText(text) {
     const key = text.trim();
     if (cache.has(key)) return cache.get(key);
-    const providers = [
+    // Orden dinámico según circuit breaker: no repetir el proveedor que acaba de darnos 429
+    const gtxOk = Date.now() >= gtxPenaltyUntil;
+    const providers = gtxOk ? [
       ['google',     () => googleTranslate(key),     RETRIES],
       ['google-alt', () => googleDictTranslate(key), 0],
+      ['mymemory',   () => myMemoryTranslate(key),   0],
+      ['bing',       () => bingTranslate(key),       0]
+    ] : [
+      ['google-alt', () => googleDictTranslate(key), RETRIES],
+      ['google',     () => googleTranslate(key),     0],
       ['mymemory',   () => myMemoryTranslate(key),   0],
       ['bing',       () => bingTranslate(key),       0]
     ];
@@ -271,8 +394,13 @@
         try {
           const tr = await fn();
           if (tr) { cache.set(key, tr); return tr; }
-        } catch (e) { lastErr = e; }
-        if (attempt < retries) await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        } catch (e) {
+          lastErr = e;
+          const m = String((e && e.message) || e);
+          if (/google-http-429/.test(m)) gtxPenaltyUntil = Date.now() + PENALTY_MS;
+          if (/dict-http-429/.test(m)) dictPenaltyUntil = Date.now() + PENALTY_MS;
+        }
+        if (attempt < retries) await new Promise(r => setTimeout(r, 350));
       }
       if (currentLanguage !== 'es') break; // el usuario volvió al Original: cancelar
     }
@@ -314,24 +442,22 @@
     return out;
   }
 
-  async function translateNode(node) {
-    if (!shouldTranslateNode(node) || currentLanguage !== 'es') return;
-    const originalRaw = node.nodeValue || '';
-    const leading = originalRaw.match(/^\s*/)?.[0] || '';
-    const trailing = originalRaw.match(/\s*$/)?.[0] || '';
-    const original = originalRaw.trim();
-    if (!original) return;
-    try {
-      const translated = await translateText(original);
-      if (currentLanguage !== 'es' || !node.isConnected) return;
-      if ((node.nodeValue || '').trim() !== original) return;
-      records.set(node, { original: originalRaw, translated: leading + translated + trailing });
-      node.nodeValue = leading + translated + trailing;
-    } catch (e) {
-      netFailures++;
-      lastError = describeNetError(e);
-      console.debug('[DrCoach Mobile Translate] node failed', e);
+  // Aplica a los nodos la traducción ya cacheada de un texto (progresivo: el usuario ve el resultado lote a lote)
+  function applyTranslation(text, nodes) {
+    const tr = cache.get(text);
+    if (!tr) return false;
+    for (const node of nodes) {
+      try {
+        if (currentLanguage !== 'es' || !node.isConnected) continue;
+        const raw = node.nodeValue || '';
+        if (raw.trim() !== text) continue;
+        const leading = raw.match(/^\s*/)?.[0] || '';
+        const trailing = raw.match(/\s*$/)?.[0] || '';
+        records.set(node, { original: raw, translated: leading + tr + trailing });
+        node.nodeValue = leading + tr + trailing;
+      } catch (_) {}
     }
+    return true;
   }
 
   async function translateAll() {
@@ -339,23 +465,76 @@
     translating = true;
     netFailures = 0;
     lastError = null;
-    postStatus('translating');
-    renderPill();
+    postStatus('translating', { done: 0, total: 0 });
+    renderPill('…');
     try {
       const nodes = collectTextNodes();
-      let index = 0;
-      async function worker() {
-        while (index < nodes.length && currentLanguage === 'es') {
-          const n = nodes[index++];
-          await translateNode(n);
+      if (!nodes.length) { postStatus('ready'); return; }
+      // Dedupe: nodos que comparten texto comparten traducción (1 texto = 1 petición, no N)
+      const byText = new Map();
+      for (const n of nodes) {
+        const t = (n.nodeValue || '').trim();
+        if (!t) continue;
+        let arr = byText.get(t);
+        if (!arr) byText.set(t, arr = []);
+        arr.push(n);
+      }
+      const pending = [...byText.entries()].filter(([t]) => !cache.has(t));
+      const total = byText.size;
+      let done = total - pending.length; // lo ya cacheado cuenta como hecho
+      const tick = () => {
+        renderPill(done >= total ? '' : done + '/' + total);
+        postStatus('translating', { done, total });
+      };
+      tick();
+      const markError = e => { netFailures++; lastError = describeNetError(e); console.debug('[DrCoach Mobile Translate] failed', e); };
+      // Fase A — LOTES (v0.5.0): ~25 textos por petición, 3 lotes en paralelo
+      const batchable = [], individual = [];
+      for (const [t] of pending) {
+        if (t.includes('@@@') || t.length > 1500) individual.push(t); // el delimitador no puede colisionar
+        else batchable.push(t);
+      }
+      const failedTexts = [];
+      const batches = buildBatches(batchable);
+      let bi = 0;
+      async function batchWorker() {
+        while (bi < batches.length && currentLanguage === 'es') {
+          const texts = batches[bi++];
+          try {
+            const parts = await translateBatchInto(texts);
+            texts.forEach((t, i) => { if (parts[i]) cache.set(t, parts[i]); });
+            for (const t of texts) {
+              if (cache.has(t)) applyTranslation(t, byText.get(t) || []);
+              else failedTexts.push(t);
+            }
+            schedulePersistCache();
+          } catch (e) {
+            failedTexts.push(...texts);
+            lastError = lastError || describeNetError(e);
+            console.debug('[DrCoach Mobile Translate] batch failed', e);
+          }
+          tick();
         }
       }
-      await Promise.all(Array.from({length: Math.min(MAX_CONCURRENCY, Math.max(1, nodes.length))}, worker));
+      await Promise.all(Array.from({ length: Math.min(BATCH_WORKERS, Math.max(1, batches.length)) }, batchWorker));
+      // Fase B — INDIVIDUALES (textos largos/peligrosos + restos de lotes fallidos): cascada clásica por texto
+      const singles = individual.concat(failedTexts);
+      let si = 0;
+      async function singleWorker() {
+        while (si < singles.length && currentLanguage === 'es') {
+          const t = singles[si++];
+          try { await translateText(t); applyTranslation(t, byText.get(t) || []); schedulePersistCache(); }
+          catch (e) { markError(e); }
+          tick();
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(SINGLE_WORKERS, Math.max(1, singles.length)) }, singleWorker));
       if (currentLanguage === 'es') {
         if (netFailures > 0) {
           postStatus('error', { message: lastError || 'error del traductor' });
           showNetErrorToast(lastError || 'error desconocido');
         } else {
+          lastError = null;
           postStatus('ready');
         }
       }
@@ -366,6 +545,7 @@
     } finally {
       translating = false;
       renderPill();
+      persistCacheNow();
     }
   }
 
@@ -398,6 +578,8 @@
 
   async function bootTranslator() {
     try { currentLanguage = (await gmGetValue(LANG_KEY, 'en')) === 'es' ? 'es' : 'en'; } catch (_) { currentLanguage = 'en'; }
+    await loadPersistedCache();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') persistCacheNow(); });
     observer = new MutationObserver(() => scheduleScan(260));
     if (document.documentElement) observer.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
     renderPill();
@@ -455,7 +637,7 @@
     (document.body || document.documentElement).appendChild(pill);
     return pill;
   }
-  function renderPill() {
+  function renderPill(progress) {
     if (!IS_MEDICOSPIRA) return;
     try {
       const p = ensurePill();
@@ -465,7 +647,7 @@
       p.textContent = '';
       const dot = document.createElement('span'); dot.className = 'dc-dot';
       p.appendChild(dot);
-      p.appendChild(document.createTextNode('DC · ' + target));
+      p.appendChild(document.createTextNode(progress ? 'DC · ' + progress : 'DC · ' + target));
       p.setAttribute('aria-pressed', currentLanguage === 'es' ? 'true' : 'false');
     } catch (_) {}
   }

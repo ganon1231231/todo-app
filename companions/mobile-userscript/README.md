@@ -1,4 +1,4 @@
-# Dr.Coach! Mobile Companion v0.4
+# Dr.Coach! Mobile Companion v0.5
 
 **Multi-gestor**: Tampermonkey/Violentmonkey (Android, Edge, PC/Mac) · **Safari iOS/iPadOS** con las apps «Userscripts» o «Stay» · Tampermonkey dentro del navegador Orion.
 
@@ -11,6 +11,7 @@
 - Mantiene traducción en páginas dinámicas del QBank.
 - **Novedad v0.4**: también corre sobre la página de Dr.Coach! para autodiagnóstico — si pulsas «Español» y el QBank no contesta, muestra un aviso con los pasos para arreglarlo (permisos, Safari vs app instalada, planes B/C).
 - **Novedad v0.4.2 (Orion-proof)**: la red va **fetch primero (CORS)** — no depende de `GM_xmlhttpRequest`, que Orion rompe con sus «Limited runtime host permissions». Cascada de motores: Google gtx → Google alternativo (clients5) → MyMemory → Bing (GM). Si todo falla: aviso «⚠ La traducción falló — <motivo>» con la causa y el arreglo concreto.
+- **Novedad v0.5.0 (motor por lotes, ~10× más rápido)**: antes cada nodo de texto era una petición HTTP (100-300 peticiones por página ⇒ minutos). Ahora agrupa **~25 textos por petición** (clients5 multi-q con mapeo nativo 1:1, respaldo gtx con delimitador `@@@`, y cascada por-texto solo para rezagados) ⇒ una página del QBank se traduce en **segundos**. **Circuit breaker**: si un proveedor da HTTP 429 se esquiva 60 s. **Caché persistente** (400 entradas en el almacenamiento del gestor): revisitar una pregunta = instantáneo. **Progreso en la píldora**: «DC · 34/120» mientras traduce.
 
 ## Instalación
 

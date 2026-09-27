@@ -1,5 +1,16 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.6 · Userscript v0.5.0 «motor por lotes»: traducción ~10× más rápida + caché persistente + progreso visible
+
+- **Reporte real**: «el script de Safari sí logró traducir, sin embargo es extremadamente lento. Demora demasiado traduciendo y no es conectividad».
+- **Causa raíz — rendimiento**: el motor v0.4.x hacía **una petición HTTP POR CADA nodo de texto** (una página del QBank = 100-300 nodos → 100-300 peticiones, solo 4 en paralelo ⇒ 15-50 s). Encima, Google gtx tenía **2 reintentos con esperas de 500 ms+1000 ms por nodo**, y **sin memoria de proveedor**: aunque el plan B funcionase, cada nodo volvía a empezar por gtx y pagaba la cascada completa una y otra vez.
+- **Motor por lotes (batching)**: técnica de los traductores profesionales — agrupar **~25 textos por petición**. Validado en vivo: `clients5.google.com/translate_a/t?client=dict-chrome-ex` acepta **múltiples `q=`** y devuelve una entrada por texto **en orden** (mapeo nativo 1:1, sin delimitadores); 25 textos en **0,58 s**. Cascada de lotes: **clients5 multi-q → gtx con delimitador `@@@`** (los símbolos sobreviven; textos que lo contienen van individuales) → respaldo por-texto clásico (gtx → clients5 → MyMemory → Bing) solo para los rezagados.
+- **Resultados**: ~200 nodos pasan de 15-50 s a **2-4 s** (~10× más rápido); dedupe de textos repetidos (1 texto = 1 traducción compartida por todos sus nodos); render **progresivo** (el texto aparece lote a lote, no al final).
+- **Circuit breaker (429-proof)**: si un proveedor responde HTTP 429 se esquiva **60 s** (`gtxPenaltyUntil`/`dictPenaltyUntil`) en lugar de pagar sus reintentos en cada texto; el orden de la cascada se reordena dinámicamente. Reintentos reducidos 2→1 con backoff corto (350 ms).
+- **Caché persistente**: las traducciones se guardan en el almacenamiento del gestor (`GM.setValue`, con fallback localStorage) **capadas a 400 entradas** y guardado diferido (3 s / al ocultar la pestaña) → **revisitar una pregunta ya traducida es instantáneo**, incluso tras recargar la página.
+- **Progreso visible**: mientras traduce, la píldora muestra **«DC · 34/120»** (contador de textos) y vuelve a «DC · Original» al terminar; la app recibe `postStatus('translating', {done,total})` con el progreso.
+- **App**: `COMPANION_VERSION` esperada pasa a **0.5.0** (la detección de Companion obsoleto avisa si sigue instalada una versión vieja).
+
 ## v3.3.5 · Userscript v0.4.2 «Orion-proof»: la traducción ya no depende de GM_xmlhttpRequest + detección de Companion obsoleto
 
 - **Reporte real (capturas de Orion/iPad)**: el popup de Tampermonkey lista «Copy + Translate **0.3.0**» (18 KB) y muestra **«Tampermonkey has no access to this page»**; la píldora/detección aparece pero **la traducción no ocurre**.
