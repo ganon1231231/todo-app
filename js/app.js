@@ -599,6 +599,7 @@ function bindEvents(){
   $('#workspaceTranslator')?.addEventListener('click',()=>window.DCTranslator?.toggleWorkspacePanel());
   $('#workspaceToggleCoach')?.addEventListener('click',toggleIntegratedCoach);
   $('#workspaceFrameWide')?.addEventListener('click',toggleWorkspaceFrameWide);
+  $('#workspaceOpenTab')?.addEventListener('click',openQBankInNewTab);
   $('#workspaceSidebarToggle')?.addEventListener('click',toggleWorkspaceSidebar);
   $('#workspaceDismissHint')?.addEventListener('click',()=>{$('#workspaceFrameHint')?.classList.add('hidden');setSetting('workspaceHintDismissed',true)});
   $('#workspaceCaptureTabs')?.addEventListener('click',e=>{const b=e.target.closest('[data-capture-tab]');if(b)setWorkspaceCaptureTab(b.dataset.captureTab)});
@@ -841,6 +842,7 @@ function toggleMedicospiraInlineTranslation(){
 }
 function toggleIntegratedCoach(){const shell=$('#integratedWorkspaceShell');if(!shell)return;const collapsed=shell.classList.toggle('coach-collapsed');$('#workspaceToggleCoach').textContent=collapsed?'Mostrar Coach':'Ocultar Coach'}
 function toggleWorkspaceFrameWide(){const shell=$('#integratedWorkspaceShell');if(!shell)return;const wide=shell.classList.toggle('frame-wide');$('#workspaceFrameWide').textContent=wide?'↙':'⤢'}
+function openQBankInNewTab(){const f=$('#medicospiraFrame');const url=(f&&f.getAttribute('src'))||'https://usmle.medicospira.com/s2/auth/login';window.open(url,'_blank','noopener');toast('QBank en pestaña nueva: en Safari usa aA → «Traducir página»; en Chrome, menú ⋮ → Traducir.')}
 function eligibleCoverageAttempt(a){return !a.isReview && (a.result==='correct'||a.result==='incorrect')}
 function coverageTotal(filterSubject=null){
   const attempts=state.attempts.filter(a=>eligibleCoverageAttempt(a)&&(!filterSubject||a.subject===filterSubject)).length;

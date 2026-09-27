@@ -258,7 +258,7 @@
     if (hasDevice) { panel.tip.hidden = true; return; }
     panel.tip.hidden = false;
     panel.tip.textContent = isIOS
-      ? '💡 iPad/iPhone: para traducir el QBank entero, abre Medicospira en su propia pestaña y usa el menú aA → «Traducir página» de Safari. Para textos sueltos, cópialos y pégalos aquí: este panel funciona siempre, sin extensiones.'
+      ? '💡 iPad/iPhone: pulsa ↗ en la barra del QBank para abrirlo en su propia pestaña y usa aA → «Traducir página» de Safari. Para textos sueltos, cópialos y pégalos aquí: este panel funciona siempre, sin extensiones.'
       : '💡 Este panel funciona en cualquier navegador, sin extensiones. También puedes traducir la página entera con el traductor de tu navegador (Safari: aA → Traducir; Chrome: menú ⋮ → Traducir).';
   }
 

@@ -1,5 +1,12 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.2.2 · Atajo a la traducción completa en iPad
+
+- **Nuevo botón «↗» en la barra del QBank** (Workspace, junto a ⌂ y ⤢): abre Medicospira en su propia pestaña del navegador. Ahí sí funciona la traducción de página completa nativa — Safari en iPad: botón **aA → Traducir página**; Chrome: menú **⋮ → Traducir** — porque dentro del iframe cross-origin ningún traductor de página puede entrar (regla de seguridad del navegador, no es un bug de la app).
+- El consejo contextual iPad/iPhone del Traductor integrado ahora señala el atajo ↗ directamente.
+- Pensado para probar la app en iPad: abrir la app en Safari → Workspace → ↗ para el QBank entero, y el botón «Traductor» / burbuja 🌐 para textos sueltos. Sin extensiones, sin instalar nada.
+- Sin cambios de datos, sincronización ni estructura.
+
 ## v3.2.0 · Traductor integrado: todos los dispositivos, cero instalaciones
 
 > Pregunta que cierra esta versión: «¿se te ocurre alguna idea para que los traductores funcionen siempre en cualquier dispositivo, automáticamente, sin instalar extensiones? En iPad no funcionan para el iframe». Respuesta: sí — dejar de depender de extensiones para el texto y meter el traductor DENTRO de la app.
