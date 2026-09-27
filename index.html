@@ -269,7 +269,7 @@
                   <button id="pasteImageBtn" type="button" class="text-btn">Pegar imagen</button>
                   <span id="attachmentStatus" class="muted compact">Sin capturas</span>
                 </div>
-                <p class="microcopy">Las imágenes se insertan como objetos movibles dentro del mismo board. El material marcado como Scratch no pasa a Review al guardar la pregunta.</p>
+                <p class="microcopy">Las imágenes quedan como objetos movibles en el board. Scratch se descarta al guardar; Keep pasa a Review.</p>
 
                 <div class="legacy-board-compat hidden" aria-hidden="true">
                   <div class="board-toolbar">
@@ -452,24 +452,24 @@
 
           <div class="two-col">
             <article class="card ai-export-card dossier-card">
-              <div class="section-head"><div><p class="eyebrow">AI STUDY DOSSIER</p><h2>Manual personalizado + QBank para IA</h2><p class="muted compact">Exporta tus patrones de rendimiento en un prompt estructurado. La IA debe verificar la teoría clínica con evidencia actual antes de construir el manual y las preguntas.</p></div><span class="evidence-badge">EBM-FIRST</span></div>
+              <div class="section-head"><div><p class="eyebrow">AI STUDY DOSSIER</p><h2>Manual personalizado + QBank para IA</h2><p class="muted compact">Exporta tus patrones en un prompt estructurado para que la IA los analice con evidencia vigente.</p></div><span class="evidence-badge">EBM-FIRST</span></div>
               <div class="form-grid two">
                 <label class="field"><span>Tipo de dossier</span><select id="aiExportScope" class="select"><option value="all">Dossier completo del módulo</option><option value="weak">Análisis focal de debilidades</option><option value="incorrect">Solo incorrectas</option></select></label>
                 <label class="field"><span>Módulo / materia</span><select id="aiExportSubject" class="select"><option value="">Todas las materias · separar por módulo</option></select></label>
               </div>
               <label class="check-row"><input id="aiIncludeStem" type="checkbox" checked /><span>Incluir stem completo en preguntas incorrectas, omitidas o con duda cuando exista</span></label>
               <label class="check-row"><input id="aiIncludeCorrect" type="checkbox" checked /><span>Usar correctas seguras para el mapa de cobertura y el repaso corto</span></label>
-              <div class="dossier-note"><b>Regla clínica:</b> tus apuntes son señales pedagógicas, no fuentes médicas. El dossier ordena a la IA verificar diagnóstico, tratamiento, dosis y recomendaciones con guías y evidencia vigentes, y señalar cualquier discrepancia.</div>
+              <div class="dossier-note"><b>Regla clínica:</b> tus apuntes son señales pedagógicas, no fuentes médicas — la IA debe verificar diagnóstico, dosis y tratamiento.</div>
               <div id="aiExportPreview" class="info-box"></div>
               <div class="button-row"><button id="copyAIReportBtn" class="btn btn-primary">Copiar AI Study Dossier</button><button id="downloadAIReportBtn" class="btn btn-secondary">Descargar dossier (.md)</button></div>
             </article>
             <article class="card install-card">
               <div class="brand-showcase"><img src="assets/img/drcoach-logo.webp" alt="Logo Dr.Coach!" /></div>
               <p class="eyebrow">MÓVIL / TABLET</p><h2>Instalar o compartir</h2>
-              <p class="muted">La forma más estable es publicar la carpeta una sola vez por HTTPS y compartir la URL. Cada dispositivo conserva su propia base local.</p>
+              <p class="muted">Publica la carpeta una vez por HTTPS y comparte la URL; cada dispositivo mantiene su copia local.</p>
               <div id="runtimeModeInfo" class="info-box"></div>
               <button id="installAppBtn" class="btn btn-primary btn-block hidden">Instalar Dr.Coach! en este dispositivo</button>
-              <p class="microcopy">El ZIP también incluye <b>DrCoach-Portable.html</b>, una versión autocontenida para compartir como un solo archivo. Es útil como respaldo, pero la PWA por HTTPS ofrece la experiencia más confiable.</p>
+              <p class="microcopy">El ZIP incluye <b>DrCoach-Portable.html</b>, todo en un solo archivo como respaldo.</p>
             </article>
           </div>
 
@@ -534,7 +534,7 @@
             <article class="card">
               <div class="section-head"><div><p class="eyebrow">FOCUS RADIO</p><h2>Barra inferior</h2><p class="muted compact">Puedes conservar el reproductor flotante o dejarlo totalmente fuera de la vista.</p></div></div>
               <label class="switch-row" for="focusDockVisibleToggle">
-                <span><b>Barra inferior de Focus Radio</b><small>ON: controles siempre visibles abajo. OFF: la música se controla únicamente entrando a Radio desde el menú lateral.</small></span>
+                <span><b>Barra inferior de Focus Radio</b><small>ON: controles siempre visibles abajo. OFF: solo desde Radio en el menú.</small></span>
                 <input id="focusDockVisibleToggle" type="checkbox" />
                 <span class="switch-ui" aria-hidden="true"></span>
               </label>
@@ -603,7 +603,7 @@
               <input id="focusSearchQuery" class="input" type="search" autocomplete="off" placeholder="Artista, canción, álbum o mood…" aria-label="Buscar música en YouTube" />
               <button id="focusSearchBtn" class="btn btn-primary btn-small" type="button">Buscar</button>
             </div>
-            <div class="focus-search-note microcopy">Sin configuración: Dr.Coach! busca mediante fuentes públicas y conserva resultados recientes para dar variedad incluso si una fuente falla.</div>
+            <div class="focus-search-note microcopy">Sin configuración: usa fuentes públicas y conserva solo resultados recientes.</div>
             <div id="focusSearchActions" class="focus-search-actions hidden">
               <button id="focusPlayTopResult" class="btn btn-secondary btn-small" type="button">▶ Mejor coincidencia</button>
               <button id="focusStartSearchRadio" class="btn btn-primary btn-small" type="button">⌘ Radio aleatoria</button>
@@ -759,6 +759,15 @@
         <button type="button" class="sb-tool" data-sb-tool="eraser" title="Borrador">⌫ <span>Eraser</span></button>
         <button type="button" class="sb-tool" data-sb-tool="lasso" title="Lasso">⌁ <span>Lasso</span></button>
         <button type="button" class="sb-tool" data-sb-tool="text" title="Texto">T <span>Text</span></button>
+      </div>
+      <div class="study-board-tool-group sb-color-group" role="group" aria-label="Color de lápiz, resaltador y texto">
+        <button type="button" class="sb-swatch active" data-sb-color="#173a5e" style="--sw:#173a5e" title="Tinta" aria-label="Color tinta"></button>
+        <button type="button" class="sb-swatch" data-sb-color="#d23b3b" style="--sw:#d23b3b" title="Rojo" aria-label="Color rojo"></button>
+        <button type="button" class="sb-swatch" data-sb-color="#0f8a4b" style="--sw:#0f8a4b" title="Verde" aria-label="Color verde"></button>
+        <button type="button" class="sb-swatch" data-sb-color="#e07b00" style="--sw:#e07b00" title="Naranja" aria-label="Color naranja"></button>
+        <button type="button" class="sb-swatch" data-sb-color="#8e44ad" style="--sw:#8e44ad" title="Morado" aria-label="Color morado"></button>
+        <button type="button" class="sb-swatch" data-sb-color="#0b6bcb" style="--sw:#0b6bcb" title="Azul" aria-label="Color azul"></button>
+        <label class="sb-swatch sb-swatch-custom" title="Color personalizado"><input id="studyBoardCustomColor" type="color" value="#173a5e" aria-label="Color personalizado"></label>
       </div>
       <div class="study-board-tool-group">
         <button id="studyBoardAddImage" type="button" class="sb-tool" title="Añadir imagen">▧ <span>Image</span></button><input id="studyBoardImageInput" type="file" accept="image/*" multiple hidden />

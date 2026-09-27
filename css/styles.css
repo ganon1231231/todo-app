@@ -681,3 +681,33 @@ html[data-theme="night"] .dc-tr-card-text{color:#edf3f9}
   body.workspace-sidebar-collapsed .integrated-workspace-shell{grid-template-columns:1fr}
   body.workspace-sidebar-collapsed .integrated-coach-panel{max-height:none}
 }
+
+/* ==== v3.3.7 — Study Board: paleta de color + editor de texto estilo Canva ==== */
+.sb-color-group{align-items:center}
+.sb-swatch{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.85);background:var(--sw);cursor:pointer;flex:0 0 auto;padding:0;box-shadow:0 1px 4px rgba(15,23,42,.28);transition:transform .12s}
+.sb-swatch:hover{transform:scale(1.12)}
+.sb-swatch.active{outline:2.5px solid #0b6bcb;outline-offset:2px}
+.sb-swatch-custom{display:inline-flex;position:relative;overflow:hidden;background:conic-gradient(from 0deg,#ef4444,#f59e0b,#22c55e,#06b6d4,#8b5cf6,#ef4444)}
+.sb-swatch-custom input{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);opacity:0;cursor:pointer}
+.study-board-text-editor{position:absolute;z-index:30;background:rgba(255,255,255,.95);border:1.5px dashed #0b6bcb;border-radius:9px;padding:9px 13px;font-family:Inter,ui-sans-serif,sans-serif;font-weight:600;line-height:1.25;resize:none;overflow:hidden;outline:none;box-shadow:0 10px 28px rgba(15,23,42,.18);color:#173a5e;min-width:130px}
+.study-board-text-editor:focus{border-style:solid;box-shadow:0 10px 28px rgba(15,23,42,.22),0 0 0 3px rgba(11,107,203,.15)}
+@media (max-width:900px){.sb-swatch{width:21px;height:21px}.sb-swatch-custom input{inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px)}}
+
+/* ==== v3.3.7 — retrato iPad (721-900px): anti-solape ==== */
+@media (min-width:721px) and (max-width:900px){
+  .page-title-row{flex-wrap:wrap;gap:10px;align-items:flex-start}
+  .workspace-head{flex-wrap:wrap;gap:10px}
+  .integrated-top-actions{flex-wrap:wrap}
+  .filters-row{grid-template-columns:1fr 1fr}
+  .content{padding:24px 18px 44px}
+  .workspace-frame-hint{max-width:min(300px,55%);font-size:.8rem}
+  .topbar{gap:8px;padding:0 12px}
+  .brand-wrap{min-width:0;flex:0 1 auto}
+  .brand-wordmark{width:100px}
+  .top-actions{gap:8px}
+  .save-state{font-size:.68rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.workspace-radio-top .workspace-focus-top-mount .focus-dock-bar{width:100%;min-width:0}
+  body.workspace-radio-top .workspace-focus-top-mount .focus-nowplaying small{display:none}
+  body.workspace-radio-top #focusDock{width:min(620px,calc(100vw - 32px))}
+  .study-board-context{top:auto;bottom:64px}
+}
