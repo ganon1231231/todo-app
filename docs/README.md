@@ -7,6 +7,7 @@
 | Quiero… | Guía |
 |---|---|
 | 📲 Instalarla como app (iPad, Android, Mac, PC) | [`INSTALAR-APP.md`](INSTALAR-APP.md) |
+| 🌍 Traducir el QBank en iPad con Safari (userscripts estilo Tampermonkey) | [`IPAD-SAFARI.md`](IPAD-SAFARI.md) |
 | ☁️ Sincronizar el progreso entre dispositivos (Supabase) | [`INSTALL-CLOUD.md`](INSTALL-CLOUD.md) |
 | 🗄️ Arreglar o revisar la base de datos (local y nube) | [`BD-MANTENIMIENTO.md`](BD-MANTENIMIENTO.md) |
 | 💾 Entender qué se respalda y cómo | [`BD-MANTENIMIENTO.md`](BD-MANTENIMIENTO.md) § backups · `scripts/backup.sh` (código) |

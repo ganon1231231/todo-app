@@ -1,22 +1,71 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.2.0
-// @description  Habilita selección/copia en Medicospira y traducción Español/Original dentro del iframe de Dr.Coach! en Android/Edge/Tampermonkey.
+// @version      0.3.0
+// @description  Habilita selección/copia en Medicospira y traducción Español/Original dentro del iframe de Dr.Coach! — para Tampermonkey/Violentmonkey (Android/Edge/PC), Safari iOS/iPadOS con las apps «Userscripts» o «Stay», y Tampermonkey dentro de Orion.
 // @match        https://usmle.medicospira.com/*
 // @run-at       document-start
-// @grant        GM_setClipboard
-// @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
+// @grant        GM_setClipboard
+// @grant        GM.setClipboard
 // @grant        GM_getValue
+// @grant        GM.getValue
 // @grant        GM_setValue
+// @grant        GM.setValue
+// @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @connect      translate.googleapis.com
 // @connect      www.bing.com
+// @homepageURL  https://github.com/ganon1231231/todo-app
+// @updateURL    https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js
+// @downloadURL  https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js
 // ==/UserScript==
 
 (() => {
   'use strict';
+
+  // --- GM shim: compatible con TODOS los gestores ---
+  // Tampermonkey/Violentmonkey/Stay → funciones GM_* clásicas.
+  // Userscripts (Safari iOS/iPadOS) y Greasemonkey 4 → objeto GM.* con promesas.
+  // Sin ninguno → localStorage para preferencias y fetch directo cuando el endpoint permite CORS.
+  const GMX = (() => {
+    const dotted = (typeof GM !== 'undefined' && GM && typeof GM === 'object') ? GM : {};
+    const hasDotted = k => typeof dotted[k] === 'function';
+    const xhrVia = fn => opts => new Promise((resolve, reject) => {
+      try {
+        fn(Object.assign({ timeout: 30000, onload: null, onerror: () => reject(new Error('network')), ontimeout: () => reject(new Error('timeout')) }, opts));
+      } catch (e) { reject(e); }
+    });
+    return {
+      get: hasDotted('getValue')
+        ? (k, d) => Promise.resolve().then(() => dotted.getValue(k)).then(v => (v === undefined || v === null) ? d : v)
+        : (typeof GM_getValue === 'function')
+          ? (k, d) => { try { const v = GM_getValue(k, d); return (v === undefined || v === null) ? d : v; } catch (_) { return d; } }
+          : (k, d) => { try { const v = localStorage.getItem('dcgm:' + k); return v === null ? d : v; } catch (_) { return d; } },
+      set: hasDotted('setValue')
+        ? (k, v) => Promise.resolve().then(() => dotted.setValue(k, v)).catch(() => {})
+        : (typeof GM_setValue === 'function')
+          ? (k, v) => { try { GM_setValue(k, v); } catch (_) {} }
+          : (k, v) => { try { localStorage.setItem('dcgm:' + k, String(v)); } catch (_) {} },
+      clipboard: hasDotted('setClipboard')
+        ? t => Promise.resolve().then(() => dotted.setClipboard(t, 'text')).then(() => true).catch(() => false)
+        : (typeof GM_setClipboard === 'function')
+          ? t => { try { GM_setClipboard(t, 'text'); return true; } catch (_) { return false; } }
+          : null,
+      xhr: hasDotted('xmlHttpRequest') ? xhrVia(dotted.xmlHttpRequest)
+        : (typeof GM_xmlhttpRequest === 'function') ? xhrVia(GM_xmlhttpRequest)
+        : null,
+      menu: (typeof GM_registerMenuCommand === 'function') ? GM_registerMenuCommand : (hasDotted('registerMenuCommand') ? dotted.registerMenuCommand : null)
+    };
+  })();
+
+  async function gmGetValue(key, def) {
+    try { const v = await GMX.get(key, def); return (v === undefined || v === null) ? def : v; } catch (_) { return def; }
+  }
+  function gmSetValue(key, val) {
+    try { const r = GMX.set(key, val); if (r && typeof r.catch === 'function') r.catch(() => {}); } catch (_) {}
+  }
 
   const LANG_KEY = 'drcoach-mobile-language';
   const TARGET_LANG = 'es';
@@ -54,6 +103,7 @@
 
   function addStyle(css) {
     try { if (typeof GM_addStyle === 'function') return GM_addStyle(css); } catch (_) {}
+    try { if (GMX && typeof GMX.addStyle === 'function') return GMX.addStyle(css); } catch (_) {}
     const s = document.createElement('style'); s.textContent = css; (document.head || document.documentElement).appendChild(s);
   }
   addStyle(COPY_STYLE);
@@ -67,21 +117,22 @@
     post('DRCOACH_TRANSLATOR_STATUS', { status, language: currentLanguage, ...extra });
   }
   function postReady() {
-    post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v0.2' });
+    post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v0.3' });
   }
 
   function gmRequest(opts) {
-    return new Promise((resolve, reject) => {
+    if (GMX.xhr) return GMX.xhr(opts);
+    // Último recurso (entorno sin API GM): fetch directo — solo funciona si el endpoint
+    // permite CORS (Google gtx suele permitirlo; Bing no, en ese caso fallará y se registrará).
+    return (async () => {
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
       try {
-        GM_xmlhttpRequest({
-          method: opts.method || 'GET', url: opts.url, headers: opts.headers || {}, data: opts.data,
-          timeout: 30000,
-          onload: resolve,
-          onerror: () => reject(new Error('network')),
-          ontimeout: () => reject(new Error('timeout'))
-        });
-      } catch (e) { reject(e); }
-    });
+        const r = await fetch(opts.url, { method: opts.method || 'GET', headers: opts.headers || undefined, body: opts.data, signal: ctrl ? ctrl.signal : undefined, cache: 'no-store' });
+        const text = await r.text();
+        return { status: r.status, responseText: text };
+      } finally { if (timer) clearTimeout(timer); }
+    })();
   }
 
   async function googleTranslate(text) {
@@ -210,12 +261,12 @@
   async function setLanguage(lang) {
     if (lang === 'es') {
       currentLanguage = 'es';
-      try { GM_setValue(LANG_KEY, 'es'); } catch (_) {}
+      gmSetValue(LANG_KEY, 'es');
       document.documentElement.setAttribute('data-drcoach-mobile-lang','es');
       await translateAll();
     } else {
       currentLanguage = 'en';
-      try { GM_setValue(LANG_KEY, 'en'); } catch (_) {}
+      gmSetValue(LANG_KEY, 'en');
       for (const [node, rec] of records) {
         try { if (node.isConnected && node.nodeValue === rec.translated) node.nodeValue = rec.original; } catch (_) {}
       }
@@ -226,8 +277,8 @@
     postReady();
   }
 
-  function bootTranslator() {
-    try { currentLanguage = GM_getValue(LANG_KEY, 'en') === 'es' ? 'es' : 'en'; } catch (_) { currentLanguage = 'en'; }
+  async function bootTranslator() {
+    try { currentLanguage = (await gmGetValue(LANG_KEY, 'en')) === 'es' ? 'es' : 'en'; } catch (_) { currentLanguage = 'en'; }
     observer = new MutationObserver(() => scheduleScan(260));
     if (document.documentElement) observer.observe(document.documentElement, { childList:true, subtree:true, characterData:true });
     postReady();
@@ -252,7 +303,7 @@
   }
   async function copyText(text) {
     if (!text) return false;
-    try { if (typeof GM_setClipboard==='function') { GM_setClipboard(text,'text'); return true; } } catch (_) {}
+    try { if (GMX.clipboard && await GMX.clipboard(text)) return true; } catch (_) {}
     try { await navigator.clipboard.writeText(text); return true; } catch (_) {}
     try { const ta=document.createElement('textarea'); ta.value=text; ta.readOnly=true; ta.style.cssText='position:fixed;left:-9999px;top:-9999px;opacity:0'; document.documentElement.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return !!ok; } catch (_) { return false; }
   }
@@ -297,9 +348,9 @@
   });
 
   try {
-    if (typeof GM_registerMenuCommand==='function') {
-      GM_registerMenuCommand('Dr.Coach: Traducir a español',()=>setLanguage('es'));
-      GM_registerMenuCommand('Dr.Coach: Ver original',()=>setLanguage('en'));
+    if (GMX.menu) {
+      GMX.menu('Dr.Coach: Traducir a español',()=>setLanguage('es'));
+      GMX.menu('Dr.Coach: Ver original',()=>setLanguage('en'));
     }
   } catch (_) {}
 

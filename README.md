@@ -58,7 +58,7 @@ drcoach/
 │
 ├── companions/           ← Extras que NO forman parte de la web
 │   ├── browser-extension/   Extensión de Chrome (DrCoach-Companion)
-│   └── mobile-userscript/   Script Tampermonkey para móvil
+│   └── mobile-userscript/   Userscript multi-gestor: Tampermonkey (Android/PC) y Safari iOS/iPadOS (apps Userscripts/Stay)
 │
 ├── .github/              ← Plantillas de issues y PR (para el mantenimiento en GitHub)
 │

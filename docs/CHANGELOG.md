@@ -1,5 +1,17 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.2 · iPad con Safari: userscripts al estilo Tampermonkey
+
+- **Pedido directo**: «¿se podría hacer algo como Tampermonkey en mi iPad usando userscript?» → **Sí**. Nueva guía completa **`docs/IPAD-SAFARI.md`** con las tres vías: app **Userscripts** (gratis, open source, nativa de Safari — recomendada), **Stay** (compatible Tampermonkey) y **Orion** (Tampermonkey real vía extensiones de Chrome/Firefox).
+- **Userscript universal (v0.2.0 → v0.3.0)**: `DrCoach-Mobile-Companion.user.js` ahora funciona en **todos** los gestores gracias a un shim GM:
+  - Detecta la API moderna `GM.*` (app «Userscripts» de Safari iOS/iPadOS, Greasemonkey 4) **y** las clásicas `GM_*` (Tampermonkey, Violentmonkey, Stay).
+  - Preferencias (`drcoach-mobile-language`) con triple vía: `GM.getValue/setValue` → `GM_getValue/setValue` → `localStorage`.
+  - Peticiones de red: `GM.xmlHttpRequest` → `GM_xmlhttpRequest` → `fetch` directo como último recurso (cuando el endpoint permite CORS).
+  - Portapapeles: `GM.setClipboard` → `GM_setClipboard` → `navigator.clipboard` → `execCommand`.
+  - Sin `GM_registerMenuCommand` (no existe en «Userscripts») el control sigue siendo el botón «Español/Original» del Workspace — que es el flujo principal.
+- **Instalación directa por URL**: el script declara `@updateURL`/`@downloadURL` contra el sitio publicado (`.../companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`) → Tampermonkey y Stay lo instalan con un clic y se **actualizan solos** con cada release.
+- En el iPad se obtiene lo mismo que con Companion en PC/Mac: traducción inline EN→ES del QBank en el iframe, desbloqueo de selección/copiado y envío de selecciones al caso clínico (`→ Stem`).
+
 ## v3.3.1 · Copiar y pegar robusto en macOS y Windows
 
 - **Auditoría completa del portapapeles** (pedido del uso real: «a veces no funcionan bien» entre Mac y Windows):
