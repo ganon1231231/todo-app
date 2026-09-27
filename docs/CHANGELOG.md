@@ -1,5 +1,12 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.2.3 · El ↗ no sustituye al flujo integrado (y pista de pegado en iOS)
+
+- **Aclaración de diseño**: el botón «↗» es **opcional** — el flujo Workspace (QBank en el marco + panel de sesión al lado) sigue exactamente igual; la pestaña nueva solo es un atajo para cuando toque traducir la página completa con Safari (aA) o Chrome (⋮).
+- Investigado y descartado con evidencia: el proxy `translate.goog` de Google envía `CSP: frame-ancestors *.translate.goog`, así que **no puede incrustarse en el iframe** del Workspace — la traducción inline del QBank sin Companion sigue siendo imposible por seguridad del navegador.
+- **Nueva pista iOS** en el panel del Traductor (solo iPad/iPhone): explica el botón «Pegar» del sistema que muestra Safari al usar «📋 Pegar y traducir», para que el bucle copiar→traducir no dé la impresión de estar roto.
+- QA de ventanas estrechas (Split View de iPad): el Workspace se mantiene sin scroll horizontal a 507 px y a 320 px, con el botón «Traductor» accesible.
+
 ## v3.2.2 · Atajo a la traducción completa en iPad
 
 - **Nuevo botón «↗» en la barra del QBank** (Workspace, junto a ⌂ y ⤢): abre Medicospira en su propia pestaña del navegador. Ahí sí funciona la traducción de página completa nativa — Safari en iPad: botón **aA → Traducir página**; Chrome: menú **⋮ → Traducir** — porque dentro del iframe cross-origin ningún traductor de página puede entrar (regla de seguridad del navegador, no es un bug de la app).

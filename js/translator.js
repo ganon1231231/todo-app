@@ -219,6 +219,7 @@
           <button id="dcTrCopy" class="btn btn-secondary btn-small" type="button">Copiar</button>
           <label class="dc-tr-auto"><input type="checkbox" id="dcTrAuto" checked> automático</label>
         </div>
+        <p class="dc-tr-tip" id="dcTrPasteHint" hidden></p>
         <div id="dcTrResult" class="dc-tr-result" role="status">La traducción aparecerá aquí.</div>
         <p class="dc-tr-tip" id="dcTrTip" hidden></p>
       </div>`);
@@ -229,6 +230,10 @@
       auto: $('dcTrAuto'), timer: null, lastResult: '', busy: false
     };
     panel.auto.checked = !!prefs.auto;
+    if (isIOS) {
+      const hint = document.getElementById('dcTrPasteHint');
+      if (hint) { hint.hidden = false; hint.textContent = 'En iPad/iPhone, al pulsar «Pegar y traducir» Safari muestra el botón «Pegar» del sistema: tócalo para confirmar y la traducción sigue sola.'; }
+    }
     panel.dir.textContent = prefs.from.toUpperCase() + ' → ' + prefs.to.toUpperCase();
     refreshEngineBadge();
     refreshTip();
