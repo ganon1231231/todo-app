@@ -1,5 +1,29 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.2.0 · Traductor integrado: todos los dispositivos, cero instalaciones
+
+> Pregunta que cierra esta versión: «¿se te ocurre alguna idea para que los traductores funcionen siempre en cualquier dispositivo, automáticamente, sin instalar extensiones? En iPad no funcionan para el iframe». Respuesta: sí — dejar de depender de extensiones para el texto y meter el traductor DENTRO de la app.
+
+### El límite real (y por qué no era un bug)
+- Un sitio web **jamás puede modificar el DOM de un iframe de otro dominio** (política de mismo origen del navegador). Por eso el Companion puede traducir Medicospira inline: es una extensión con `all_frames`, el único mecanismo que el navegador permite — pero solo existe en Chrome/Edge de escritorio, y por eso en iPad no hay forma directa.
+
+### Nuevo — Traductor integrado del Workspace (`js/translator.js`)
+- **Botón «Traductor»** en la barra del Workspace: panel con área de origen/resultado, **«📋 Pegar y traducir»** (lee el portapapeles con un toque), traducción automática al escribir (debounce 700 ms), **⇄ intercambiar EN→ES / ES→EN** (mueve el resultado al origen y re-traduce), **Copiar** y badge de motor.
+- **Cadena de motores con degradación elegante** — si uno falla prueba el siguiente y el badge muestra quién respondió:
+  1. **⚡ En el dispositivo** — Chrome Translator API (Chrome/Edge 138+): gratis, offline, privado; con LanguageDetector para auto-detectar idioma.
+  2. **🌐 Google** — endpoint público `translate_a` (CORS abierto, detecta idioma solo, textos largos por fragmentos con corte inteligente por frases).
+  3. **📦 MyMemory** — respaldo público (≤480 car/petición, también fragmentado).
+- **Consejo contextual para iPad/iPhone**: si no hay motor on-device, el panel muestra cómo traducir la página entera con Safari (aA → «Traducir página») y recuerda que el panel funciona siempre. En Android/escritorio sin Companion sugiere el traductor del navegador.
+- **Degradación automática del botón «Español»**: si el Companion no responde (iPad, Safari, Firefox, Chrome viejo), el aviso ya no deja al usuario colgado — abre el Traductor integrado y explica el porqué.
+
+### Nuevo — Burbuja de selección en toda la app
+- Selecciona texto en **cualquier vista de Dr.Coach!** (notas, Study Board, dossier, evidencias) → aparece una burbuja **🌐 Traducir** anclada a la selección → tarjeta con la traducción, badge de motor, Copiar y «Traducir de nuevo». Esc/clic fuera la cierran; el scroll la retira con elegancia.
+- Auto → ES con detección de idioma; tolerante a selección con ratón y con gestos táctiles (selectionchange + pointerup con debounce).
+
+### Técnico
+- Nuevo archivo `js/translator.js` (auto-montaje, sin dependencias, API pública `window.DCTranslator.translate/toggleWorkspacePanel`); preferencias de dirección y modo automático persistidas en `localStorage`.
+- `sw.js` pre-cachea `./js/translator.js` (offline OK); `check.sh` §1 lo exige como archivo crítico; estilos `.dc-tr-*` con los tokens de diseño existentes y toque ≥32 px.
+
 ## v3.1.0 · Recorte estilo Canva y cero imágenes estiradas
 
 > Síntoma que cierra esta versión: «el crop no lo hace como Canva u otra app — estira absurdamente las imágenes, no es funcional». Dos defectos de fondo en el motor del board, no en el botón.

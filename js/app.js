@@ -596,6 +596,7 @@ function bindEvents(){
   $('#workspaceReloadFrame')?.addEventListener('click',()=>reloadMedicospiraFrame(false));
   $('#workspaceHomeFrame')?.addEventListener('click',()=>reloadMedicospiraFrame(true));
   $('#workspaceTranslateChrome')?.addEventListener('click',toggleMedicospiraInlineTranslation);
+  $('#workspaceTranslator')?.addEventListener('click',()=>window.DCTranslator?.toggleWorkspacePanel());
   $('#workspaceToggleCoach')?.addEventListener('click',toggleIntegratedCoach);
   $('#workspaceFrameWide')?.addEventListener('click',toggleWorkspaceFrameWide);
   $('#workspaceSidebarToggle')?.addEventListener('click',toggleWorkspaceSidebar);
@@ -835,7 +836,7 @@ function toggleMedicospiraInlineTranslation(){
   try{frame.contentWindow.postMessage({type:'DRCOACH_TRANSLATE_REQUEST',targetLanguage:target},MEDICOSPIRA_ORIGIN)}catch(_){ }
   clearTimeout(medicospiraTranslateRequestTimer);
   medicospiraTranslateRequestTimer=setTimeout(()=>{
-    if(!medicospiraCompanionReady)toast('Instala Dr.Coach! Companion para traducir Medicospira dentro del Workspace.');
+    if(!medicospiraCompanionReady){toast('Sin Companion: abro el Traductor integrado, que funciona en cualquier dispositivo.');window.DCTranslator?.openWorkspacePanel();}
   },1200);
 }
 function toggleIntegratedCoach(){const shell=$('#integratedWorkspaceShell');if(!shell)return;const collapsed=shell.classList.toggle('coach-collapsed');$('#workspaceToggleCoach').textContent=collapsed?'Mostrar Coach':'Ocultar Coach'}
