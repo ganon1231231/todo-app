@@ -28,10 +28,16 @@ git push -u origin main --tags
 
 ## 2. Activar GitHub Pages
 
+**Opción recomendada — con el workflow incluido (`.github/workflows/deploy-pages.yml`):**
+
 1. En tu repo: **Settings → Pages** (menú lateral izquierdo).
-2. En **Build and deployment → Source**, elige **Deploy from a branch**.
-3. En **Branch**, selecciona `main` y la carpeta **`/ (root)`**.
-4. **Save**.
+2. En **Build and deployment → Source**, elige **GitHub Actions**.
+3. Listo. Cada push a `main` publica la app sola en 1-2 minutos (pestaña **Actions** muestra el progreso).
+
+**Alternativa — sin Actions (Deploy from a branch):**
+
+1. **Settings → Pages → Source**: **Deploy from a branch**.
+2. **Branch**: `main` + carpeta **`/ (root)`** → **Save**.
 
 Espera 1–2 minutos. Aparecerá arriba: *"Your site is live at https://TU-USUARIO.github.io/TU-REPO/"*.
 

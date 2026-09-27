@@ -1,5 +1,13 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.2.4 · Publicación: deploy automático a GitHub Pages incluido
+
+- **Workflow oficial de Pages** (`.github/workflows/deploy-pages.yml`): cada `git push` a `main` publica la PWA en `https://TU-USUARIO.github.io/TU-REPO/` en 1-2 minutos, sin configurar nada más (primera vez: Settings → Pages → Source: «GitHub Actions»).
+- Guía `docs/GITHUB-PAGES.md` actualizada con las dos vías de activación (workflow recomendado / Deploy from a branch) y el checklist de verificación post-publicación.
+- Verificado para subcarpeta de Pages: `index.html` sin rutas absolutas, Service Worker con `register('./sw.js')`, manifest con `start_url`/`scope`/iconos relativos — la PWA se instala igual desde `usuario.github.io/drcoach/`.
+- Verificado que `config/supabase.config.js` (credenciales) sigue ignorado por git: al repo solo sube la plantilla `example.js`.
+- `git bundle` con historial completo y tags disponible para restaurar el repo con memoria en cualquier máquina.
+
 ## v3.2.3 · El ↗ no sustituye al flujo integrado (y pista de pegado en iOS)
 
 - **Aclaración de diseño**: el botón «↗» es **opcional** — el flujo Workspace (QBank en el marco + panel de sesión al lado) sigue exactamente igual; la pestaña nueva solo es un atajo para cuando toque traducir la página completa con Safari (aA) o Chrome (⋮).
