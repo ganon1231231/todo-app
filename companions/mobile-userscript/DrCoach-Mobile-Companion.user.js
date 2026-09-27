@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.4.1
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Muestra píldora «DC · Español/Original» para confirmar que está activo y autodiagnostica si el gestor no inyecta en iframes.
+// @version      0.4.2
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Red a prueba de Orion: fetch+CORS primero (no depende de GM_xmlhttpRequest) y aviso visible si la traducción falla.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -18,6 +18,8 @@
 // @grant        GM.addStyle
 // @grant        GM_registerMenuCommand
 // @connect      translate.googleapis.com
+// @connect      clients5.google.com
+// @connect      api.mymemory.translated.net
 // @connect      www.bing.com
 // @homepageURL  https://github.com/ganon1231231/todo-app
 // @updateURL    https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js
@@ -78,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.4.1';
+  const SCRIPT_VERSION = '0.4.2';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   const MAX_CONCURRENCY = 4;
@@ -95,6 +97,9 @@
   let scanTimer = null;
   let observer = null;
   let bingAuthCache = null;
+  let lastError = null;
+  let netFailures = 0;
+  let lastNetToastAt = 0;
 
   const EXCLUDED = new Set(['SCRIPT','STYLE','NOSCRIPT','TEMPLATE','TEXTAREA','INPUT','SELECT','OPTION','CODE','PRE','KBD','SAMP','SVG','MATH','CANVAS','IFRAME','VIDEO','AUDIO']);
   const INTERACTIVE = 'a,button,input,textarea,select,option,label,summary,[role="button"],[role="link"],[contenteditable="true"]';
@@ -138,6 +143,19 @@
       pointer-events: none !important; opacity: .95; transition: opacity .6s ease;
     }
     #drcoach-mobile-hello.dc-fade { opacity: 0; }
+    #drcoach-mobile-neterr {
+      position: fixed !important; z-index: 2147483647 !important;
+      left: 50% !important; transform: translateX(-50%) !important;
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+      max-width: min(92vw, 520px) !important;
+      background: rgba(15,24,38,.96) !important; color: #fff !important;
+      padding: 11px 13px !important; border-radius: 14px !important;
+      border: 1px solid rgba(248,113,113,.5) !important; box-shadow: 0 16px 40px rgba(0,0,0,.35) !important;
+      font: 500 12.5px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+      cursor: pointer; pointer-events: auto !important;
+    }
+    #drcoach-mobile-neterr b { color: #fca5a5; }
+    #drcoach-mobile-pill[data-err="1"] .dc-dot { background: #f87171; }
   `;
 
   function post(type, payload={}) {
@@ -151,33 +169,71 @@
     post('DRCOACH_COMPANION_READY', { language: currentLanguage, mobile: true, translator: 'drcoach-mobile-v' + SCRIPT_VERSION });
   }
 
-  function gmRequest(opts) {
-    if (GMX.xhr) return GMX.xhr(opts);
-    // Último recurso (entorno sin API GM): fetch directo — solo funciona si el endpoint
-    // permite CORS (Google gtx suele permitirlo; Bing no, en ese caso fallará y se registrará).
+  // Red a prueba de Orion (v0.4.2): PRIMERO fetch directo (CORS) — funciona aunque el gestor
+  // tenga GM_xmlhttpRequest roto por permisos limitados (Orion iOS con «Limited runtime host
+  // permissions»). GM_xmlhttpRequest queda como respaldo en carrera con timeout duro, para
+  // que un gestor colgado no bloquee la cascada de proveedores.
+  function netRequest(opts) {
     return (async () => {
+      let fetchResult = null;
       const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 12000) : null;
       try {
         const r = await fetch(opts.url, { method: opts.method || 'GET', headers: opts.headers || undefined, body: opts.data, signal: ctrl ? ctrl.signal : undefined, cache: 'no-store' });
         const text = await r.text();
-        return { status: r.status, responseText: text };
+        fetchResult = { status: r.status, responseText: text };
+        if (r.ok || !GMX.xhr) return fetchResult;
+      } catch (fetchErr) {
+        if (!GMX.xhr) throw fetchErr;
       } finally { if (timer) clearTimeout(timer); }
+      // Respaldo GM (p. ej. Bing, que no permite CORS): si el gestor no responde en 8 s, se descarta.
+      return await Promise.race([
+        Promise.resolve().then(() => GMX.xhr(opts)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('gm-hang-timeout')), 8000))
+      ]);
     })();
   }
 
   async function googleTranslate(text) {
     const url = GOOGLE_URL + '?client=gtx&sl=auto&tl=' + encodeURIComponent(TARGET_LANG) + '&dt=t&q=' + encodeURIComponent(text);
-    const res = await gmRequest({ url });
+    const res = await netRequest({ url });
     if (res.status !== 200) throw new Error('google-http-' + res.status);
     const data = JSON.parse(res.responseText);
     if (!data || !Array.isArray(data[0])) throw new Error('google-parse');
     return data[0].map(seg => seg?.[0] || '').join('').trim();
   }
 
+  // Alternativa de Google por otro host (suele respetar CORS; salva rate-limits del gtx)
+  async function googleDictTranslate(text) {
+    const url = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=' + encodeURIComponent(TARGET_LANG) + '&q=' + encodeURIComponent(text);
+    const res = await netRequest({ url });
+    if (res.status !== 200) throw new Error('dict-http-' + res.status);
+    const data = JSON.parse(res.responseText);
+    let out = '';
+    if (typeof data === 'string') out = data;
+    else if (Array.isArray(data)) {
+      if (typeof data[0] === 'string') out = data[0];
+      else if (Array.isArray(data[0]) && typeof data[0][0] === 'string') out = data[0][0];
+    }
+    out = String(out || '').trim();
+    if (!out) throw new Error('dict-parse');
+    return out;
+  }
+
+  // Último recurso con CORS: MyMemory (memoria de traducción pública, límite ~500 car/petición)
+  async function myMemoryTranslate(text) {
+    const url = 'https://api.mymemory.translated.net/get?langpair=en|' + encodeURIComponent(TARGET_LANG) + '&q=' + encodeURIComponent(text.slice(0, 480));
+    const res = await netRequest({ url });
+    if (res.status !== 200) throw new Error('mymemory-http-' + res.status);
+    const data = JSON.parse(res.responseText);
+    const tr = data && data.responseData && data.responseData.translatedText;
+    if (!tr || /MYMEMORY WARNING/i.test(String(tr))) throw new Error('mymemory-parse');
+    return String(tr).trim();
+  }
+
   async function getBingAuth(force=false) {
     if (!force && bingAuthCache && Date.now() - bingAuthCache.at < bingAuthCache.ttl) return bingAuthCache;
-    const res = await gmRequest({ url: 'https://www.bing.com/translator' });
+    const res = await netRequest({ url: 'https://www.bing.com/translator' });
     if (res.status !== 200) throw new Error('bing-auth-' + res.status);
     const html = res.responseText || '';
     const ig = /IG:"([^"]+)"/.exec(html);
@@ -192,7 +248,7 @@
     const a = await getBingAuth(false);
     const url = 'https://www.bing.com/ttranslatev3?isVertical=1&IG=' + encodeURIComponent(a.ig) + '&IID=' + encodeURIComponent(a.iid);
     const data = 'fromLang=auto-detect&to=es&text=' + encodeURIComponent(text) + '&token=' + encodeURIComponent(a.token) + '&key=' + encodeURIComponent(a.key);
-    const res = await gmRequest({ method:'POST', url, headers:{'Content-Type':'application/x-www-form-urlencoded'}, data });
+    const res = await netRequest({ method:'POST', url, headers:{'Content-Type':'application/x-www-form-urlencoded'}, data });
     let json = null; try { json = JSON.parse(res.responseText); } catch (_) {}
     const tr = json?.[0]?.translations?.[0]?.text;
     if (res.status === 200 && tr) return String(tr).trim();
@@ -203,19 +259,34 @@
   async function translateText(text) {
     const key = text.trim();
     if (cache.has(key)) return cache.get(key);
+    const providers = [
+      ['google',     () => googleTranslate(key),     RETRIES],
+      ['google-alt', () => googleDictTranslate(key), 0],
+      ['mymemory',   () => myMemoryTranslate(key),   0],
+      ['bing',       () => bingTranslate(key),       0]
+    ];
     let lastErr;
-    for (let attempt=0; attempt<=RETRIES; attempt++) {
-      try {
-        const tr = await googleTranslate(key);
-        if (tr) { cache.set(key, tr); return tr; }
-      } catch (e) { lastErr = e; }
-      if (attempt < RETRIES) await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+    for (const [, fn, retries] of providers) {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const tr = await fn();
+          if (tr) { cache.set(key, tr); return tr; }
+        } catch (e) { lastErr = e; }
+        if (attempt < retries) await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+      }
+      if (currentLanguage !== 'es') break; // el usuario volvió al Original: cancelar
     }
-    try {
-      const tr = await bingTranslate(key);
-      if (tr) { cache.set(key, tr); return tr; }
-    } catch (e) { lastErr = e; }
     throw lastErr || new Error('translation-failed');
+  }
+
+  // Convierte errores técnicos en causas entendibles para el aviso en pantalla
+  function describeNetError(e) {
+    const msg = String((e && e.message) || e || 'error desconocido');
+    if (/gm-hang-timeout/.test(msg)) return 'el gestor de scripts no respondió (Orion: reinstala el script y dale permiso)';
+    if (/abort|timeout/i.test(msg)) return 'tiempo agotado';
+    if (/http-\d{3}/i.test(msg)) return 'el servidor rechazó la petición (HTTP ' + (msg.split(/http-/i)[1] || '?') + ')';
+    if (/Failed to fetch|NetworkError|Load failed|network/i.test(msg)) return 'red bloqueada por el navegador';
+    return msg;
   }
 
   function shouldTranslateNode(node) {
@@ -257,6 +328,8 @@
       records.set(node, { original: originalRaw, translated: leading + translated + trailing });
       node.nodeValue = leading + translated + trailing;
     } catch (e) {
+      netFailures++;
+      lastError = describeNetError(e);
       console.debug('[DrCoach Mobile Translate] node failed', e);
     }
   }
@@ -264,6 +337,8 @@
   async function translateAll() {
     if (translating || currentLanguage !== 'es') return;
     translating = true;
+    netFailures = 0;
+    lastError = null;
     postStatus('translating');
     renderPill();
     try {
@@ -276,9 +351,18 @@
         }
       }
       await Promise.all(Array.from({length: Math.min(MAX_CONCURRENCY, Math.max(1, nodes.length))}, worker));
-      if (currentLanguage === 'es') postStatus('ready');
+      if (currentLanguage === 'es') {
+        if (netFailures > 0) {
+          postStatus('error', { message: lastError || 'error del traductor' });
+          showNetErrorToast(lastError || 'error desconocido');
+        } else {
+          postStatus('ready');
+        }
+      }
     } catch (e) {
-      postStatus('error', { message: String(e?.message || e) });
+      lastError = describeNetError(e);
+      postStatus('error', { message: lastError });
+      showNetErrorToast(lastError);
     } finally {
       translating = false;
       renderPill();
@@ -333,6 +417,29 @@
     } catch (_) {}
   }
 
+  // --- Aviso visible cuando la traducción falla (p. ej. Orion con permisos limitados) ---
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
+  }
+  function showNetErrorToast(reason) {
+    const now = Date.now();
+    if (now - lastNetToastAt < 30000) return;
+    lastNetToastAt = now;
+    try {
+      const old = document.getElementById('drcoach-mobile-neterr');
+      if (old) old.remove();
+      const t = document.createElement('div');
+      t.id = 'drcoach-mobile-neterr';
+      t.setAttribute('role', 'alert');
+      t.title = 'Toca para cerrar';
+      t.innerHTML = '<b>⚠ La traducción falló</b> — ' + escapeHtml(reason) + '.<br>' +
+        'Orion: mantén pulsado el icono de Tampermonkey → <b>Permitir siempre en este sitio</b> y reinstala el script desde la guía iPad (su auto-actualización está rota).';
+      t.addEventListener('click', () => { try { t.remove(); } catch (_) {} }, true);
+      (document.body || document.documentElement).appendChild(t);
+      setTimeout(() => { try { t.remove(); } catch (_) {} }, 12000);
+    } catch (_) {}
+  }
+
   // --- Píldora visible «DC · Español/Original» (confirmación de que el script está vivo) ---
   let pill = null;
   function ensurePill() {
@@ -354,6 +461,7 @@
       const p = ensurePill();
       const target = currentLanguage === 'es' ? 'Original' : 'Español';
       p.dataset.lang = currentLanguage;
+      if (lastError) p.dataset.err = '1'; else p.removeAttribute('data-err');
       p.textContent = '';
       const dot = document.createElement('span'); dot.className = 'dc-dot';
       p.appendChild(dot);

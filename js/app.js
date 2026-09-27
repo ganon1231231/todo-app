@@ -785,6 +785,8 @@ function setWorkspaceCaptureTab(tab){
 }
 function reloadMedicospiraFrame(home=false){const f=$('#medicospiraFrame');if(!f)return;$('#workspaceFrameStatus').textContent='Cargando…';f.src=home?MEDICOSPIRA_URL:(f.src||MEDICOSPIRA_URL);setTimeout(()=>{$('#workspaceFrameStatus').textContent='usmle.medicospira.com';pingMedicospiraCompanion()},1200)}
 const MEDICOSPIRA_ORIGIN='https://usmle.medicospira.com';
+const COMPANION_VERSION='0.4.2';
+const COMPANION_INSTALL_URL='https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js';
 let medicospiraCompanionReady=false;
 let medicospiraTranslationMode='en';
 let medicospiraTranslateRequestTimer=null;
@@ -812,6 +814,8 @@ function handleMedicospiraCompanionMessage(event){
   if(d.type==='DRCOACH_COMPANION_READY'){
     medicospiraCompanionReady=true;clearTimeout(medicospiraTranslateRequestTimer);
     medicospiraTranslationMode=d.language==='es'?'es':'en';
+    const mv=/v(\d+\.\d+(?:\.\d+)?)/.exec(String(d.translator||''));
+    if(mv&&mv[1]!==COMPANION_VERSION)showCompanionUpdate(mv[1]);
     updateWorkspaceTranslateButtons();return;
   }
   if(d.type==='DRCOACH_TRANSLATOR_STATUS'){
@@ -849,23 +853,41 @@ function isIOSHomeScreenApp(){
   }catch(_){return false}
 }
 let companionDiagOpen=false;
+function ensureDiagStyle(){
+  if($('#dcDiagStyle'))return;
+  const st=document.createElement('style');st.id='dcDiagStyle';
+  st.textContent='#companionDiag{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:2147483000;max-width:min(92vw,560px);background:#0f1826;color:#fff;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 16px 40px rgba(0,0,0,.35);font:500 13px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#companionDiag b{color:#fbbf24}#companionDiag ol{margin:6px 0 8px;padding-left:20px}#companionDiag li{margin:2px 0}#companionDiag a{color:#fbbf24;text-decoration:underline;word-break:break-all}#companionDiag .dc-diag-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:6px}#companionDiag button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:6px 12px;font:700 12px system-ui;cursor:pointer}';
+  document.head.appendChild(st);
+}
 function showCompanionDiag(){
   if(companionDiagOpen)return;companionDiagOpen=true;
   try{
-    if(!$('#dcDiagStyle')){
-      const st=document.createElement('style');st.id='dcDiagStyle';
-      st.textContent='#companionDiag{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:2147483000;max-width:min(92vw,560px);background:#0f1826;color:#fff;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 16px 40px rgba(0,0,0,.35);font:500 13px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#companionDiag b{color:#fbbf24}#companionDiag ol{margin:6px 0 8px;padding-left:20px}#companionDiag li{margin:2px 0}#companionDiag a{color:#fbbf24;text-decoration:underline;word-break:break-all}#companionDiag .dc-diag-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:6px}#companionDiag button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:6px 12px;font:700 12px system-ui;cursor:pointer}';
-      document.head.appendChild(st);
-    }
+    ensureDiagStyle();
     const old=$('#companionDiag');if(old)old.remove();
     const d=document.createElement('div');d.id='companionDiag';d.setAttribute('role','alertdialog');d.setAttribute('aria-label','Diagnóstico del traductor del QBank');
-    d.innerHTML='<b>El QBank no respondió al traductor</b> (Companion no inyectado).<ol><li>Actualiza el userscript a v0.4+: abre su URL en Safari y acepta la instalación.</li><li>Permisos: Ajustes → Safari → Extensiones → tu gestor → «Todos los sitios web»: Permitir.</li><li>Usa Safari, no el icono de pantalla de inicio. En Orion/Tampermonkey: Dashboard → Settings → Page Filter Mode: Blacklist.</li></ol>';
+    d.innerHTML='<b>El QBank no respondió al traductor</b> (Companion no inyectado).<ol><li>Actualiza el userscript a v0.4+: abre su URL en Safari y acepta la instalación.</li><li>Permisos: Ajustes → Safari → Extensiones → tu gestor → «Todos los sitios web»: Permitir.</li><li>Usa Safari, no el icono de pantalla de inicio. En Orion: Page Filter Mode: Blacklist, <b>Permitir siempre</b> para Tampermonkey y reinstala el script (su auto-actualización está rota).</li></ol>';
     const actions=document.createElement('div');actions.className='dc-diag-actions';
     const guide=document.createElement('a');guide.href='https://ganon1231231.github.io/todo-app/docs/IPAD-SAFARI.md';guide.target='_blank';guide.rel='noopener';guide.textContent='Guía iPad';
     const ok=document.createElement('button');ok.type='button';ok.textContent='Entendido';ok.addEventListener('click',()=>{d.remove();companionDiagOpen=false});
     actions.append(guide,ok);d.appendChild(actions);
     (document.body||document.documentElement).appendChild(d);
     setTimeout(()=>{try{if(d.isConnected){d.remove();companionDiagOpen=false}}catch(_){ }},25000);
+  }catch(_){companionDiagOpen=false}
+}
+function showCompanionUpdate(stale){
+  if(companionDiagOpen)return;companionDiagOpen=true;
+  try{
+    ensureDiagStyle();
+    const old=$('#companionDiag');if(old)old.remove();
+    const d=document.createElement('div');d.id='companionDiag';d.setAttribute('role','alertdialog');d.setAttribute('aria-label','Companion desactualizado');
+    d.innerHTML='<b>⚠ Companion v'+stale+' detectado</b> (la app espera v'+COMPANION_VERSION+').<ol><li>La auto-actualización <b>falla en Orion</b>: borra el script viejo en el Dashboard de Tampermonkey y reinstálalo abriendo su URL.</li><li>Permiso: mantén pulsado el icono de Tampermonkey → <b>Permitir siempre en este sitio</b> (Safari: «Todos los sitios web»: Permitir).</li></ol>';
+    const actions=document.createElement('div');actions.className='dc-diag-actions';
+    const link=document.createElement('a');link.href=COMPANION_INSTALL_URL;link.target='_blank';link.rel='noopener';link.textContent='Instalar v'+COMPANION_VERSION;
+    const guide=document.createElement('a');guide.href='https://ganon1231231.github.io/todo-app/docs/IPAD-SAFARI.md';guide.target='_blank';guide.rel='noopener';guide.textContent='Guía iPad';
+    const ok=document.createElement('button');ok.type='button';ok.textContent='Entendido';ok.addEventListener('click',()=>{d.remove();companionDiagOpen=false});
+    actions.append(link,guide,ok);d.appendChild(actions);
+    (document.body||document.documentElement).appendChild(d);
+    setTimeout(()=>{try{if(d.isConnected){d.remove();companionDiagOpen=false}}catch(_){ }},30000);
   }catch(_){companionDiagOpen=false}
 }
 function toggleIntegratedCoach(){const shell=$('#integratedWorkspaceShell');if(!shell)return;const collapsed=shell.classList.toggle('coach-collapsed');$('#workspaceToggleCoach').textContent=collapsed?'Mostrar Coach':'Ocultar Coach'}

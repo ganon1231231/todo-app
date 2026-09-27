@@ -2,7 +2,7 @@
 
 **Sí, se puede.** Safari en iPadOS no admite Tampermonkey directamente, pero hay tres formas de ejecutar userscripts que dejan el flujo igual al de tu PC/Mac: el botón **«Español / Original»** del Workspace traduce el QBank dentro del iframe, y al seleccionar texto aparece la barrita **«Copiar / → Stem»**.
 
-El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.4.1, multi-gestor).
+El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.4.2, multi-gestor).
 
 ---
 
@@ -55,6 +55,25 @@ Si Tampermonkey muestra algo como *«Some URLs are restricted by your browser or
 2. Si sigue igual: en Settings (Advanced) → **Content Script API** → cambia `UserScripts API` a **`UserScripts API Dynamic`** → Save → cierra Orion por completo y reabre.
 3. ¿Nada? Usa la **Opción A** (Safari + app Userscripts), que es la vía más estable en iPadOS.
 
+### Orion: «Tampermonkey has no access to this page» + script viejo (0.3.x)
+
+Dos problemas típicos de Orion que se ven en las capturas del popup de Tampermonkey:
+
+**1) «Tampermonkey has no access to this page»** = Orion no le dio permiso a Tampermonkey para ejecutarse en ese sitio. Sin ese permiso, NINGÚN script corre ahí, aunque esté instalado y activado. Solución:
+
+- Toca el **icono de Tampermonkey en la barra de direcciones** de Orion (o menú **••• → Extensiones**). Si ves el aviso «has no access», tócalo o busca el permiso del sitio:
+- Concede **«Permitir siempre en este sitio»** (Always Allow on This Website) — y si existe, **«Permitir siempre en todos los sitios»**. En Orion también funciona: **mantén pulsado el icono de la extensión → Permisos**.
+- Repite el permiso para **`ganon1231231.github.io`** y para **`usmle.medicospira.com`** (el QBank vive en ese dominio dentro de un iframe).
+- Cierra Orion por completo (multitarea → deslizar fuera) y reabre.
+
+**2) Script viejo (0.3.x) instalado** — el banner naranja de Orion («Limited runtime host permissions might break some Tampermonkey features like **script update**…») lo dice: **la auto-actualización de scripts está rota en Orion**. Si tu popup lista «Copy + Translate **0.3.0**», tienes una versión que además solo matcheaba Medicospira. Reinstalación manual:
+
+1. Dashboard de Tampermonkey → pestaña **Installed Userscripts** → papelera en la fila del script viejo.
+2. Abre en Orion la URL del script: `https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js` → Tampermonkey mostrará **0.4.2** → **Install**.
+3. Verifica en Installed Userscripts: debe decir **0.4.2** y ~28 KB.
+
+> A partir de v0.4.2 la traducción **usa primero `fetch` normal (CORS)** en lugar de `GM_xmlhttpRequest` (que Orion rompe con sus «Limited runtime host permissions»). Si aun así falla la red, la píldora DC muestra su **punto en rojo** y aparece un aviso «⚠ La traducción falló» con el motivo concreto.
+
 ---
 
 ## Qué obtienes en el iPad con cualquiera de las tres
@@ -79,14 +98,15 @@ Si Tampermonkey muestra algo como *«Some URLs are restricted by your browser or
 
 ## 🛠️ Solución de problemas — «no se activa / no reconoce la página»
 
-### Cómo saber si el script está vivo (v0.4.1)
+### Cómo saber si el script está vivo (v0.4.2)
 El script ahora **siempre deja señal visible**:
 
 | Dónde miras | Señal de vida |
 |---|---|
-| Dentro del QBank (Workspace) | Aviso efímero **«🧩 Companion v0.4.1 activo»** (3 s) + píldora fija abajo a la derecha: **«DC · Español»** (o «DC · Original» si ya está traduciendo). Tocando la píldora alternas español/original sin usar el botón del Workspace. |
-| En la página de Dr.Coach | Aviso efímero **«🧩 Companion v0.4.1 activo»** abajo a la izquierda (5 s) y el popup del gestor (ícono ᴀA → Userscripts/Tampermonkey) **sí lista el script**. |
-| Si pulsas «Español» y el QBank no responde | La **propia app Dr.Coach! (v3.3.4+) muestra una tarjeta de diagnóstico** con los pasos exactos — funciona aunque el userscript no se haya inyectado. |
+| Dentro del QBank (Workspace) | Aviso efímero **«🧩 Companion v0.4.2 activo»** (3 s) + píldora fija abajo a la derecha: **«DC · Español»** (o «DC · Original» si ya está traduciendo). Tocando la píldora alternas español/original sin usar el botón del Workspace. **Punto rojo = fallo de red** (ver aviso ⚠). |
+| En la página de Dr.Coach | Aviso efímero **«🧩 Companion v0.4.2 activo»** abajo a la izquierda (5 s) y el popup del gestor (ícono ᴀA → Userscripts/Tampermonkey) **sí lista el script**. |
+| Si la traducción falla con el script vivo | Aviso **«⚠ La traducción falló — <motivo>»** (12 s, tocable para cerrar) dentro del QBank + la app muestra toast «No se pudo traducir…». |
+| Si pulsas «Español» y el QBank no responde | La **propia app Dr.Coach! (v3.3.5+) muestra una tarjeta de diagnóstico** con los pasos exactos — funciona aunque el userscript no se haya inyectado. Si el script inyectado es viejo (0.3.x), la app muestra una tarjeta de **«Companion desactualizado»** con enlace directo de instalación. |
 
 ### Causas típicas (en orden de probabilidad)
 
@@ -98,8 +118,9 @@ El script ahora **siempre deja señal visible**:
    - **Plan B**: abre el QBank en pestaña propia — la píldora «DC · Español» funciona igual (el script es autónomo), y con iPadOS **Split View** tienes QBank traducido a un lado y Dr.Coach al otro.
    - **Plan C**: Orion + Tampermonkey (extensión real de escritorio).
 6. **El script no se sincronizó en la app Userscripts.** Abre la app → ↻ → el interruptor del script debe estar verde. Si usas iCloud Drive, espera a que la sincronización termine (puede tardar).
-7. **Caché del script viejo (v0.3/v0.4.0).** Abre el enlace del script en Safari y acepta la actualización, o repite la instalación. La versión correcta es **0.4.1** (visible en el popup del gestor y en el aviso «🧩 Companion»). Si instalaste pegando el código a mano, el script **no se actualiza solo**: bórralo y vuelve a instalarlo desde la URL.
+7. **Caché del script viejo (v0.3/v0.4.0).** Abre el enlace del script en Safari y acepta la actualización, o repite la instalación. La versión correcta es **0.4.2** (visible en el popup del gestor y en el aviso «🧩 Companion»). Si instalaste pegando el código a mano, el script **no se actualiza solo**: bórralo y vuelve a instalarlo desde la URL. La app (v3.3.5+) te avisa sola: si el script inyectado anuncia una versión distinta a la esperada, muestra la tarjeta «⚠ Companion vX detectado» con el enlace de instalación.
 8. **Orion: «Some URLs are restricted…».** Es el fallo conocido de Tampermonkey 5.5.x — solución en la sección de la Opción C de arriba (Page Filter Mode → Blacklist, o Content Script API → UserScripts API Dynamic).
+9. **Orion: «Tampermonkey has no access to this page» + script 0.3.x.** Permiso de sitio sin conceder y auto-actualización rota — solución paso a paso en la sección «Orion: «Tampermonkey has no access…»» de la Opción C.
 
 ### Señales rápidas de diagnóstico
 

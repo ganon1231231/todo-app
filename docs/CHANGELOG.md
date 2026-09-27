@@ -1,5 +1,14 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.3.5 · Userscript v0.4.2 «Orion-proof»: la traducción ya no depende de GM_xmlhttpRequest + detección de Companion obsoleto
+
+- **Reporte real (capturas de Orion/iPad)**: el popup de Tampermonkey lista «Copy + Translate **0.3.0**» (18 KB) y muestra **«Tampermonkey has no access to this page»**; la píldora/detección aparece pero **la traducción no ocurre**.
+- **Causa raíz #1 — script desactualizado**: en Orion la **auto-actualización de scripts está rota** (el propio banner naranja de Orion lo advierte: «Limited runtime host permissions might break some Tampermonkey features like *script update*, GM_xmlhttpRequest and others!»). El usuario seguía con v0.3.0, que además solo matcheaba Medicospira. Ahora la **app detecta el Companion obsoleto** por el handshake (`translator: drcoach-mobile-v0.3.0`) y muestra la tarjeta **«⚠ Companion v0.3.0 detectado (la app espera v0.4.2)»** con enlace directo **«Instalar v0.4.2»** + pasos (borrar el viejo, reinstalar por URL, permiso «Permitir siempre»).
+- **Causa raíz #2 — red**: `gmRequest()` intentaba PRIMERO `GM_xmlhttpRequest` y solo usaba `fetch` si la API GM no existía. En Orion la API GM **existe pero está rota** por los permisos limitados → la traducción moría sin mensaje. **Fix (userscript v0.4.2)**: nuevo `netRequest()` que hace **`fetch` directo (CORS) primero** — Google gtx permite CORS, así que funciona en Orion aunque GM_xmlhttpRequest esté roto — y deja GM como respaldo **en carrera con timeout duro (8 s)** para que un gestor colgado no bloquee la cascada.
+- **Cascada de motores más resistente**: Google gtx (2 reintentos) → **Google alternativo** `clients5.google.com` (dict-chrome-ex) → **MyMemory** (CORS) → Bing (vía GM). Errores traducidos a causas entendibles (`describeNetError`): «el gestor no respondió (Orion: reinstala y da permiso)», «tiempo agotado», «HTTP 429», «red bloqueada por el navegador».
+- **Fallo visible, nunca silencioso**: si fallan nodos al traducir, la píldora DC muestra su **punto en rojo**, aparece el aviso **«⚠ La traducción falló — <motivo>»** (12 s, tocable) dentro del QBank y la app recibe `postStatus('error')` → toast «No se pudo traducir: …».
+- **Docs**: IPAD-SAFARI.md con nueva sección **«Orion: «Tampermonkey has no access to this page» + script viejo (0.3.x)»** (permiso por sitio para github.io y medicospira.com + reinstalación manual paso a paso), señales de vida actualizadas a v0.4.2, causas #9 del troubleshooting; README del userscript con la cascada y las advertencias de Orion.
+
 ## v3.3.4 · Userscript v0.4.1: señales de vida visibles + diagnóstico desde la propia app (fix Orion «restricted URLs»)
 
 - **Reporte real**: «Nada, no funcionaron los scripts ni en Orion ni en Safari; en Safari al menos la app ya reconoce que hay scripts, y en Orion dice algo como *some URLs are restricted*.»

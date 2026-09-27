@@ -3,13 +3,14 @@
 **Multi-gestor**: Tampermonkey/Violentmonkey (Android, Edge, PC/Mac) · **Safari iOS/iPadOS** con las apps «Userscripts» o «Stay» · Tampermonkey dentro del navegador Orion.
 
 ## Qué hace
-- **Píldora fija «DC · Español/Original»** dentro de Medicospira: confirma que el script está vivo y sirve para alternar el idioma con un toque (sin depender del Workspace).
+- **Píldora fija «DC · Español/Original»** dentro de Medicospira: confirma que el script está vivo y sirve para alternar el idioma con un toque (sin depender del Workspace). **Punto rojo = fallo de red.**
 - Permite seleccionar y copiar texto dentro de Medicospira (barrita flotante «Copiar / → Stem»).
 - `→ Stem` envía la selección al campo Caso clínico de Dr.Coach!.
 - Traduce Medicospira **en el mismo iframe** y **reemplaza** el inglés por español (no modo bilingüe).
 - El botón `Español / Original` del Workspace controla este userscript (y la píldora se sincroniza).
 - Mantiene traducción en páginas dinámicas del QBank.
 - **Novedad v0.4**: también corre sobre la página de Dr.Coach! para autodiagnóstico — si pulsas «Español» y el QBank no contesta, muestra un aviso con los pasos para arreglarlo (permisos, Safari vs app instalada, planes B/C).
+- **Novedad v0.4.2 (Orion-proof)**: la red va **fetch primero (CORS)** — no depende de `GM_xmlhttpRequest`, que Orion rompe con sus «Limited runtime host permissions». Cascada de motores: Google gtx → Google alternativo (clients5) → MyMemory → Bing (GM). Si todo falla: aviso «⚠ La traducción falló — <motivo>» con la causa y el arreglo concreto.
 
 ## Instalación
 
@@ -26,6 +27,8 @@ Instalar Stay (App Store), activarla en Extensiones y usar su importador por URL
 ### iPad — alternativa «Orion» (Tampermonkey real)
 Instalar **Orion Browser** (Kagi) desde el App Store → dentro de Orion, abrir la Chrome Web Store → añadir **Tampermonkey** → instalar el script desde el enlace de arriba. Experiencia idéntica al escritorio.
 
+**Importante en Orion** (ver guía para el detalle): la auto-actualización de scripts está rota — cuando salga versión nueva, **borra el script y reinstálalo desde la URL**; y concede permiso a Tampermonkey para `ganon1231231.github.io` y `usmle.medicospira.com` («Permitir siempre en este sitio»), o verás «Tampermonkey has no access to this page».
+
 ### Android / Lenovo (Edge) — Tampermonkey
 1. Desactiva/elimina el userscript de Immersive Translate para evitar traducciones duplicadas.
 2. Tampermonkey → crear/importar script → instala `DrCoach-Mobile-Companion.user.js` (o pega la URL de arriba en la pestaña «Utilidades» → Importar).
@@ -39,4 +42,4 @@ Guía completa con las 7 causas típicas y las señales rápidas: **[`docs/IPAD-
 El script declara `@updateURL`/`@downloadURL` apuntando al sitio publicado: Tampermonkey y Stay comprueban actualizaciones solas con cada release (la versión va en la cabecera). En «Userscripts», abrir el enlace del script en Safari ofrece la actualización.
 
 ## Privacidad / red
-La traducción automática móvil usa Google Translate como motor primario y Bing como fallback mediante endpoints web sin clave. El texto a traducir se envía a esos servicios. No lo uses para texto con datos clínicos identificables de pacientes reales.
+La traducción automática móvil usa Google Translate (2 hosts), MyMemory y Bing como fallbacks mediante endpoints web sin clave. El texto a traducir se envía a esos servicios. No lo uses para texto con datos clínicos identificables de pacientes reales.
