@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.5.2
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. v0.5.1: clients5 primero (gtx bloqueado por Google), reintentos automáticos tras rate-limit y diagnóstico de proveedores con pulsación larga en la píldora. v0.5.2: progreso REAL en la píldora (antes se clavaba en 0/N y parecía rota), lotes auto-reparables (split-retry: un lote que falla se parte y reintenta en vez de degradar 25 textos al modo lento) y watchdog de arranque.
+// @version      0.5.3
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. v0.5.1: clients5 primero (gtx bloqueado por Google), reintentos automáticos tras rate-limit y diagnóstico de proveedores con pulsación larga en la píldora. v0.5.2: progreso REAL en la píldora (antes se clavaba en 0/N y parecía rota), lotes auto-reparables (split-retry: un lote que falla se parte y reintenta en vez de degradar 25 textos al modo lento) y watchdog de arranque. v0.5.3: centro de control en la página de Dr.Coach! — píldora PERMANENTE con el estado del QBank en vivo (verde conectado / ámbar sin señal) y panel con el arreglo de 1 toque («Abrir QBank en pestaña propia», donde el Companion corre como página principal y el gestor SÍ inyecta) — así «el QBank no responde» deja de ser un fallo invisible.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.5.2';
+  const SCRIPT_VERSION = '0.5.3';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
@@ -852,16 +852,19 @@
   // Vigila el botón «Español» del Workspace: si tras pulsarlo el QBank no responde,
   // muestra un aviso con los pasos exactos para arreglarlo en iPad (permisos, Safari, etc.).
   const DIAG_STYLE = `
-    #drcoach-top-badge {
+    #drcoach-top-pill {
       position: fixed !important; z-index: 2147483647 !important;
       left: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-      padding: 9px 13px !important; border-radius: 999px !important;
-      background: rgba(15,24,38,.92) !important; color: #fff !important;
-      border: 1px solid rgba(255,255,255,.18) !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important;
+      display: flex; gap: 7px; align-items: center;
+      padding: 10px 14px !important; border-radius: 999px !important;
+      background: rgba(15,24,38,.92) !important; border: 1px solid rgba(255,255,255,.18) !important;
+      color: #fff !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important; backdrop-filter: blur(10px);
       font: 700 12.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
-      pointer-events: none !important; opacity: .95; transition: opacity .7s ease;
+      cursor: pointer !important; opacity: .95; -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
     }
-    #drcoach-top-badge.dc-fade { opacity: 0; }
+    #drcoach-top-pill .dc-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex: 0 0 auto; }
+    #drcoach-top-pill[data-state="warn"] .dc-dot { background: #fbbf24; }
     #drcoach-mobile-diag {
       position: fixed !important; z-index: 2147483647 !important;
       left: 50% !important; transform: translateX(-50%) !important;
@@ -877,54 +880,169 @@
     #drcoach-mobile-diag li { margin: 2px 0; }
     #drcoach-mobile-diag .dc-diag-close {
       border: 0 !important; background: rgba(255,255,255,.14) !important; color: #fff !important;
-      border-radius: 8px !important; padding: 6px 12px !important; font: 700 12px system-ui !important; cursor: pointer;
+      border-radius: 8px !important; padding: 10px 14px !important; font: 700 12.5px system-ui !important; cursor: pointer;
     }
+    #drcoach-mobile-diag .dc-row { display: flex; gap: 8px; align-items: flex-start; margin: 3px 0; }
+    #drcoach-mobile-diag .dc-ok { color: #34d399 !important; font-weight: 700; flex: 0 0 auto; }
+    #drcoach-mobile-diag .dc-warn { color: #fbbf24 !important; font-weight: 700; flex: 0 0 auto; }
+    #drcoach-mobile-diag .dc-diag-primary {
+      border: 0 !important; background: #fbbf24 !important; color: #17223b !important;
+      border-radius: 10px !important; padding: 13px 16px !important; font: 700 13.5px system-ui !important;
+      cursor: pointer; width: 100%; margin: 10px 0 2px;
+    }
+    #drcoach-mobile-diag .dc-diag-actions { display: flex; gap: 8px; margin-top: 12px; }
+    #drcoach-mobile-diag .dc-diag-actions .dc-diag-close { flex: 1; }
   `;
   let lastSignalAt = 0;
-  let diagShown = false;
-  function showDiag() {
-    if (diagShown) return;
-    diagShown = true;
+  let qbankCompanionVersion = '';
+  let topPill = null;
+  const SIGNAL_FRESH_MS = 15000;
+  const QBANK_FALLBACK_URL = 'https://usmle.medicospira.com/s2/auth/login';
+
+  function qbankFrame() {
+    try { return document.getElementById('medicospiraFrame'); } catch (_) { return null; }
+  }
+  function qbankFresh() {
+    try { return lastSignalAt > 0 && (Date.now() - lastSignalAt) < SIGNAL_FRESH_MS; } catch (_) { return false; }
+  }
+  function topPillState() {
+    const f = qbankFrame();
+    if (!f) return { state: 'idle', label: 'DC · v' + SCRIPT_VERSION };
+    if (qbankFresh()) return { state: 'ok', label: 'DC · QBank ' + (qbankCompanionVersion ? 'v' + qbankCompanionVersion + ' ✓' : 'conectado ✓') };
+    return { state: 'warn', label: 'DC · QBank sin responder' };
+  }
+  // v0.5.3: píldora PERMANENTE en la página de Dr.Coach! (sustituye al badge efímero de 5 s).
+  // Si el gestor deja de inyectar DENTRO del QBank (permiso «Preguntar» revertido, iframes sin permiso),
+  // el fallo ya no es invisible: píldora en ámbar + panel con el arreglo de 1 toque.
+  function renderTopPill() {
     try {
-      injectStyle(DIAG_STYLE);
+      if (!topPill || !topPill.isConnected) {
+        topPill = document.createElement('button');
+        topPill.type = 'button';
+        topPill.id = 'drcoach-top-pill';
+        topPill.setAttribute('aria-label', 'Dr.Coach Companion: estado del QBank. Toca para ver soluciones.');
+        topPill.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); showTopPanel(); }, true);
+        (document.body || document.documentElement).appendChild(topPill);
+      }
+      const st = topPillState();
+      topPill.dataset.state = st.state;
+      topPill.textContent = '';
+      const dot = document.createElement('span'); dot.className = 'dc-dot';
+      topPill.appendChild(dot);
+      topPill.appendChild(document.createTextNode(st.label));
+    } catch (_) {}
+  }
+  function openQBankInTab() {
+    let url = '';
+    try { const f = qbankFrame(); url = (f && f.src) || ''; } catch (_) {}
+    if (!url) url = QBANK_FALLBACK_URL;
+    try { return !!window.open(url, '_blank', 'noopener'); } catch (_) { return false; }
+  }
+  function buildTopReport() {
+    const f = qbankFrame();
+    return 'Informe Dr.Coach! Companion (página Dr.Coach!)\n' +
+      '- Script en esta página: v' + SCRIPT_VERSION + '\n' +
+      '- URL: ' + location.href + '\n' +
+      '- Navegador: ' + (navigator.userAgent || '?') + '\n' +
+      '- QBank (iframe): ' + (f ? 'presente' : 'no está en pantalla') + '\n' +
+      '- Señal del QBank: ' + (qbankFresh() ? 'sí (hace ' + Math.max(0, Math.round((Date.now() - lastSignalAt) / 1000)) + ' s)' : 'NINGUNA') + '\n' +
+      '- Companion dentro del QBank: ' + (qbankCompanionVersion ? 'v' + qbankCompanionVersion : 'desconocida (sin señal)') + '\n' +
+      '- src del QBank: ' + ((f && f.src) || '?') + '\n';
+  }
+  function showTopPanel() {
+    try {
       const old = document.getElementById('drcoach-mobile-diag');
       if (old) old.remove();
+      const f = qbankFrame();
+      const fresh = qbankFresh();
       const d = document.createElement('div');
       d.id = 'drcoach-mobile-diag';
       d.setAttribute('role', 'alertdialog');
-      d.setAttribute('aria-label', 'Dr.Coach Companion móvil: diagnóstico del QBank');
-      d.innerHTML =
-        '<b>Dr.Coach! Companion móvil</b> — el QBank no contestó al botón «Español».' +
-        '<ol>' +
-        '<li>Ajustes → Safari → Extensiones → tu gestor → <b>«Todos los sitios web»: Permitir</b>.</li>' +
-        '<li>Cierra Safari por completo (desliza fuera) y vuelve a abrir. <b>No uses el icono de pantalla de inicio</b>: las extensiones solo corren en Safari.</li>' +
-        '<li>Abre el Workspace: dentro del QBank debe verse la píldora <b>«DC · Español»</b>. Si no aparece, abre el QBank en pestaña propia (ahí sí funciona) o usa Orion + Tampermonkey.</li>' +
-        '</ol>';
+      d.setAttribute('aria-label', 'Dr.Coach Companion móvil: estado del QBank y soluciones');
+      d.innerHTML = '<b>Dr.Coach! Companion v' + SCRIPT_VERSION + '</b> — estado del QBank';
+      const list = document.createElement('div');
+      list.style.margin = '6px 0';
+      const row = (ok, txt) => {
+        const r = document.createElement('div');
+        r.className = 'dc-row';
+        const s = document.createElement('span');
+        s.className = ok ? 'dc-ok' : 'dc-warn';
+        s.textContent = ok ? '✅' : '⚠️';
+        r.appendChild(s);
+        r.appendChild(document.createTextNode(txt));
+        list.appendChild(r);
+      };
+      row(true, 'Inyección en Dr.Coach!: activa (por eso ves esta píldora).');
+      if (fresh) {
+        row(true, 'QBank: conectado' + (qbankCompanionVersion ? ' (Companion v' + qbankCompanionVersion + ')' : '') + ' — usa el botón «Español» del Workspace.');
+      } else if (f) {
+        row(false, 'QBank: SIN SEÑAL — el gestor no ejecuta el script DENTRO del QBank (los iframes necesitan permiso aparte).');
+      } else {
+        row(false, 'QBank: no está en pantalla — entra al Workspace y vuelve a tocar la píldora.');
+      }
+      d.appendChild(list);
+      if (f && !fresh) {
+        const fixTitle = document.createElement('div');
+        fixTitle.style.marginTop = '6px';
+        fixTitle.innerHTML = '<b>Arreglo inmediato (siempre funciona)</b>';
+        d.appendChild(fixTitle);
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'dc-diag-primary';
+        open.textContent = '↗ Abrir QBank en pestaña propia';
+        open.addEventListener('click', e => {
+          e.preventDefault(); e.stopPropagation();
+          open.textContent = openQBankInTab() ? 'Abierto ✓ — busca la píldora DC abajo a la derecha' : 'No se pudo abrir: permite pop-ups para este sitio';
+        }, true);
+        d.appendChild(open);
+        const hint = document.createElement('div');
+        hint.style.cssText = 'opacity:.85; font-size:12px; margin-top:4px;';
+        hint.textContent = 'En la pestaña nueva el QBank corre como página principal: el Companion SÍ se inyecta ahí. Toca la píldora DC para traducir (Español/Original).';
+        d.appendChild(hint);
+        const perm = document.createElement('div');
+        perm.style.marginTop = '10px';
+        perm.innerHTML = '<b>Para que vuelva a funcionar DENTRO del Workspace</b>' +
+          '<ol style="margin:4px 0 0; padding-left:20px;">' +
+          '<li>Ajustes → Safari → Extensiones → tu gestor → <b>«Todos los sitios web»: Permitir</b> (no «Preguntar»: en los iframes nunca pregunta).</li>' +
+          '<li>Cierra Safari por completo (desliza fuera) y vuelve a abrir. No uses el icono de pantalla de inicio.</li>' +
+          '</ol>';
+        d.appendChild(perm);
+      }
+      const actions = document.createElement('div');
+      actions.className = 'dc-diag-actions';
+      const copy = document.createElement('button');
+      copy.type = 'button'; copy.className = 'dc-diag-close'; copy.textContent = 'Copiar informe';
+      copy.addEventListener('click', async e => {
+        e.preventDefault(); e.stopPropagation();
+        const ok = await copyText(buildTopReport());
+        copy.textContent = ok ? 'Copiado ✓' : 'No se pudo copiar';
+        setTimeout(() => { copy.textContent = 'Copiar informe'; }, 1600);
+      }, true);
       const close = document.createElement('button');
-      close.type = 'button';
-      close.className = 'dc-diag-close';
-      close.textContent = 'Entendido';
+      close.type = 'button'; close.className = 'dc-diag-close'; close.textContent = 'Entendido';
       close.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); d.remove(); }, true);
-      d.appendChild(close);
+      actions.appendChild(copy); actions.appendChild(close);
+      d.appendChild(actions);
       (document.body || document.documentElement).appendChild(d);
-      setTimeout(() => { try { d.remove(); } catch (_) {} }, 20000);
     } catch (_) {}
   }
   function bootDiagnostics() {
-    // badge efímero: confirma que el gestor EJECUTA el script en la página de Dr.Coach!
-    try {
-      injectStyle(DIAG_STYLE);
-      const b = document.createElement('div');
-      b.id = 'drcoach-top-badge';
-      b.textContent = '🧩 Companion v' + SCRIPT_VERSION + ' activo';
-      (document.body || document.documentElement).appendChild(b);
-      setTimeout(() => { b.classList.add('dc-fade'); setTimeout(() => { try { b.remove(); } catch (_) {} }, 800); }, 5200);
-    } catch (_) {}
+    injectStyle(DIAG_STYLE);
+    // píldora permanente = prueba de vida instantánea + estado del QBank en vivo (refresco cada 2 s)
+    renderTopPill();
+    setInterval(renderTopPill, 2000);
     window.addEventListener('message', ev => {
       try {
         const d = ev && ev.data;
         if (!d || typeof d !== 'object') return;
+        // v0.5.3: solo señales del QBank real (el iframe de Medicospira) — nunca de otras ventanas
+        const f = qbankFrame();
+        if (!f || !ev.source || ev.source !== f.contentWindow) return;
         if (d.type === 'DRCOACH_TRANSLATOR_STATUS' || d.type === 'DRCOACH_COMPANION_READY') lastSignalAt = Date.now();
+        if (d.type === 'DRCOACH_COMPANION_READY') {
+          const m = /v(\d+\.\d+\.\d+)/.exec(String(d.translator || ''));
+          if (m) qbankCompanionVersion = m[1];
+        }
       } catch (_) {}
     });
     document.addEventListener('click', ev => {
@@ -932,11 +1050,17 @@
       try { btn = ev.target && ev.target.closest ? ev.target.closest('#workspaceTranslateChrome') : null; } catch (_) {}
       if (!btn) return;
       setTimeout(() => {
-        if (Date.now() - lastSignalAt < 15000) return;
-        showDiag();
+        if (qbankFresh()) return;
+        showTopPanel();
       }, 4000);
     }, true);
-    try { window.__dcMobileProbe = { get lastSignalAt() { return lastSignalAt; }, get diagShown() { return diagShown; } }; } catch (_) {}
+    try {
+      window.__dcMobileProbe = {
+        get lastSignalAt() { return lastSignalAt; },
+        get qbankCompanionVersion() { return qbankCompanionVersion; },
+        get state() { return topPillState().state; }
+      };
+    } catch (_) {}
   }
 
   // ==================== Arranque por rama ====================
