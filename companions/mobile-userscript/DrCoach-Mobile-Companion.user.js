@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.5.3
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso en la píldora. v0.5.1: clients5 primero (gtx bloqueado por Google), reintentos automáticos tras rate-limit y diagnóstico de proveedores con pulsación larga en la píldora. v0.5.2: progreso REAL en la píldora (antes se clavaba en 0/N y parecía rota), lotes auto-reparables (split-retry: un lote que falla se parte y reintenta en vez de degradar 25 textos al modo lento) y watchdog de arranque. v0.5.3: centro de control en la página de Dr.Coach! — píldora PERMANENTE con el estado del QBank en vivo (verde conectado / ámbar sin señal) y panel con el arreglo de 1 toque («Abrir QBank en pestaña propia», donde el Companion corre como página principal y el gestor SÍ inyecta) — así «el QBank no responde» deja de ser un fallo invisible.
+// @version      0.5.4
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso real en la píldora. v0.5.4 RESTAURACIÓN: vuelve el motor EXACTO de la v0.5.0 (la era que traducía todo y rápido en el iPad) — Google gtx PRIMERO en lotes y por-texto, sin penalizaciones experimentales ni split-retry; y la píldora de la página Dr.Coach! se convierte en un punto discreto ARRASTRABLE (toca = panel de estado; ya no estorba la interfaz).
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.5.3';
+  const SCRIPT_VERSION = '0.5.4';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
@@ -91,9 +91,6 @@
   const SINGLE_WORKERS = 2;
   const RETRIES = 1;
   const PENALTY_MS = 60000;
-  // v0.5.1: HTTP 200 con HTML de bloqueo («Sorry…») también rompe el JSON.parse → tras N fallos de parse
-  // seguidos el proveedor se penaliza igual que un 429 (no martillar un host que Google ya nos cerró).
-  const PARSE_STREAK_PENALTY = 2;
   const LONGPRESS_MS = 700;
   const CACHE_PERSIST_KEY = 'drcoach-trans-cache-v1';
   const CACHE_PERSIST_MAX = 400;
@@ -115,9 +112,6 @@
   // Circuit breaker (v0.5.0): si un proveedor da 429 se esquiva 60 s en vez de pagar su cascada en CADA texto
   let gtxPenaltyUntil = 0;
   let dictPenaltyUntil = 0;
-  // v0.5.1: racha de fallos de parse por proveedor + reintento único al expirar el circuit breaker
-  let gtxParseStreak = 0;
-  let dictParseStreak = 0;
   let pendingRetryTimer = null;
   let persistTimer = null;
   let cacheDirty = false;
@@ -289,46 +283,23 @@
     return parts;
   }
 
-  // v0.5.2: split-retry — si un lote completo falla (p.ej. bloqueo intermitente del edge de Google),
-  // se parte por la mitad y cada mitad se reintenta una vez. Así 25 textos no caen en bloque al modo
-  // lento individual: el fallo se aísla en el subconjunto que de verdad falla.
-  async function retrySplitInto(texts) {
-    const out = new Map();
-    const queue = [texts];
-    while (queue.length) {
-      const cur = queue.shift();
-      try {
-        const parts = await translateBatchInto(cur);
-        cur.forEach((t, i) => out.set(t, parts[i] || null));
-      } catch (_) {
-        if (cur.length > 1) {
-          const mid = Math.ceil(cur.length / 2);
-          queue.push(cur.slice(0, mid), cur.slice(mid));
-        } else {
-          out.set(cur[0], null);
-        }
-      }
-    }
-    return out;
-  }
-
   // Traduce un lote con cascada de proveedores + circuit breaker; devuelve Map texto→traducción
-  // v0.5.1: clients5 (dict-chrome-ex) PRIMERO — es la vía que hoy no está bloqueada; gtx pasa a respaldo
-  // (desde muchas IPs Google responde con HTTP 200 + HTML «Sorry…» al gtx clásico).
+  // v0.5.4 RESTAURACIÓN del orden v0.5.0 (la era que SÍ funcionaba en el iPad del usuario):
+  // Google gtx (translate.googleapis.com) PRIMERO, clients5 (dict-chrome-ex) de respaldo.
+  // Fuera la reordenación experimental de v0.5.1 y las penalizaciones por racha de parse.
   async function translateBatchInto(texts) {
     let lastErr = null;
     const gtxOk = Date.now() >= gtxPenaltyUntil;
     const dictOk = Date.now() >= dictPenaltyUntil;
     const plans = [];
-    if (dictOk) plans.push(['dict', () => googleDictBatchTranslate(texts), 1]);
-    if (gtxOk)  plans.push(['gtx',  () => googleBatchTranslate(texts),  1]);
-    if (!dictOk) plans.push(['dict', () => googleDictBatchTranslate(texts), 0]);
-    if (!gtxOk)  plans.push(['gtx',  () => googleBatchTranslate(texts),  0]);
-    for (const [name, fn, retries] of plans) {
+    if (gtxOk)  plans.push([() => googleBatchTranslate(texts), 1]);
+    if (dictOk) plans.push([() => googleDictBatchTranslate(texts), 1]);
+    if (!gtxOk)  plans.push([() => googleBatchTranslate(texts), 0]);
+    if (!dictOk) plans.push([() => googleDictBatchTranslate(texts), 0]);
+    for (const [fn, retries] of plans) {
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
           const parts = await fn();
-          if (name === 'dict') { dictParseStreak = 0; } else { gtxParseStreak = 0; }
           const out = new Map();
           texts.forEach((t, i) => out.set(t, parts[i]));
           return out;
@@ -337,8 +308,6 @@
           const m = String((e && e.message) || e);
           if (/google-http-429/.test(m)) gtxPenaltyUntil = Date.now() + PENALTY_MS;
           if (/dict-http-429/.test(m)) dictPenaltyUntil = Date.now() + PENALTY_MS;
-          if (/google-parse/.test(m) && name === 'gtx' && ++gtxParseStreak >= PARSE_STREAK_PENALTY) gtxPenaltyUntil = Date.now() + PENALTY_MS;
-          if (/^dict-(parse|batch-incomplete)$/.test(m) && name === 'dict' && ++dictParseStreak >= PARSE_STREAK_PENALTY) dictPenaltyUntil = Date.now() + PENALTY_MS;
         }
         if (attempt < retries) await new Promise(r => setTimeout(r, 350));
       }
@@ -432,18 +401,18 @@
     const key = text.trim();
     if (cache.has(key)) return cache.get(key);
     // Orden dinámico según circuit breaker: no repetir el proveedor que acaba de darnos 429
-    // v0.5.1: clients5 (dict) SIEMPRE primero — gtx está siendo bloqueado por Google en muchas IPs
+    // v0.5.4 RESTAURACIÓN del orden v0.5.0: Google gtx PRIMERO (con reintento), luego clients5, MyMemory y Bing
     const gtxOk = Date.now() >= gtxPenaltyUntil;
     const providers = gtxOk ? [
-      ['google-alt', () => googleDictTranslate(key), RETRIES],
-      ['google',     () => googleTranslate(key),     0],
+      ['google',     () => googleTranslate(key),     RETRIES],
+      ['google-alt', () => googleDictTranslate(key), 0],
       ['mymemory',   () => myMemoryTranslate(key),   0],
       ['bing',       () => bingTranslate(key),       0]
     ] : [
       ['google-alt', () => googleDictTranslate(key), RETRIES],
+      ['google',     () => googleTranslate(key),     0],
       ['mymemory',   () => myMemoryTranslate(key),   0],
-      ['bing',       () => bingTranslate(key),       0],
-      ['google',     () => googleTranslate(key),     0]
+      ['bing',       () => bingTranslate(key),       0]
     ];
     let lastErr;
     for (const [, fn, retries] of providers) {
@@ -578,19 +547,10 @@
             }
             schedulePersistCache();
           } catch (e) {
-            // v0.5.2: split-retry (salvo 429: ahí no se insiste, manda el circuit breaker)
+            // v0.5.4: comportamiento v0.5.0 — el lote que falla cae a la Fase B (cascada por texto)
             lastError = lastError || describeNetError(e);
-            console.debug('[DrCoach Mobile Translate] batch failed → split-retry', e);
-            if (/429/.test(String((e && e.message) || e))) {
-              failedTexts.push(...texts);
-            } else {
-              const salvaged = await retrySplitInto(texts);
-              salvaged.forEach((tr, t) => {
-                if (tr) { cache.set(t, tr); applyTranslation(t, byText.get(t) || []); done++; }
-                else failedTexts.push(t);
-              });
-              schedulePersistCache();
-            }
+            console.debug('[DrCoach Mobile Translate] batch failed', e);
+            failedTexts.push(...texts);
           }
           tick();
         }
@@ -855,16 +815,24 @@
     #drcoach-top-pill {
       position: fixed !important; z-index: 2147483647 !important;
       left: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-      display: flex; gap: 7px; align-items: center;
-      padding: 10px 14px !important; border-radius: 999px !important;
-      background: rgba(15,24,38,.92) !important; border: 1px solid rgba(255,255,255,.18) !important;
-      color: #fff !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important; backdrop-filter: blur(10px);
-      font: 700 12.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
-      cursor: pointer !important; opacity: .95; -webkit-tap-highlight-color: transparent;
+      width: 16px !important; height: 16px !important;
+      min-width: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important;
+      border-radius: 50% !important; display: block !important;
+      background: rgba(15,24,38,.88) !important; border: 2px solid rgba(255,255,255,.55) !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,.35) !important;
+      cursor: grab !important; touch-action: none !important;
+      opacity: .42; transition: opacity .45s ease; -webkit-tap-highlight-color: transparent;
       user-select: none; -webkit-user-select: none;
     }
-    #drcoach-top-pill .dc-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex: 0 0 auto; }
+    #drcoach-top-pill:hover, #drcoach-top-pill:focus-visible, #drcoach-top-pill.dc-active { opacity: 1; }
+    #drcoach-top-pill .dc-dot { display: block; width: 6px; height: 6px; margin: auto; border-radius: 50%; background: #94a3b8; }
+    #drcoach-top-pill[data-state="ok"] .dc-dot { background: #34d399; }
     #drcoach-top-pill[data-state="warn"] .dc-dot { background: #fbbf24; }
+    #drcoach-top-pill[data-state="warn"] { opacity: .85; animation: dcpillpulse 1.8s ease-in-out infinite; }
+    @keyframes dcpillpulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.55) !important; }
+      50% { box-shadow: 0 0 0 8px rgba(251,191,36,0) !important; }
+    }
     #drcoach-mobile-diag {
       position: fixed !important; z-index: 2147483647 !important;
       left: 50% !important; transform: translateX(-50%) !important;
@@ -911,25 +879,92 @@
     if (qbankFresh()) return { state: 'ok', label: 'DC · QBank ' + (qbankCompanionVersion ? 'v' + qbankCompanionVersion + ' ✓' : 'conectado ✓') };
     return { state: 'warn', label: 'DC · QBank sin responder' };
   }
-  // v0.5.3: píldora PERMANENTE en la página de Dr.Coach! (sustituye al badge efímero de 5 s).
-  // Si el gestor deja de inyectar DENTRO del QBank (permiso «Preguntar» revertido, iframes sin permiso),
-  // el fallo ya no es invisible: píldora en ámbar + panel con el arreglo de 1 toque.
+  // v0.5.4: la píldora de la página Dr.Coach! pasa a ser un PUNTO discreto y ARRASTRABLE.
+  // Nada de texto permanente pisando la interfaz: 16 px, semitransparente, movible a cualquier
+  // esquina (posición recordada). Toque = panel de estado; el color del punto dice el estado.
+  const TOP_PILL_POS_KEY = 'drcoach-top-pill-pos';
+  let topPillDragged = false;
+  function applyTopPillPos(x, y) {
+    try {
+      if (!topPill) return;
+      const w = topPill.offsetWidth || 16, h = topPill.offsetHeight || 16;
+      const cx = Math.max(4, Math.min(window.innerWidth - w - 4, x));
+      const cy = Math.max(4, Math.min(window.innerHeight - h - 4, y));
+      topPill.style.setProperty('left', cx + 'px', 'important');
+      topPill.style.setProperty('top', cy + 'px', 'important');
+      topPill.style.setProperty('right', 'auto', 'important');
+      topPill.style.setProperty('bottom', 'auto', 'important');
+    } catch (_) {}
+  }
+  async function restoreTopPillPos() {
+    try {
+      const raw = await gmGetValue(TOP_PILL_POS_KEY, '');
+      if (!raw) return;
+      const p = JSON.parse(raw);
+      if (p && typeof p.x === 'number' && typeof p.y === 'number') applyTopPillPos(p.x, p.y);
+    } catch (_) {}
+  }
   function renderTopPill() {
     try {
       if (!topPill || !topPill.isConnected) {
         topPill = document.createElement('button');
         topPill.type = 'button';
         topPill.id = 'drcoach-top-pill';
-        topPill.setAttribute('aria-label', 'Dr.Coach Companion: estado del QBank. Toca para ver soluciones.');
-        topPill.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); showTopPanel(); }, true);
+        topPill.setAttribute('aria-label', 'Dr.Coach Companion: estado del QBank. Toca para abrir el panel; mantén pulsado y arrastra para moverlo.');
+        topPill.addEventListener('click', e => {
+          e.preventDefault(); e.stopPropagation();
+          if (topPillDragged) { topPillDragged = false; return; }
+          showTopPanel();
+        }, true);
+        // v0.5.4: arrastre libre con puntero (táctil/ratón); toque corto sin movimiento = panel
+        let dragging = false, moved = false, sx = 0, sy = 0;
+        topPill.addEventListener('pointerdown', e => {
+          try {
+            dragging = true; moved = false; sx = e.clientX; sy = e.clientY;
+            topPill.classList.add('dc-active');
+            try { topPill.setPointerCapture(e.pointerId); } catch (_) {}
+          } catch (_) {}
+        }, true);
+        topPill.addEventListener('pointermove', e => {
+          try {
+            if (!dragging) return;
+            const dx = e.clientX - sx, dy = e.clientY - sy;
+            if (!moved && Math.hypot(dx, dy) < 8) return;
+            moved = true;
+            const r = topPill.getBoundingClientRect();
+            applyTopPillPos(r.left + dx, r.top + dy);
+            sx = e.clientX; sy = e.clientY;
+          } catch (_) {}
+        }, true);
+        const endDrag = () => {
+          try {
+            if (!dragging) return;
+            dragging = false;
+            topPill.classList.remove('dc-active');
+            if (moved) {
+              topPillDragged = true;
+              const r = topPill.getBoundingClientRect();
+              gmSetValue(TOP_PILL_POS_KEY, JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) }));
+              setTimeout(() => { topPillDragged = false; }, 350);
+            }
+          } catch (_) {}
+        };
+        topPill.addEventListener('pointerup', endDrag, true);
+        topPill.addEventListener('pointercancel', endDrag, true);
+        const dot = document.createElement('span'); dot.className = 'dc-dot';
+        topPill.appendChild(dot);
         (document.body || document.documentElement).appendChild(topPill);
+        restoreTopPillPos();
+        window.addEventListener('resize', () => {
+          try {
+            const r = topPill.getBoundingClientRect();
+            if (r.left || r.top) applyTopPillPos(r.left, r.top);
+          } catch (_) {}
+        });
       }
       const st = topPillState();
       topPill.dataset.state = st.state;
-      topPill.textContent = '';
-      const dot = document.createElement('span'); dot.className = 'dc-dot';
-      topPill.appendChild(dot);
-      topPill.appendChild(document.createTextNode(st.label));
+      topPill.title = st.label + ' — toca para abrir el panel';
     } catch (_) {}
   }
   function openQBankInTab() {
@@ -1028,7 +1063,7 @@
   }
   function bootDiagnostics() {
     injectStyle(DIAG_STYLE);
-    // píldora permanente = prueba de vida instantánea + estado del QBank en vivo (refresco cada 2 s)
+    // punto discreto arrastrable = estado del QBank en vivo (refresco cada 2 s), sin estorbar la UI
     renderTopPill();
     setInterval(renderTopPill, 2000);
     window.addEventListener('message', ev => {
