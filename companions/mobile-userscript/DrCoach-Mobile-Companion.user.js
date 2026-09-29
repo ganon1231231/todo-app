@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.5.5
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso real. v0.5.4 RESTAURACIÓN: motor EXACTO de la v0.5.0 (Google gtx PRIMERO) y punto de estado discreto arrastrable. v0.5.5: píldora del QBank MUDA (adiós al texto «DC · Español/Original»: estado por color del punto y progreso como anillo ámbar alrededor del disco) y el punto de la página Dr.Coach! SOLO aparece dentro de la vista «Datos» de la app.
+// @version      0.5.6
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso real. v0.5.4 RESTAURACIÓN: motor EXACTO de la v0.5.0 (Google gtx PRIMERO) y punto de estado discreto arrastrable. v0.5.5: píldora del QBank MUDA (adiós al texto «DC · Español/Original»: estado por color del punto y progreso como anillo ámbar alrededor del disco). v0.5.6: la página de Dr.Coach! queda 100 % LIMPIA — sin punto ni píldora permanente (petición del usuario); el panel de estado/arreglo solo aparece SI SOLO SI al pulsar «Español» el QBank no responde.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.5.5';
+  const SCRIPT_VERSION = '0.5.6';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
@@ -830,27 +830,6 @@
   // Vigila el botón «Español» del Workspace: si tras pulsarlo el QBank no responde,
   // muestra un aviso con los pasos exactos para arreglarlo en iPad (permisos, Safari, etc.).
   const DIAG_STYLE = `
-    #drcoach-top-pill {
-      position: fixed !important; z-index: 2147483647 !important;
-      left: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-      width: 16px !important; height: 16px !important;
-      min-width: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important;
-      border-radius: 50% !important; display: block !important;
-      background: rgba(15,24,38,.88) !important; border: 2px solid rgba(255,255,255,.55) !important;
-      box-shadow: 0 2px 10px rgba(0,0,0,.35) !important;
-      cursor: grab !important; touch-action: none !important;
-      opacity: .42; transition: opacity .45s ease; -webkit-tap-highlight-color: transparent;
-      user-select: none; -webkit-user-select: none;
-    }
-    #drcoach-top-pill:hover, #drcoach-top-pill:focus-visible, #drcoach-top-pill.dc-active { opacity: 1; }
-    #drcoach-top-pill .dc-dot { display: block; width: 6px; height: 6px; margin: auto; border-radius: 50%; background: #94a3b8; }
-    #drcoach-top-pill[data-state="ok"] .dc-dot { background: #34d399; }
-    #drcoach-top-pill[data-state="warn"] .dc-dot { background: #fbbf24; }
-    #drcoach-top-pill[data-state="warn"] { opacity: .85; animation: dcpillpulse 1.8s ease-in-out infinite; }
-    @keyframes dcpillpulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.55) !important; }
-      50% { box-shadow: 0 0 0 8px rgba(251,191,36,0) !important; }
-    }
     #drcoach-mobile-diag {
       position: fixed !important; z-index: 2147483647 !important;
       left: 50% !important; transform: translateX(-50%) !important;
@@ -881,7 +860,6 @@
   `;
   let lastSignalAt = 0;
   let qbankCompanionVersion = '';
-  let topPill = null;
   const SIGNAL_FRESH_MS = 15000;
   const QBANK_FALLBACK_URL = 'https://usmle.medicospira.com/s2/auth/login';
 
@@ -896,101 +874,6 @@
     if (!f) return { state: 'idle', label: 'DC · v' + SCRIPT_VERSION };
     if (qbankFresh()) return { state: 'ok', label: 'DC · QBank ' + (qbankCompanionVersion ? 'v' + qbankCompanionVersion + ' ✓' : 'conectado ✓') };
     return { state: 'warn', label: 'DC · QBank sin responder' };
-  }
-  // v0.5.4: la píldora de la página Dr.Coach! pasa a ser un PUNTO discreto y ARRASTRABLE.
-  // Nada de texto permanente pisando la interfaz: 16 px, semitransparente, movible a cualquier
-  // esquina (posición recordada). Toque = panel de estado; el color del punto dice el estado.
-  const TOP_PILL_POS_KEY = 'drcoach-top-pill-pos';
-  let topPillDragged = false;
-  function applyTopPillPos(x, y) {
-    try {
-      if (!topPill) return;
-      const w = topPill.offsetWidth || 16, h = topPill.offsetHeight || 16;
-      const cx = Math.max(4, Math.min(window.innerWidth - w - 4, x));
-      const cy = Math.max(4, Math.min(window.innerHeight - h - 4, y));
-      topPill.style.setProperty('left', cx + 'px', 'important');
-      topPill.style.setProperty('top', cy + 'px', 'important');
-      topPill.style.setProperty('right', 'auto', 'important');
-      topPill.style.setProperty('bottom', 'auto', 'important');
-    } catch (_) {}
-  }
-  async function restoreTopPillPos() {
-    try {
-      const raw = await gmGetValue(TOP_PILL_POS_KEY, '');
-      if (!raw) return;
-      const p = JSON.parse(raw);
-      if (p && typeof p.x === 'number' && typeof p.y === 'number') applyTopPillPos(p.x, p.y);
-    } catch (_) {}
-  }
-  // v0.5.5: el punto solo aparece cuando el usuario está en la vista «Datos» de la app
-  // (sección de estado/backup/cloud — el hogar natural del diagnóstico). Fuera de ahí, cero intrusión.
-  function topDotAllowed() {
-    try { return !!document.querySelector('#view-data.active-view'); } catch (_) { return false; }
-  }
-  function renderTopPill() {
-    try {
-      if (!topPill || !topPill.isConnected) {
-        topPill = document.createElement('button');
-        topPill.type = 'button';
-        topPill.id = 'drcoach-top-pill';
-        topPill.setAttribute('aria-label', 'Dr.Coach Companion: estado del QBank. Toca para abrir el panel; mantén pulsado y arrastra para moverlo.');
-        topPill.addEventListener('click', e => {
-          e.preventDefault(); e.stopPropagation();
-          if (topPillDragged) { topPillDragged = false; return; }
-          showTopPanel();
-        }, true);
-        // v0.5.4: arrastre libre con puntero (táctil/ratón); toque corto sin movimiento = panel
-        let dragging = false, moved = false, sx = 0, sy = 0;
-        topPill.addEventListener('pointerdown', e => {
-          try {
-            dragging = true; moved = false; sx = e.clientX; sy = e.clientY;
-            topPill.classList.add('dc-active');
-            try { topPill.setPointerCapture(e.pointerId); } catch (_) {}
-          } catch (_) {}
-        }, true);
-        topPill.addEventListener('pointermove', e => {
-          try {
-            if (!dragging) return;
-            const dx = e.clientX - sx, dy = e.clientY - sy;
-            if (!moved && Math.hypot(dx, dy) < 8) return;
-            moved = true;
-            const r = topPill.getBoundingClientRect();
-            applyTopPillPos(r.left + dx, r.top + dy);
-            sx = e.clientX; sy = e.clientY;
-          } catch (_) {}
-        }, true);
-        const endDrag = () => {
-          try {
-            if (!dragging) return;
-            dragging = false;
-            topPill.classList.remove('dc-active');
-            if (moved) {
-              topPillDragged = true;
-              const r = topPill.getBoundingClientRect();
-              gmSetValue(TOP_PILL_POS_KEY, JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) }));
-              setTimeout(() => { topPillDragged = false; }, 350);
-            }
-          } catch (_) {}
-        };
-        topPill.addEventListener('pointerup', endDrag, true);
-        topPill.addEventListener('pointercancel', endDrag, true);
-        const dot = document.createElement('span'); dot.className = 'dc-dot';
-        topPill.appendChild(dot);
-        (document.body || document.documentElement).appendChild(topPill);
-        restoreTopPillPos();
-        window.addEventListener('resize', () => {
-          try {
-            const r = topPill.getBoundingClientRect();
-            if (r.left || r.top) applyTopPillPos(r.left, r.top);
-          } catch (_) {}
-        });
-      }
-      const st = topPillState();
-      topPill.dataset.state = st.state;
-      topPill.title = st.label + ' — toca para abrir el panel';
-      // v0.5.5: visible SOLO en la vista Datos de la app
-      topPill.style.setProperty('display', topDotAllowed() ? 'block' : 'none', 'important');
-    } catch (_) {}
   }
   function openQBankInTab() {
     let url = '';
@@ -1088,17 +971,8 @@
   }
   function bootDiagnostics() {
     injectStyle(DIAG_STYLE);
-    // punto discreto arrastrable = estado del QBank en vivo (refresco cada 2 s), sin estorbar la UI
-    renderTopPill();
-    setInterval(renderTopPill, 2000);
-    // v0.5.5: respuesta instantánea al cambiar de vista (la app marca la activa con .active-view)
-    try {
-      let visTimer = null;
-      new MutationObserver(() => {
-        clearTimeout(visTimer);
-        visTimer = setTimeout(renderTopPill, 120);
-      }).observe(document.body || document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] });
-    } catch (_) {}
+    // v0.5.6: SIN píldora permanente (petición del usuario) — la página de Dr.Coach! queda 100 % limpia.
+    // El panel de estado solo se abre SOLO si al pulsar «Español» el QBank no responde (red de seguridad).
     window.addEventListener('message', ev => {
       try {
         const d = ev && ev.data;
@@ -1126,7 +1000,8 @@
       window.__dcMobileProbe = {
         get lastSignalAt() { return lastSignalAt; },
         get qbankCompanionVersion() { return qbankCompanionVersion; },
-        get state() { return topPillState().state; }
+        get state() { return topPillState().state; },
+        openPanel() { showTopPanel(); }
       };
     } catch (_) {}
   }

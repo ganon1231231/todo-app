@@ -1,5 +1,14 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.4.4 · Userscript v0.5.6: página de Dr.Coach! 100 % LIMPIA — sin punto ni píldora permanente (petición del usuario)
+
+- **Reporte real del usuario**: «Aun sigue la píldora presente. Ese punto verde no lo quiero ver, en ninguna parte de la pantalla, me agobia. Por favor solo quítalo».
+- **Eliminado por completo el punto de estado de la página Dr.Coach!** (el de 16 px que aparecía en «Datos»): fuera de la pantalla para siempre — no se crea, no se renderiza, sin CSS, sin intervalos ni observadores asociados (−6 KB de código). La página queda exactamente como si el Companion no estuviera ahí.
+- **Red de seguridad invisible conservada**: si al pulsar «Español» en el Workspace el QBank no responde en 4 s, el panel de estado/arreglo (1 toque: «Abrir QBank en pestaña propia», pasos del permiso, «Copiar informe») se abre SOLO — solo cuando hay un problema real, nunca en el día a día. El handshake con el QBank sigue funcionando en segundo plano (es invisible) y `window.__dcMobileProbe.openPanel()` queda expuesto para depuración futura.
+- **La píldora del QBank NO se toca** (es el botón de traducción: círculo mudo, gris=Original / ámbar=Español / anillo=progreso) — el usuario no la mencionó y sin ella no hay traducción manual.
+- **App**: APP_VERSION **3.4.4**, SW `drcoach-3.4.4-release`, `COMPANION_VERSION` esperada **0.5.6**.
+- **QA**: `node --check` OK · 0 referencias residuales al punto (grep) · harness Dr.Coach!: `#drcoach-top-pill` NO existe ni en Hoy ni en Datos ni tras recargar ✓ · pulsar «Español» sin QBank → panel automático a los 4 s ✓ · READY del iframe → probe.state ok sin UI ✓ · harness Medicospira: píldora circular muda intacta, traducción real «Chest pain»→«Dolor en el pecho» ✓ · 0 errores de página.
+
 ## v3.4.3 · Userscript v0.5.5: píldora del QBank MUDA (sin «DC · Español/Original») + punto de estado solo en la vista «Datos»
 
 - **Confirmación del usuario**: «borré caché en la app Userscripts (suele borrar todos los scripts y empezar otra vez)… eso solucionó todo, ya no hay inconvenientes con el traductor». La restauración v0.5.4 del motor quedó confirmada en el dispositivo real. Cerrado el caso de la traducción.
