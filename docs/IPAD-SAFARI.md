@@ -2,7 +2,7 @@
 
 **Sí, se puede.** Safari en iPadOS no admite Tampermonkey directamente, pero hay tres formas de ejecutar userscripts que dejan el flujo igual al de tu PC/Mac: el botón **«Español / Original»** del Workspace traduce el QBank dentro del iframe, y al seleccionar texto aparece la barrita **«Copiar / → Stem»**.
 
-El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.5.4, multi-gestor, motor v0.5.0 restaurado + punto de estado discreto y arrastrable en la página de Dr.Coach!).
+El userscript es el mismo para todos los casos: [`companions/mobile-userscript/DrCoach-Mobile-Companion.user.js`](https://ganon1231231.github.io/todo-app/companions/mobile-userscript/DrCoach-Mobile-Companion.user.js) (v0.5.5, multi-gestor, motor v0.5.0 restaurado; píldora del QBank muda (estado por color, progreso como anillo) y punto de estado SOLO en la vista Datos).
 
 ---
 
@@ -15,8 +15,8 @@ Este es el caso «el badge aparece, la píldora no». Qué significa cada señal
 
 La píldora de la página de Dr.Coach! muestra el estado del QBank en vivo:
 
-- **«DC · v0.5.4»** (punto verde) — inyección viva; sin QBank en pantalla todavía.
-- **«DC · QBank v0.5.4 ✓»** (punto verde) — el Companion dentro del QBank responde: todo conectado, el botón «Español» del Workspace funciona.
+- Punto verde en la vista «Datos» — inyección viva; sin QBank en pantalla todavía.
+- Punto verde en «Datos» + QBank conectado — el Companion dentro del QBank responde: todo conectado, el botón «Español» del Workspace funciona.
 - **«DC · QBank sin responder»** (punto ámbar) — el QBank está en pantalla pero no llega señal: el gestor no inyecta dentro del iframe. **Tócala** y el panel te da el arreglo:
 
   1. **Arreglo inmediato (1 toque, siempre funciona)**: **«↗ Abrir QBank en pestaña propia»** — abre la MISMA página de Medicospira como pestaña principal, donde el gestor SÍ inyecta; busca la píldora DC abajo a la derecha y tócala para traducir.
@@ -42,7 +42,7 @@ Si actualizaste y la píldora sigue mostrando la versión vieja (o el script «n
 
 1. Abre la app **Userscripts** → pestaña de scripts instalados → **borra** «Dr.Coach! Mobile Companion» (desliza / botón borrar).
 2. Cierra la pestaña de Dr.Coach!/Medicospira en Safari (para descargar la pestaña con el script viejo en memoria).
-3. Abre en Safari el enlace de instalación de arriba → la app ofrece **instalar de nuevo** → acepta y comprueba que dice **v0.5.4**.
+3. Abre en Safari el enlace de instalación de arriba → la app ofrece **instalar de nuevo** → acepta y comprueba que dice **v0.5.5**.
 4. Ajustes → Safari → Extensiones → Userscripts sigue en **«Todos los sitios web» → Permitir**.
 5. Recarga la página 1-2 veces → dentro del QBank debe aparecer la píldora **«DC · Español»**.
 

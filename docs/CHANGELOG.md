@@ -1,5 +1,15 @@
 # Dr.Coach! — Registro de cambios
 
+## v3.4.3 · Userscript v0.5.5: píldora del QBank MUDA (sin «DC · Español/Original») + punto de estado solo en la vista «Datos»
+
+- **Confirmación del usuario**: «borré caché en la app Userscripts (suele borrar todos los scripts y empezar otra vez)… eso solucionó todo, ya no hay inconvenientes con el traductor». La restauración v0.5.4 del motor quedó confirmada en el dispositivo real. Cerrado el caso de la traducción.
+- **Pedidos del usuario (estética)**: (1) que la píldora de la página Dr.Coach! solo aparezca si entra en «Apariencia» o «Datos» — a mi elección; (2) quitar el texto «DC · Español / DC · Original» de la píldora del QBank porque le molesta.
+- **Elección: «Datos»** — es la sección de estado/backup/cloud (donde ya viven el estado de sync y la versión de la app), el hogar natural del diagnóstico. En el Workspace y el resto de la app el punto ya no existe: cero intrusión mientras se estudia/traduce.
+- **Punto top contextual (v0.5.5)**: visible SOLO cuando existe `#view-data.active-view` en la app; reacción instantánea a cambios de vista (MutationObserver sobre clases + refresco de 2 s). Todo lo demás igual: arrastrable, posición recordada, toque = panel de estado, ámbar pulsante solo si el QBank no responde.
+- **Píldora del QBank muda**: se elimina el texto «DC · Español/Original» (y el de progreso). Estado ahora 100 % visual: **punto gris = Original, punto ámbar = Español, punto rojo = error**, y el **progreso es un ANILLO ámbar** que llena el círculo (conic-gradient, sin texto). Tooltip y aria-label conservan la información completa (accesibilidad intacta). Tamaño compacto 34 px; toque = alternar idioma; pulsación larga = diagnóstico de proveedores (intacto).
+- **App**: APP_VERSION **3.4.3**, SW `drcoach-3.4.3-release`, `COMPANION_VERSION` esperada **0.5.5**.
+- **QA**: `node --check` OK · harness Medicospira: píldora 34 px circular SIN texto, anillo de progreso varía durante la traducción y vuelve a 0 %, traducción real «Chest pain»→«Dolor en el pecho» (motor golden intacto) ✓ · harness Dr.Coach!: punto oculto en vista Hoy, visible al activar `#view-data.active-view`, oculto al salir ✓ · panel/toque/arrastre sin regresiones ✓ · 0 errores de página.
+
 ## v3.4.2 · Userscript v0.5.4: RESTAURACIÓN del motor v0.5.0 (la era que traducía todo y rápido) + píldora discreta arrastrable
 
 - **Reporte real del usuario**: «¿de qué me sirve la pastilla (que está horrible, interfiriendo con mi UI, no me gusta) si al final no funciona nada. No traduce. Después de lo del Study Board con paleta de colores y el sync, todo se jodió. Podía traducir TODO y rápido y ahora no puedo nada. Soluciónalo».

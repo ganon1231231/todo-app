@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Dr.Coach! Mobile Companion — Copy + Translate
 // @namespace    drcoach.mobile
-// @version      0.5.4
-// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso real en la píldora. v0.5.4 RESTAURACIÓN: vuelve el motor EXACTO de la v0.5.0 (la era que traducía todo y rápido en el iPad) — Google gtx PRIMERO en lotes y por-texto, sin penalizaciones experimentales ni split-retry; y la píldora de la página Dr.Coach! se convierte en un punto discreto ARRASTRABLE (toca = panel de estado; ya no estorba la interfaz).
+// @version      0.5.5
+// @description  Traducción Español/Original de Medicospira y copia/selección desbloqueada — dentro del iframe del Workspace de Dr.Coach! o en pestaña propia. Multi-gestor: Tampermonkey/Violentmonkey/Stay y Userscripts (Safari iOS/iPadOS). Motor por lotes: ~25 textos por petición (hasta ~10× más rápido) + caché persistente + progreso real. v0.5.4 RESTAURACIÓN: motor EXACTO de la v0.5.0 (Google gtx PRIMERO) y punto de estado discreto arrastrable. v0.5.5: píldora del QBank MUDA (adiós al texto «DC · Español/Original»: estado por color del punto y progreso como anillo ámbar alrededor del disco) y el punto de la página Dr.Coach! SOLO aparece dentro de la vista «Datos» de la app.
 // @match        *://*.medicospira.com/*
 // @match        https://ganon1231231.github.io/todo-app/*
 // @run-at       document-start
@@ -80,7 +80,7 @@
   }
 
   const LANG_KEY = 'drcoach-mobile-language';
-  const SCRIPT_VERSION = '0.5.4';
+  const SCRIPT_VERSION = '0.5.5';
   const TARGET_LANG = 'es';
   const GOOGLE_URL = 'https://translate.googleapis.com/translate_a/single';
   // v0.5.0: motor por lotes — 1 petición traduce ~25 textos (antes: 1 petición POR nodo = lentísimo)
@@ -168,15 +168,22 @@
     #drcoach-mobile-pill {
       position: fixed !important; z-index: 2147483647 !important;
       right: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-      display: flex; gap: 7px; align-items: center;
-      padding: 10px 14px !important; border-radius: 999px !important;
-      background: rgba(15,24,38,.92) !important; border: 1px solid rgba(255,255,255,.18) !important;
-      color: #fff !important; box-shadow: 0 10px 24px rgba(0,0,0,.30) !important; backdrop-filter: blur(10px);
-      font: 700 12.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
-      cursor: pointer !important; opacity: .93; -webkit-tap-highlight-color: transparent;
+      width: 34px !important; height: 34px !important;
+      min-width: 0 !important; padding: 0 !important; margin: 0 !important;
+      border-radius: 50% !important; display: block !important;
+      /* v0.5.5: sin texto «DC · Español/Original» — anillo de progreso alrededor del disco */
+      background: conic-gradient(#fbbf24 var(--dc-prog, 0%), rgba(15,24,38,.92) 0) !important;
+      border: 1px solid rgba(255,255,255,.20) !important;
+      box-shadow: 0 6px 16px rgba(0,0,0,.28) !important;
+      cursor: pointer !important; opacity: .88; transition: opacity .3s ease; -webkit-tap-highlight-color: transparent;
       user-select: none; -webkit-user-select: none;
     }
-    #drcoach-mobile-pill .dc-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex: 0 0 auto; }
+    #drcoach-mobile-pill:hover, #drcoach-mobile-pill:focus-visible, #drcoach-mobile-pill.dc-active { opacity: 1; }
+    #drcoach-mobile-pill::before {
+      content: ''; position: absolute; inset: 3px; border-radius: 50%;
+      background: rgba(15,24,38,.96);
+    }
+    #drcoach-mobile-pill .dc-dot { position: relative; display: block; width: 8px; height: 8px; margin: auto; border-radius: 50%; background: #94a3b8; }
     #drcoach-mobile-pill[data-lang="es"] .dc-dot { background: #fbbf24; }
     #drcoach-mobile-hello {
       position: fixed !important; z-index: 2147483647 !important;
@@ -756,11 +763,22 @@
       const target = currentLanguage === 'es' ? 'Original' : 'Español';
       p.dataset.lang = currentLanguage;
       if (lastError) p.dataset.err = '1'; else p.removeAttribute('data-err');
+      // v0.5.5: píldora MUDA (el usuario la pidió sin «DC · Español/Original»):
+      // estado por COLOR del punto (gris=Original, ámbar=Español, rojo=error) y
+      // progreso como ANILLO ámbar alrededor del disco (conic-gradient).
       p.textContent = '';
       const dot = document.createElement('span'); dot.className = 'dc-dot';
       p.appendChild(dot);
-      p.appendChild(document.createTextNode(progress ? 'DC · ' + progress : 'DC · ' + target));
-      p.title = lastError ? ('Último error: ' + lastError + ' — mantén pulsada la píldora para diagnóstico') : 'Mantén pulsada la píldora para diagnóstico del traductor';
+      const m = progress && /^(\d+)\/(\d+)$/.exec(progress);
+      p.style.setProperty('--dc-prog', m ? Math.round(100 * (+m[1] / +m[2])) + '%' : '0%');
+      p.title = (lastError ? ('Último error: ' + lastError + ' — ') : '') +
+        'Toca: traducir ' + (currentLanguage === 'es' ? 'al Original' : 'a Español') +
+        ' · Estado: ' + (currentLanguage === 'es' ? 'Español' : 'Original') +
+        (progress ? ' · Progreso: ' + progress : '') +
+        ' · Mantén pulsada: diagnóstico';
+      p.setAttribute('aria-label', 'Dr.Coach Companion: alternar traducción. Punto ' +
+        (lastError ? 'rojo (error)' : (currentLanguage === 'es' ? 'ámbar (Español)' : 'gris (Original)')) +
+        '. Mantener pulsada: diagnóstico del traductor.');
       p.setAttribute('aria-pressed', currentLanguage === 'es' ? 'true' : 'false');
     } catch (_) {}
   }
@@ -904,6 +922,11 @@
       if (p && typeof p.x === 'number' && typeof p.y === 'number') applyTopPillPos(p.x, p.y);
     } catch (_) {}
   }
+  // v0.5.5: el punto solo aparece cuando el usuario está en la vista «Datos» de la app
+  // (sección de estado/backup/cloud — el hogar natural del diagnóstico). Fuera de ahí, cero intrusión.
+  function topDotAllowed() {
+    try { return !!document.querySelector('#view-data.active-view'); } catch (_) { return false; }
+  }
   function renderTopPill() {
     try {
       if (!topPill || !topPill.isConnected) {
@@ -965,6 +988,8 @@
       const st = topPillState();
       topPill.dataset.state = st.state;
       topPill.title = st.label + ' — toca para abrir el panel';
+      // v0.5.5: visible SOLO en la vista Datos de la app
+      topPill.style.setProperty('display', topDotAllowed() ? 'block' : 'none', 'important');
     } catch (_) {}
   }
   function openQBankInTab() {
@@ -1066,6 +1091,14 @@
     // punto discreto arrastrable = estado del QBank en vivo (refresco cada 2 s), sin estorbar la UI
     renderTopPill();
     setInterval(renderTopPill, 2000);
+    // v0.5.5: respuesta instantánea al cambiar de vista (la app marca la activa con .active-view)
+    try {
+      let visTimer = null;
+      new MutationObserver(() => {
+        clearTimeout(visTimer);
+        visTimer = setTimeout(renderTopPill, 120);
+      }).observe(document.body || document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    } catch (_) {}
     window.addEventListener('message', ev => {
       try {
         const d = ev && ev.data;
