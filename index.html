@@ -78,7 +78,7 @@
         <button class="nav-item" data-view="session"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg></span><b>Sesión</b></button>
         <button class="nav-item" data-view="workspace"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M7 8h4M7 11h7"/></svg></span><b>Workspace</b></button>
         <button class="nav-item" data-view="qbank"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 4v16"/></svg></span><b>QBank</b></button>
-        <button class="nav-item" data-view="review"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.2 9A7 7 0 0 0 6.1 7.1L4 10M5.8 15A7 7 0 0 0 17.9 16.9L20 14"/></svg></span><b>Review</b><em id="reviewBadge" class="badge hidden">0</em></button>
+        <button class="nav-item" data-view="review"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.2 9A7 7 0 0 0 6.1 7.1L4 10M5.8 15A7 7 0 0 0 17.9 16.9L20 14"/></svg></span><b>Repaso</b><em id="reviewBadge" class="badge hidden">0</em></button>
         <button class="nav-item" data-view="analytics"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9m5 9V5m5 13v-7m5 7V3"/></svg></span><b>Analytics</b></button>
         <button class="nav-item" data-view="history"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></span><b>Historial</b></button>
         <button class="nav-item" data-view="data"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16m0 0-3-3m3 3 3-3M16 20V4m0 0-3 3m3-3 3 3"/></svg></span><b>Datos</b></button>
@@ -124,8 +124,8 @@
           </div>
 
           <article id="learningHome" class="card learning-home">
-            <div><p class="eyebrow">TU ESPACIO DE REPASO</p><h2 id="learningGreeting">Una idea a la vez</h2><p id="learningHomeStatus" class="muted">Preparando tu repaso…</p><p id="learningTodayEvidence" class="muted compact"></p></div>
-            <div class="button-row"><button type="button" id="learningHomeStart" class="btn btn-primary" disabled>Repaso de hoy</button><button type="button" id="learningHomeSetup" class="btn btn-secondary">Mis objetivos</button></div>
+            <div><p class="eyebrow">TU CAMINO DE REPASO</p><h2 id="learningGreeting">¿Qué quieres recordar hoy?</h2><p id="learningHomeStatus" class="muted">Preparando tu repaso…</p><p id="learningTodayEvidence" class="muted compact"></p></div>
+            <div class="button-row"><button type="button" id="learningHomeStart" class="btn btn-primary" disabled>Empezar repaso</button><button type="button" id="learningHomeSetup" class="btn btn-secondary">Elegir qué estudiar</button></div>
           </article>
 
           <div class="motivation-grid">
@@ -354,20 +354,26 @@
         </section>
 
         <section id="view-review" class="view">
-          <div class="page-title-row"><div><p class="eyebrow">STUDY LIBRARY</p><h1>Review</h1><p class="muted">Todo lo que has visto, en un solo lugar: correctas, incorrectas, dudas, omitidas y material ya dominado.</p></div></div>
-          <article id="learningPanel" class="card learning-panel">
-            <div class="section-head"><div><p class="eyebrow">REPASO DE HOY</p><h2>Mi entrenamiento</h2><p class="muted compact">Recuerda, conecta y contrasta. Una sesión breve, a tu ritmo.</p></div><button type="button" id="learningCreate" class="btn btn-secondary">+ Objetivo propio</button></div>
-            <div class="learning-preferences">
-              <label>Cómo te llamamos<input id="learningName" class="input" maxlength="60" placeholder="Tu nombre (opcional)" autocomplete="given-name" /></label>
-              <label>Tiempo disponible<select id="learningMinutes" class="select"><option value="5">Un momento · 5 min</option><option value="10" selected>Una pausa · 10 min</option><option value="20">Con calma · 20 min</option></select></label>
-              <label>Cómo practicar<select id="learningMode" class="select"><option value="mixed">Variar los ejercicios</option><option value="recall">Solo recuerdo libre</option></select></label>
-              <label>Tema<select id="learningTopic" class="select"><option value="">Todos mis temas</option></select></label>
+          <div class="page-title-row"><div><p class="eyebrow">TU BIBLIOTECA DE ESTUDIO</p><h1>Repaso</h1><p class="muted">Un espacio para volver a lo que te cuesta, convertirlo en una ruta clara y recordarlo sin aburrirte.</p></div></div>
+          <article id="learningPanel" class="card learning-panel learning-hub">
+            <div class="learning-hub-head"><div><p class="eyebrow">REPASO INTELIGENTE</p><h2>¿Qué quieres dominar hoy?</h2><p class="muted compact">Tú eliges el tema. Dr.Coach adapta el ritmo y la dificultad según lo que recuerdes.</p></div><span id="learningPersonalizedStatus" class="learning-status-chip">A tu ritmo</span></div>
+            <div class="learning-path-grid" role="tablist" aria-label="Forma de elegir el repaso">
+              <button type="button" class="learning-path active" data-learning-path="today" role="tab"><strong>Hoy</strong><span id="learningDueCount">0 ideas</span><small>Lo que ya toca recordar</small></button>
+              <button type="button" class="learning-path" data-learning-path="difficulties" role="tab"><strong>Mis dificultades</strong><span id="learningDifficultyCount">0 preguntas</span><small>Lo que te hizo dudar</small></button>
+              <button type="button" class="learning-path" data-learning-path="routes" role="tab"><strong>Mis temas</strong><span id="learningRouteCount">0 temas</span><small>Tus rutas y tarjetas</small></button>
             </div>
-            <div class="button-row"><button type="button" id="learningStart" class="btn btn-primary" disabled>Comenzar sesión</button><button type="button" id="learningExamples" class="btn btn-secondary">Probar con ejemplos de EM</button></div>
+            <p id="learningPathHint" class="learning-path-hint">Empieza por una idea pendiente y comprueba si todavía puedes explicarla.</p>
+            <div class="learning-preferences learning-controls">
+              <label class="learning-name-field">Cómo te llamamos<input id="learningName" class="input" maxlength="60" placeholder="Tu nombre (opcional)" autocomplete="given-name" /></label>
+              <label>Tiempo<select id="learningMinutes" class="select"><option value="5">5 minutos</option><option value="10" selected>10 minutos</option><option value="20">20 minutos</option></select></label>
+              <label>Formato<select id="learningMode" class="select"><option value="mixed">Variar ejercicios</option><option value="recall">Solo recuerdo libre</option></select></label>
+              <label>Quiero practicar<select id="learningTopic" class="select"><option value="">Todos mis temas</option></select></label>
+            </div>
+            <div class="learning-hub-actions"><button type="button" id="learningStart" class="btn btn-primary" disabled>Empezar repaso</button><button type="button" id="learningCreate" class="btn btn-secondary">Crear un tema</button></div>
             <p id="learningStorageNote" class="muted compact"></p>
             <div id="learningUnits" class="learning-units"></div>
           </article>
-          <div class="section-head"><div><h2>Biblioteca de preguntas</h2><p class="muted compact">Tus registros, notas y evidencias originales.</p></div></div>
+          <div class="section-head"><div><h2>Tus preguntas y notas</h2><p class="muted compact">Vuelve a tus errores, dudas, aciertos y material guardado.</p></div></div>
           <div class="card review-filter-card">
             <div class="review-filters">
               <select id="reviewSubjectFilter" class="select"><option value="">Todas las materias</option></select>
@@ -683,18 +689,18 @@
 
   <dialog id="learningUnitDialog" class="modal learning-modal" aria-labelledby="learningEditorTitle">
     <form id="learningUnitForm" class="modal-card learning-session-card">
-      <div class="section-head"><div><p class="eyebrow">MIS OBJETIVOS</p><h2 id="learningEditorTitle">Crear un objetivo propio</h2></div><button type="button" id="learningCloseEditor" class="icon-btn" aria-label="Cerrar editor">×</button></div>
-      <p class="muted compact">Redacta una pregunta y una referencia con tus palabras. Usa material propio o que tengas autorización para reutilizar.</p>
+      <div class="section-head"><div><p class="eyebrow">NUEVO TEMA DE REPASO</p><h2 id="learningEditorTitle">Crear una tarjeta de estudio</h2></div><button type="button" id="learningCloseEditor" class="icon-btn" aria-label="Cerrar editor">×</button></div>
+      <p class="muted compact">Escribe lo que quieres poder explicar. Dr.Coach lo convertirá en una práctica breve de recuerdo activo.</p>
       <div class="learning-editor-fields">
         <label>Tema<input id="learningUnitTopic" class="input" maxlength="160" required placeholder="Ej.: Esclerosis múltiple" /></label>
-        <label>Qué quiero aprender<input id="learningUnitTitle" class="input" maxlength="160" required placeholder="Ej.: Explicar dónde ocurre" /></label>
+        <label>Qué quieres poder explicar<input id="learningUnitTitle" class="input" maxlength="160" required placeholder="Ej.: Explicar dónde ocurre" /></label>
         <label>Pregunta de recuerdo<textarea id="learningUnitPrompt" class="textarea" maxlength="5000" rows="2" required></textarea></label>
         <label>Respuesta de referencia<textarea id="learningUnitAnswer" class="textarea" maxlength="5000" rows="3" required></textarea></label>
         <label>Pista opcional<input id="learningUnitHint" class="input" maxlength="5000" /></label>
         <details><summary>Ejercicios adicionales (opcionales)</summary><label>Pregunta para contrastar conceptos<textarea id="learningUnitContrast" class="textarea" maxlength="5000" rows="2" placeholder="¿Qué diferencia A de B y por qué? La referencia debe explicar ambos."></textarea></label><label>Secuencia correcta: un paso por línea<textarea id="learningUnitSequence" class="textarea" maxlength="2500" rows="4" placeholder="Entre 2 y 8 pasos distintos, hasta 300 caracteres por paso."></textarea></label></details>
         <label>Fuente o referencia<input id="learningUnitSource" class="input" maxlength="5000" placeholder="Título, capítulo o enlace a la fuente" /></label>
       </div>
-      <p id="learningEditorError" class="info-box" role="alert" hidden></p><button type="submit" class="btn btn-primary">Guardar objetivo</button>
+      <p id="learningEditorError" class="info-box" role="alert" hidden></p><button type="submit" class="btn btn-primary">Guardar tema</button>
     </form>
   </dialog>
 

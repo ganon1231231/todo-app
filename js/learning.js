@@ -2,11 +2,11 @@
 (()=>{
   'use strict';
   const E=window.DrCoachLearningEngine,Store=window.DrCoachLearningStore;
-  const $=id=>document.getElementById(id);
+  const $=id=>document.getElementById(id),$$=selector=>[...document.querySelectorAll(selector)];
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const labels={new:'Por descubrir',reinforce:'Reforzar',effort:'Recordado con esfuerzo',remembered:'Recordado · prueba diferida pendiente'};
   const modes={recall:'Recuerdo libre',contrast:'Contraste de conceptos',sequence:'Reconstruir una secuencia'};
-  let scope,profile,options={},chain=Promise.resolve(),draftTimer,draft=null,busy=false,editorContext={};
+  let scope,profile,options={},chain=Promise.resolve(),draftTimer,draft=null,busy=false,editorContext={},selectedPath='today';
   const sameSession=(data,id,index)=>{if(!data.active||data.active.id!==id||data.active.index!==index)throw new Error('La sesión cambió en otra pestaña. Cierra y vuelve a abrir el repaso.');return data.active;};
   function message(error){options.toast?.(error?.message||'No se pudo guardar el entrenamiento.');}
   function mutate(fn){
@@ -42,28 +42,45 @@
     const today=profile.events.filter(e=>new Date(e.at).toDateString()===day);
     return {due:E.queue(profile,{time:now}).length,recalls:today.filter(e=>e.mode!=='sequence'&&!e.hint&&e.rating!=='again').length,practice:today.length};
   }
+  function reviewSummary(){
+    try{return options.reviewProvider?.()||{pending:0,total:0};}catch(_){return {pending:0,total:0};}
+  }
+  function pathText(path,due,difficulties,routes){
+    if(path==='difficulties')return difficulties?`Tienes ${difficulties} pregunta${difficulties===1?'':'s'} que merece una segunda mirada. Abre una y pulsa «Entrenar dificultad» para convertirla en una práctica tuya.`:'Todavía no hay dificultades registradas. Cuando dudes en una pregunta, aparecerá aquí.';
+    if(path==='routes')return routes?`Tienes ${routes} tema${routes===1?'':'s'} creado${routes===1?'':'s'}. Puedes practicarlo por partes y subir de nivel con el tiempo.`:'Crea un tema con tus propias palabras. No hay contenido impuesto ni ejemplos precargados.';
+    return due?`${due} idea${due===1?'':'s'} lista${due===1?'':'s'} para recordar hoy. Empieza por una y deja que el repaso haga el resto.`:'No tienes ideas pendientes. Puedes crear un tema nuevo o volver a tus preguntas difíciles.';
+  }
+  function renderUnitCards(units,mode){
+    if(!units.length)return '<div class="learning-empty"><span class="learning-empty-icon">✦</span><strong>'+escape(mode==='routes'?'Todavía no tienes temas propios':'No hay ideas para este momento')+'</strong><p>'+escape(mode==='routes'?'Escribe un tema que quieras poder explicar y conviértelo en una ruta de recuerdo.':'Cuando tengas una dificultad o un tema pendiente, aparecerá aquí.')+'</p></div>';
+    const groups=new Map();units.forEach(unit=>{const key=unit.topic||'Sin tema';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(unit);});
+    return [...groups.entries()].map(([topic,items])=>`<section class="learning-route"><div class="learning-route-head"><div><span class="learning-route-dot"></span><strong>${escape(topic)}</strong></div><span class="muted compact">${items.length} idea${items.length===1?'':'s'}</span></div><div class="learning-route-items">${items.map(unit=>{const memory=E.memory(profile,unit.id),status=labels[memory.status]||'Por descubrir';return `<article class="learning-unit"><div><h3>${escape(unit.title)}</h3><p class="muted compact">${escape(status)}${memory.due?` · ${escape(new Date(memory.due).toLocaleDateString('es-PA',{day:'numeric',month:'short'}))}`:''}</p></div><button type="button" class="btn btn-secondary btn-small" data-learning-edit="${escape(unit.id)}">Editar</button></article>`}).join('')}</div></section>`).join('');
+  }
   function render(){
     if(!profile)return;
-    const {due,recalls,practice}=stats(),name=profile.preferences.name.trim();
-    $('learningGreeting').textContent=name?`${name}, una idea a la vez`:'Una idea a la vez';
-    $('learningHomeStatus').textContent=profile.active?'Tu sesión está guardada. Continúa cuando te venga bien.':!profile.units.length?'Prepara un objetivo propio o prueba una sesión con ejemplos.':due?`${due} objetivos disponibles · elige una sesión breve, sin cronómetro.`:'Tus objetivos tienen su próximo repaso programado. Puedes añadir uno nuevo.';
-    $('learningHomeStart').textContent=profile.active?'Continuar mi repaso':'Repaso de hoy';
+    const {due,recalls,practice}=stats(),name=profile.preferences.name.trim(),review=reviewSummary(),routes=new Set(profile.units.map(u=>u.topic).filter(Boolean)).size;
+    $('learningGreeting').textContent=name?`${name}, ¿qué quieres recordar hoy?`:'¿Qué quieres recordar hoy?';
+    $('learningHomeStatus').textContent=profile.active?'Tienes un repaso guardado. Puedes continuar cuando quieras.':!profile.units.length?'Elige un tema propio y conviértelo en una ruta de recuerdo.':due?`${due} idea${due===1?'':'s'} lista${due===1?'':'s'} para practicar hoy.`:'Por hoy estás al día. Puedes explorar tus temas o volver a tus dificultades.';
+    $('learningHomeStart').textContent=profile.active?'Continuar repaso':'Empezar repaso';
     $('learningHomeStart').disabled=!profile.active&&!due;
-    $('learningTodayEvidence').textContent=practice?`${practice} actividades hoy · ${recalls} recuerdos sin pistas`:'Tu progreso de recuerdo se registra separado del QBank.';
+    $('learningTodayEvidence').textContent=practice?`${practice} práctica${practice===1?'':'s'} hoy · ${recalls} recuerdo${recalls===1?'':'s'} sin pistas`:'Tu progreso de recuerdo se guarda separado del QBank.';
+    $('learningPersonalizedStatus').textContent=profile.active?'Repaso en pausa':routes?`${routes} tema${routes===1?'':'s'} tuyos`:'Sin contenido impuesto';
+    $('learningDueCount').textContent=`${due} idea${due===1?'':'s'}`;
+    $('learningDifficultyCount').textContent=`${review.pending||0} pregunta${review.pending===1?'':'s'}`;
+    $('learningRouteCount').textContent=`${routes} tema${routes===1?'':'s'}`;
+    $$('[data-learning-path]').forEach(button=>{const active=button.dataset.learningPath===selectedPath;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
+    $('learningPathHint').textContent=pathText(selectedPath,due,review.pending||0,routes);
     $('learningName').value=profile.preferences.name;
     $('learningMinutes').value=String(profile.preferences.minutes);
     $('learningMode').value=profile.preferences.mode;
     const topic=$('learningTopic').value;
     $('learningTopic').innerHTML='<option value="">Todos mis temas</option>'+[...new Set(profile.units.map(u=>u.topic))].sort().map(t=>`<option value="${escape(t)}">${escape(t)}</option>`).join('');
     if([...$('learningTopic').options].some(o=>o.value===topic))$('learningTopic').value=topic;
-    $('learningStart').textContent=profile.active?'Continuar sesión':'Comenzar sesión';
+    $('learningStart').textContent=profile.active?'Continuar repaso':selectedPath==='today'?'Empezar repaso':'Practicar mis temas';
     $('learningStart').disabled=!profile.active&&!E.queue(profile,{topic:$('learningTopic').value}).length;
-    $('learningStorageNote').textContent=scope==='local'?'Entrenamiento guardado en este dispositivo · incluye tus objetivos en el backup.':'Entrenamiento local de esta cuenta · incluido en backups; la sincronización del nuevo módulo llegará después.';
-    const units=profile.units.filter(u=>!$('learningTopic').value||u.topic===$('learningTopic').value);
-    $('learningUnits').innerHTML=units.length?units.map(unit=>{
-      const memory=E.memory(profile,unit.id),dueLabel=memory.due?new Date(memory.due).toLocaleString('es-PA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Primera práctica';
-      return `<article class="learning-unit"><div><p class="eyebrow">${escape(unit.topic)}${unit.example?' · ejemplo educativo':''}</p><h3>${escape(unit.title)}</h3><p class="muted compact">${escape(labels[memory.status])}${memory.recognitions&&!memory.recalls?' · recuperación abierta pendiente':''}</p><p class="muted compact">${escape(dueLabel)}</p></div><button type="button" class="btn btn-secondary btn-small" data-learning-edit="${escape(unit.id)}">Editar objetivo</button></article>`;
-    }).join(''):'<div class="info-box">Empieza con una pregunta que quieras poder responder sin ayuda. La referencia será tu material de estudio; podrás corregirla cuando lo necesites.</div>';
+    $('learningStorageNote').textContent=scope==='local'?'Se guarda en este dispositivo y se incluye en tus backups.':'Se guarda en tu perfil y en tus backups.';
+    let units=profile.units.filter(u=>!$('learningTopic').value||u.topic===$('learningTopic').value);
+    if(selectedPath==='today'){const dueIds=new Set(E.queue(profile,{topic:$('learningTopic').value}).map(x=>x.unit.id));units=units.filter(u=>dueIds.has(u.id));}
+    $('learningUnits').innerHTML=selectedPath==='difficulties'&&!review.pending?'<div class="learning-empty"><span class="learning-empty-icon">✓</span><strong>Aún no hay dificultades registradas</strong><p>Cuando marques una duda o falles una pregunta del QBank, podrás traerla aquí y entrenarla con tus propias palabras.</p></div>':renderUnitCards(units,selectedPath);
     if($('learningDialog').open)renderSession();
   }
   async function openSession(fromHome=false){
@@ -141,7 +158,7 @@
     });
   }
   function openEditor(origin={},unit=null){
-    editorContext={...origin,id:unit?.id||null};$('learningUnitForm').reset();$('learningEditorTitle').textContent=unit?'Editar objetivo':'Crear un objetivo propio';
+    editorContext={...origin,id:unit?.id||null};$('learningUnitForm').reset();$('learningEditorTitle').textContent=unit?'Editar tarjeta':'Crear una tarjeta de estudio';
     const fields={learningUnitTitle:unit?.title||origin.focus||'',learningUnitTopic:unit?.topic||origin.topic||'',learningUnitPrompt:unit?.prompt||'',learningUnitAnswer:unit?.answer||'',learningUnitHint:unit?.hint||'',learningUnitContrast:unit?.contrast||'',learningUnitSequence:(unit?.sequence||[]).join('\n'),learningUnitSource:unit?.source||''};
     Object.entries(fields).forEach(([key,value])=>$(key).value=value);
     $('learningEditorError').hidden=true;$('learningUnitDialog').showModal();
@@ -151,33 +168,19 @@
     const fields={title:$('learningUnitTitle').value,topic:$('learningUnitTopic').value,prompt:$('learningUnitPrompt').value,answer:$('learningUnitAnswer').value,hint:$('learningUnitHint').value,contrast:$('learningUnitContrast').value,source:$('learningUnitSource').value,sequence:$('learningUnitSequence').value.split('\n').map(x=>x.trim()).filter(Boolean),subject:editorContext.subject||'',system:editorContext.system||'',originId:editorContext.originId||''};
     await mutate(data=>{
       const previous=data.units.find(u=>u.id===editorContext.id);
-      if(previous&&data.active?.items.some(item=>item.unitId===previous.id))throw new Error('Termina la sesión que incluye este objetivo antes de editarlo.');
+      if(previous&&data.active?.items.some(item=>item.unitId===previous.id))throw new Error('Termina la sesión que incluye esta tarjeta antes de editarla.');
       const unit=E.makeUnit({...previous,...fields,id:previous?.id,example:false,contentVersion:previous?previous.contentVersion+1:1});
       if(previous){unit.createdAt=previous.createdAt;data.units[data.units.findIndex(u=>u.id===previous.id)]=unit;}else data.units.push(unit);
       return data;
     });
-    $('learningUnitDialog').close();options.toast?.('Objetivo guardado. Ya puedes practicarlo.');
-  }
-  const NIH='https://health.nih.gov/health-topics-a-z/ms';
-  function examples(){
-    const base={topic:'Esclerosis múltiple · fundamentos',subject:'Medicine',system:'Nervous System',source:NIH,example:true};
-    return [
-      {id:'example-em-definition-v1',title:'Definir la EM',prompt:'Explica qué es la EM en una frase.',answer:'Es una enfermedad inmunomediada del sistema nervioso central que puede lesionar mielina y células nerviosas.',hint:'Incluye mecanismo inmunitario y localización central.'},
-      {id:'example-em-myelin-v1',title:'Relacionar mielina y señal nerviosa',prompt:'¿Qué función cumple la mielina y qué puede ocurrir al dañarse?',answer:'La mielina recubre las fibras nerviosas y facilita la transmisión de señales. Su lesión puede alterar esa transmisión y contribuir a síntomas neurológicos.',sequence:['Recubrimiento de la fibra nerviosa','Facilitación de la transmisión','Lesión de la mielina','Alteración de la señal'],hint:'Piensa en la cubierta de la fibra y en la señal que conduce.'},
-      {id:'example-em-structures-v1',title:'Localizar la enfermedad',prompt:'¿Qué tres estructuras puede afectar la EM?',answer:'Cerebro, médula espinal y nervios ópticos. Las estructuras mencionadas corresponden al sistema nervioso central.',contrast:'Distingue las estructuras centrales afectadas por EM de los nervios periféricos. ¿Dónde situarías cerebro, médula espinal y nervios ópticos?',hint:'Piensa en encéfalo, eje medular y vía visual.'},
-      {id:'example-em-damage-v1',title:'Ir más allá de la mielina',prompt:'¿Por qué decir «solo pierde mielina» es incompleto?',answer:'La EM puede afectar tanto la mielina como las propias células nerviosas.',hint:'La lesión no se limita a la cubierta de la fibra.'}
-    ].map(fields=>E.makeUnit({...base,...fields}));
-  }
-  async function addExamples(){
-    await mutate(data=>{const ids=new Set(data.units.map(u=>u.id));data.units.push(...examples().filter(u=>!ids.has(u.id)));return data;});
-    options.toast?.('Ejemplos añadidos. Puedes editarlos o crear tus propios objetivos.');
+    $('learningUnitDialog').close();selectedPath='routes';options.toast?.('Tema guardado. Ya puedes practicarlo.');
   }
   function bind(){
     $('learningHomeStart').addEventListener('click',()=>action(()=>openSession(true)));
     $('learningHomeSetup').addEventListener('click',()=>{document.querySelector('[data-view="review"]')?.click();$('learningPanel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});});
     $('learningStart').addEventListener('click',()=>action(()=>openSession()));
     $('learningCreate').addEventListener('click',()=>openEditor());
-    $('learningExamples').addEventListener('click',()=>action(addExamples));
+    $$('[data-learning-path]').forEach(button=>button.addEventListener('click',()=>{selectedPath=button.dataset.learningPath;render();}));
     $('learningTopic').addEventListener('change',render);
     ['learningName','learningMinutes','learningMode'].forEach(key=>$(key).addEventListener('change',()=>action(()=>mutate(data=>{data.preferences={name:$('learningName').value.trim(),minutes:Number($('learningMinutes').value),mode:$('learningMode').value};return data;}))));
     $('learningResponse').addEventListener('input',pendingInput);
