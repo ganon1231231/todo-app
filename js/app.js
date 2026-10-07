@@ -534,6 +534,7 @@ async function init(){
   updateDayGreeting();
   await restoreActiveSession();
   renderAll();
+  await window.DrCoachLearning?.init({userId:state.cloudUser?.id,toast});
   setupBoard();
   setupStudyBoard();
   registerServiceWorker();
@@ -990,6 +991,7 @@ function renderMotivation(){
 }
 function renderAll(){renderToday();renderQBank();renderReviewBadge();renderSessionView();renderBaselines();renderAIExportPreview();}
 function renderToday(){
+  window.DrCoachLearning?.render();
   const done=coverageTotal(), rem=TARGET_TOTAL-done, goal=Number(getSetting('dailyGoal',16)), td=todayCoverage();
   $('#overallDone').textContent=fmtInt(done);$('#overallRemaining').textContent=`${fmtInt(rem)} restantes`;$('#overallPct').textContent=`${pct(done,TARGET_TOTAL)}%`;$('#overallProgressBar').style.width=`${pct(done,TARGET_TOTAL)}%`;
   $('#todayDone').textContent=td;$('#todayGoalLabel').textContent=`/ ${goal}`;$('#todayProgressBar').style.width=`${clamp(td/Math.max(goal,1)*100,0,100)}%`;
@@ -1304,15 +1306,17 @@ function filteredReviewItems(){
 function shortText(s,max=190){const t=String(s||'').replace(/\s+/g,' ').trim();return t.length>max?t.slice(0,max-1).trimEnd()+'…':t}
 function hasAttemptVisual(a){return !!(attemptAttachmentIds(a).length||(Array.isArray(a?.strokes)&&a.strokes.length)||studyBoardHasVisual(a?.studyBoard))}
 function renderReview(){
+  window.DrCoachLearning?.render();
   const list=$('#reviewList');if(!list)return;const all=reviewMaterial(),items=filteredReviewItems(),pending=reviewQueue();state.reviewVisibleIds=items.map(a=>a.id);
   const stats=$('#reviewStats');if(stats){const correct=all.filter(a=>a.result==='correct').length,wrong=all.filter(a=>a.result==='incorrect').length,doubt=all.filter(a=>a.result==='correct'&&a.confidence==='doubt').length,visual=all.filter(hasAttemptVisual).length,mastered=all.filter(a=>a.mastered).length;stats.innerHTML=`<span class="review-stat-pill"><b>${all.length}</b> registradas</span><span class="review-stat-pill"><b>${correct}</b> correctas</span><span class="review-stat-pill"><b>${wrong}</b> incorrectas</span><span class="review-stat-pill"><b>${doubt}</b> con duda</span><span class="review-stat-pill"><b>${pending.length}</b> por reforzar</span>${mastered?`<span class="review-stat-pill"><b>${mastered}</b> dominadas</span>`:''}<span class="review-stat-pill">📷 <b>${visual}</b> con material visual</span>${items.length!==all.length?`<span class="review-stat-pill"><b>${items.length}</b> visibles con filtros</span>`:''}`}
   if(!items.length){list.innerHTML=`<div class="card review-empty"><h2>${all.length?'No hay coincidencias':'Aún no hay material'}</h2><p class="muted">${all.length?'Cambia los filtros o la búsqueda para ver otras preguntas.':'Cuando registres preguntas, todas aparecerán aquí, incluso las correctas y seguras.'}</p></div>`;return}
   list.innerHTML=items.map(a=>{
     const visual=hasAttemptVisual(a),reasons=(a.errorReasons||[]).slice(0,2),brief=shortText(a.concept||a.rule||a.whyFailed||a.notes||a.stem||'Sin nota breve.'),evidenceCount=attemptAttachmentIds(a).length;
-    return `<article class="review-item ${visual?'has-visual':''}"><div class="review-item-main"><div class="review-item-kicker"><b>${escapeHTML(a.subject)}</b><span class="pill">${escapeHTML(a.system)}</span>${a.topic?`<span class="pill topic-pill">${escapeHTML(a.topic)}</span>`:''}${a.focus?`<span class="pill focus-pill">${escapeHTML(a.focus)}</span>`:''}${a.questionId?`<span class="pill">#${escapeHTML(a.questionId)}</span>`:''}<span class="pill ${a.result==='incorrect'?'bad':a.result==='correct'?'good':'warn'}">${resultLabel(a.result)}</span>${a.confidence==='doubt'?'<span class="pill warn">Con duda</span>':a.confidence==='sure'?'<span class="pill">Segura</span>':''}${a.mastered?'<span class="pill good">Dominada</span>':''}${visual?`<span class="visual-indicator">📷 ${evidenceCount||'Pizarrón'}</span>`:''}</div><div class="review-item-concept">${escapeHTML(brief)}</div>${reasons.length?`<div class="study-tags">${reasons.map(r=>`<span class="error-tag">${escapeHTML(r)}</span>`).join('')}</div>`:''}<div class="review-item-submeta"><span>${fmtDateTime(a.createdAt)}</span>${Array.isArray(a.reviewEvents)&&a.reviewEvents.length?`<span>↻ ${a.reviewEvents.length} revisión${a.reviewEvents.length===1?'':'es'}</span>`:''}</div></div><div class="item-actions"><button class="btn btn-primary btn-small" data-review-open="${a.id}">Repasar →</button><button class="btn btn-secondary btn-small" data-edit-attempt="${a.id}">Editar</button></div></article>`
+    return `<article class="review-item ${visual?'has-visual':''}"><div class="review-item-main"><div class="review-item-kicker"><b>${escapeHTML(a.subject)}</b><span class="pill">${escapeHTML(a.system)}</span>${a.topic?`<span class="pill topic-pill">${escapeHTML(a.topic)}</span>`:''}${a.focus?`<span class="pill focus-pill">${escapeHTML(a.focus)}</span>`:''}${a.questionId?`<span class="pill">#${escapeHTML(a.questionId)}</span>`:''}<span class="pill ${a.result==='incorrect'?'bad':a.result==='correct'?'good':'warn'}">${resultLabel(a.result)}</span>${a.confidence==='doubt'?'<span class="pill warn">Con duda</span>':a.confidence==='sure'?'<span class="pill">Segura</span>':''}${a.mastered?'<span class="pill good">Dominada</span>':''}${visual?`<span class="visual-indicator">📷 ${evidenceCount||'Pizarrón'}</span>`:''}</div><div class="review-item-concept">${escapeHTML(brief)}</div>${reasons.length?`<div class="study-tags">${reasons.map(r=>`<span class="error-tag">${escapeHTML(r)}</span>`).join('')}</div>`:''}<div class="review-item-submeta"><span>${fmtDateTime(a.createdAt)}</span>${Array.isArray(a.reviewEvents)&&a.reviewEvents.length?`<span>↻ ${a.reviewEvents.length} revisión${a.reviewEvents.length===1?'':'es'}</span>`:''}</div></div><div class="item-actions"><button class="btn btn-primary btn-small" data-review-open="${a.id}">Repasar →</button><button class="btn btn-secondary btn-small" data-edit-attempt="${a.id}">Editar</button><button class="btn btn-secondary btn-small" data-learning-from="${escapeHTML(a.id)}">+ Objetivo</button></div></article>`
   }).join('');
   $$('[data-review-open]').forEach(b=>b.addEventListener('click',()=>openReviewDetail(b.dataset.reviewOpen)));
   $$('[data-edit-attempt]').forEach(b=>b.addEventListener('click',()=>openAttemptEdit(b.dataset.editAttempt)));
+  $$('[data-learning-from]').forEach(b=>b.addEventListener('click',()=>{const a=state.attempts.find(x=>x.id===b.dataset.learningFrom);if(a)window.DrCoachLearning?.createFromAttempt({originId:a.id,topic:a.topic||'',focus:a.focus||'',subject:a.subject,system:a.system})}));
 }
 function resultLabel(r){return r==='correct'?'Correcta':r==='incorrect'?'Incorrecta':'Omitida'}
 function confidenceLabel(c){return c==='sure'?'Segura':c==='doubt'?'Con duda':''}
@@ -1367,7 +1371,12 @@ function renderReviewTimeline(a){
 function setReviewRecallMode(on){state.reviewRecallMode=!!on;renderReviewDetail()}
 function moveReviewDetail(delta){const idx=state.reviewVisibleIds.indexOf(state.reviewDetailId),next=state.reviewVisibleIds[idx+delta];if(next){state.reviewDetailId=next;state.reviewRecallMode=false;renderReviewDetail()}}
 async function recordReviewAssessment(level){
-  const a=state.attempts.find(x=>x.id===state.reviewDetailId);if(!a)return;const oldIdx=state.reviewVisibleIds.indexOf(a.id);a.reviewEvents=Array.isArray(a.reviewEvents)?a.reviewEvents:[];a.reviewEvents.push({id:uuid(),createdAt:nowISO(),level});if(level==='mastered')a.mastered=true;await DB.put('attempts',a);renderReviewBadge();renderReview();
+  const a=state.attempts.find(x=>x.id===state.reviewDetailId);if(!a)return;const oldIdx=state.reviewVisibleIds.indexOf(a.id);
+  const updated={...a,updatedAt:nowISO(),mastered:level==='mastered',reviewEvents:[...(Array.isArray(a.reviewEvents)?a.reviewEvents:[]),{id:uuid(),createdAt:nowISO(),level}]};
+  try{await DB.put('attempts',updated);}catch(error){console.error(error);toast('No se pudo guardar la revisión. Inténtalo de nuevo.');return;}
+  Object.assign(a,updated);
+  if(window.DrCoachSync&&state.cloudUser)try{await window.DrCoachSync.pushAttempt(updated);}catch(error){console.warn('Review sync failed',error);toast('Revisión guardada localmente; la subida necesita reintentarse.');}
+  renderReviewBadge();renderReview();
   if(!state.reviewVisibleIds.includes(a.id)){
     const fresh=state.reviewVisibleIds;if(!fresh.length){$('#reviewDetailDialog').close();toast(level==='mastered'?'Marcada como dominada.':'Revisión registrada.');return}const next=fresh[Math.min(Math.max(oldIdx,0),fresh.length-1)];state.reviewDetailId=next;state.reviewRecallMode=false;await renderReviewDetail();
   }else{await renderReviewDetail()}
@@ -1629,13 +1638,15 @@ async function installPWA(){
 }
 
 function buildDataPackage(includeAttachmentMeta=true){
-  return {app:APP_NAME,legacyApp:'Mediospira',appVersion:APP_VERSION,schemaVersion:SCHEMA_VERSION,exportedAt:nowISO(),target:TARGET_TOTAL,deadline:getSetting('deadline',DEADLINE),attempts:state.attempts.map(a=>includeAttachmentMeta?{...a}:{...a,attachmentId:null,attachmentIds:[],boardAttachmentId:null,attachmentExcluded:attemptAttachmentIds(a).length>0}),sessions:state.sessions,settings:Object.entries(state.settings).map(([key,value])=>({key,value})),baselines:state.baselines,attachments:includeAttachmentMeta?state.attachments.map(a=>({id:a.id,mime:a.mime||a.blob?.type||'image/jpeg',size:a.blob?.size||a.size||0,createdAt:a.createdAt,name:a.name||'',kind:a.kind||'image'})) : []};
+  return {app:APP_NAME,legacyApp:'Mediospira',appVersion:APP_VERSION,schemaVersion:SCHEMA_VERSION,exportedAt:nowISO(),learning:window.DrCoachLearning?.exportData(),target:TARGET_TOTAL,deadline:getSetting('deadline',DEADLINE),attempts:state.attempts.map(a=>includeAttachmentMeta?{...a}:{...a,attachmentId:null,attachmentIds:[],boardAttachmentId:null,attachmentExcluded:attemptAttachmentIds(a).length>0}),sessions:state.sessions,settings:Object.entries(state.settings).map(([key,value])=>({key,value})),baselines:state.baselines,attachments:includeAttachmentMeta?state.attachments.map(a=>({id:a.id,mime:a.mime||a.blob?.type||'image/jpeg',size:a.blob?.size||a.size||0,createdAt:a.createdAt,name:a.name||'',kind:a.kind||'image'})) : []};
 }
 async function exportDataOnly(){
+  await window.DrCoachLearning?.flush();
   const data=buildDataPackage(false);downloadBlob(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`drcoach-data-${dayKey()}.json`);await setSetting('lastBackupAt',nowISO());updateStorageHealth();toast('Backup de datos exportado.');
 }
 async function exportFull(){
   try{
+    await window.DrCoachLearning?.flush();
     toast('Preparando backup completo...');const data=buildDataPackage(true);const entries=[{name:'data.json',data:JSON.stringify(data)}];for(const a of state.attachments){if(a.blob)entries.push({name:`attachments/${a.id}.bin`,data:a.blob})}
     const manifest={format:'Dr.Coach! Backup',schemaVersion:SCHEMA_VERSION,appVersion:APP_VERSION,exportedAt:data.exportedAt,attempts:data.attempts.length,sessions:data.sessions.length,baselines:data.baselines.length,attachments:data.attachments.length,totalAttachmentBytes:data.attachments.reduce((s,a)=>s+a.size,0)};entries.unshift({name:'manifest.json',data:JSON.stringify(manifest,null,2)});const blob=await ZIP.createZip(entries);downloadBlob(blob,`drcoach-full-${dayKey()}.zip`);await setSetting('lastBackupAt',nowISO());updateStorageHealth();toast(`Backup completo listo (${bytesLabel(blob.size)}).`);
   }catch(e){console.error(e);toast('No se pudo crear el backup completo.')}
@@ -1653,11 +1664,12 @@ async function previewImport(e){
     validateImport(data);state.pendingImport={data,attachments,fileName:file.name};$('#importPreview').classList.remove('hidden');$('#importPreview').innerHTML=`<b>${escapeHTML(file.name)}</b><br>${fmtInt(data.attempts?.length||0)} registros · ${fmtInt(data.sessions?.length||0)} bloques · ${fmtInt(data.baselines?.length||0)} baselines · ${fmtInt(attachments.length)} capturas<br><span class="muted">Exportado: ${data.exportedAt?fmtDateTime(data.exportedAt):'sin fecha'} · schema v${data.schemaVersion}</span>`;$('#confirmImportBtn').classList.remove('hidden');
   }catch(err){console.error(err);toast(err.message||'Backup inválido.');$('#importPreview').classList.add('hidden')}
 }
-function validateImport(d){const validApp=d&&(d.app===APP_NAME||d.app==='Mediospira'||d.legacyApp==='Mediospira');if(!validApp||!Array.isArray(d.attempts)||!Array.isArray(d.sessions)||!Array.isArray(d.baselines))throw new Error('Este archivo no parece un backup válido de Dr.Coach! o de una versión anterior compatible.');if(Number(d.schemaVersion)!==SCHEMA_VERSION)throw new Error(`Schema ${d.schemaVersion} no compatible con esta versión.`)}
+function validateImport(d){const validApp=d&&(d.app===APP_NAME||d.app==='Mediospira'||d.legacyApp==='Mediospira');if(!validApp||!Array.isArray(d.attempts)||!Array.isArray(d.sessions)||!Array.isArray(d.baselines))throw new Error('Este archivo no parece un backup válido de Dr.Coach! o de una versión anterior compatible.');if(Number(d.schemaVersion)!==SCHEMA_VERSION)throw new Error(`Schema ${d.schemaVersion} no compatible con esta versión.`);if(d.learning!==undefined)window.DrCoachLearning?.validateImport(d.learning)}
 async function confirmImport(){
   const p=state.pendingImport;if(!p)return;const mode=$('#importMode').value;if(!confirm(`${mode==='replace'?'REPLACE borrará lo local antes de restaurar.':'MERGE conservará lo local y añadirá IDs nuevos.'}\n\n¿Continuar?`))return;
   try{
     const d=p.data;
+    if(d.learning!==undefined)window.DrCoachLearning?.validateImport(d.learning);
     if(mode==='replace'){
       await DB.clearAll();await Promise.all([DB.bulkPut('attempts',d.attempts||[]),DB.bulkPut('sessions',d.sessions||[]),DB.bulkPut('baselines',d.baselines||[]),DB.bulkPut('settings',d.settings||[]),DB.bulkPut('attachments',p.attachments||[])]);
     }else{
@@ -1665,6 +1677,7 @@ async function confirmImport(){
       await DB.bulkPut('attempts',(d.attempts||[]).filter(x=>!localIds.attempts.has(x.id)));await DB.bulkPut('sessions',(d.sessions||[]).filter(x=>!localIds.sessions.has(x.id)));await DB.bulkPut('baselines',(d.baselines||[]).filter(x=>!localIds.baselines.has(x.id)));await DB.bulkPut('attachments',(p.attachments||[]).filter(x=>!localIds.attachments.has(x.id)));
       const existingSettings=new Set(Object.keys(state.settings));await DB.bulkPut('settings',(d.settings||[]).filter(x=>!existingSettings.has(x.key)));
     }
+    await window.DrCoachLearning?.importData(d.learning,mode);
     await reloadState();state.pendingImport=null;$('#importPreview').classList.add('hidden');$('#confirmImportBtn').classList.add('hidden');$('#importFile').value='';renderAll();showView('today');toast('Importación completada.');
     // v3.0.0: push imported data to cloud so the backup also reaches the user's other devices
     if (window.DrCoachSync && state.cloudUser) {
@@ -1678,7 +1691,7 @@ async function confirmImport(){
   }catch(e){console.error(e);toast('La importación falló; no cierres la app y revisa el archivo.')}
 }
 async function reloadState(){const [attempts,sessions,settings,baselines,attachments]=await Promise.all(['attempts','sessions','settings','baselines','attachments'].map(DB.getAll));state.attempts=attempts;state.sessions=sessions;state.baselines=baselines;state.attachments=attachments;state.settings=Object.fromEntries(settings.map(x=>[x.key,x.value]));state.activeSession=state.sessions.find(s=>s.status==='active')||null}
-async function resetAll(){if(!confirm('Esto borrará TODO el progreso local, notas, pizarrones y capturas de este dispositivo. ¿Continuar?'))return;if(!confirm('Última confirmación: ¿borrar definitivamente?'))return;await DB.clearAll();for(const k of Object.keys(localStorage))if(k.startsWith('mediospira-draft-')||k.startsWith('drcoach-draft-'))localStorage.removeItem(k);location.reload()}
+async function resetAll(){if(!confirm('Esto borrará TODO el progreso local, notas, pizarrones y capturas de este dispositivo. ¿Continuar?'))return;if(!confirm('Última confirmación: ¿borrar definitivamente?'))return;await window.DrCoachLearning?.reset();await DB.clearAll();for(const k of Object.keys(localStorage))if(k.startsWith('mediospira-draft-')||k.startsWith('drcoach-draft-'))localStorage.removeItem(k);location.reload()}
 
 function registerServiceWorker(){if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW',e))}
 
@@ -2584,4 +2597,3 @@ setTimeout(() => { try { cloudRefreshStatus(); } catch(_) {} }, 1500);
 
 document.addEventListener('DOMContentLoaded',init);
 })();
-

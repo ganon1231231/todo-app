@@ -711,3 +711,30 @@ html[data-theme="night"] .dc-tr-card-text{color:#edf3f9}
   body.workspace-radio-top #focusDock{width:min(620px,calc(100vw - 32px))}
   .study-board-context{top:auto;bottom:64px}
 }
+/* Repaso de hoy — additive surfaces using Dr.Coach!'s existing theme. */
+.learning-home{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:18px}
+.learning-home h2,.learning-panel h2{margin:0 0 8px}
+.learning-home .button-row{flex-shrink:0}
+.learning-panel{margin-bottom:24px}
+.learning-preferences{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.learning-preferences label,.learning-editor-fields label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--text);min-width:0}
+.learning-preferences input,.learning-preferences select{width:100%;min-width:0}
+.learning-units{display:grid;gap:12px;margin-top:16px}
+.learning-unit{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid var(--line);padding-top:14px;overflow-wrap:anywhere}
+.learning-unit h3{margin:4px 0 8px}.learning-unit p{margin:4px 0}.learning-unit .btn{flex-shrink:0}
+.learning-modal{width:min(720px,calc(100vw - 24px));max-width:720px}
+.learning-session-card{width:100%;box-sizing:border-box;max-height:85vh;overflow:auto}
+.learning-question{font-size:1.08rem;line-height:1.6;overflow-wrap:anywhere}
+.learning-progress{width:100%;height:7px;appearance:none;border:none;background:var(--surface-2);border-radius:8px;accent-color:var(--primary);margin-bottom:18px}
+.learning-progress::-webkit-progress-bar{background:var(--surface-2);border-radius:8px}.learning-progress::-webkit-progress-value{background:var(--primary);border-radius:8px}.learning-progress::-moz-progress-bar{background:var(--primary);border-radius:8px}
+.learning-session-card .textarea{width:100%;box-sizing:border-box;margin:8px 0}.learning-session-card .button-row{margin-top:16px;flex-wrap:wrap}
+.learning-reference{background:var(--surface-2);padding:16px;border-radius:var(--radius);margin-top:18px;overflow-wrap:anywhere}
+.learning-reference h3{margin-top:0}.learning-preserve{white-space:pre-wrap;line-height:1.6}
+.learning-sequence{padding:12px 12px 12px 32px;background:var(--surface-2);border-radius:var(--radius)}.learning-sequence li{padding:5px 0;overflow-wrap:anywhere}
+.learning-finish{margin-top:24px;padding-top:14px;border-top:1px solid var(--line)}
+.learning-summary-list{list-style:none;padding:0}.learning-summary-list li{padding:12px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.learning-summary-list span{display:block;margin-top:4px;font-size:.84rem}
+.learning-editor-fields{display:grid;gap:14px;margin:16px 0}.learning-editor-fields details label{margin-top:12px}
+@media(max-width:900px){.learning-preferences{grid-template-columns:repeat(2,minmax(0,1fr))}.learning-home{align-items:flex-start;flex-direction:column}.learning-home .button-row{flex-shrink:1}}
+@media(max-width:480px){.learning-preferences{grid-template-columns:1fr}.learning-unit{align-items:flex-start;flex-direction:column}.learning-session-card .btn{min-height:44px}.learning-session-card textarea,.learning-session-card input{font-size:16px}.learning-home .button-row{flex-wrap:wrap}.learning-panel .section-head{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.learning-home .btn,.learning-panel .btn,.learning-session-card .btn{transition:none;transform:none}}
+#learningDialog [hidden],#learningUnitDialog [hidden]{display:none!important}
