@@ -6,7 +6,7 @@
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const labels={new:'Por descubrir',reinforce:'Reforzar',effort:'Recordado con esfuerzo',remembered:'Recordado · prueba diferida pendiente'};
   const modes={recall:'Recuerdo libre',contrast:'Contraste de conceptos',sequence:'Reconstruir una secuencia'};
-  let scope,profile,options={},chain=Promise.resolve(),draftTimer,draft=null,busy=false,editorContext={},selectedPath='today';
+  let scope,profile,options={},chain=Promise.resolve(),draftTimer,draft=null,busy=false,editorContext={},selectedPath='today',coachSyncKey='',coachSyncBusy=false;
   const sameSession=(data,id,index)=>{if(!data.active||data.active.id!==id||data.active.index!==index)throw new Error('La sesión cambió en otra pestaña. Cierra y vuelve a abrir el repaso.');return data.active;};
   function message(error){options.toast?.(error?.message||'No se pudo guardar el entrenamiento.');}
   function mutate(fn){
@@ -43,7 +43,47 @@
     return {due:E.queue(profile,{time:now}).length,recalls:today.filter(e=>e.mode!=='sequence'&&!e.hint&&e.rating!=='again').length,practice:today.length};
   }
   function reviewSummary(){
-    try{return options.reviewProvider?.()||{pending:0,total:0};}catch(_){return {pending:0,total:0};}
+    try{const value=options.reviewProvider?.()||{};return {pending:Number(value.pending)||0,total:Number(value.total)||0,attempts:Array.isArray(value.attempts)?value.attempts:[]};}catch(_){return {pending:0,total:0,attempts:[]};}
+  }
+  function coachSnapshot(review){
+    const attempts=review.attempts||[],weak=attempts.filter(a=>a.result==='incorrect'||a.result==='omitted'||a.confidence==='doubt');
+    const groups=new Map();
+    for(const attempt of attempts){
+      const topic=(attempt.topic||attempt.focus||attempt.system||attempt.subject||'Sin clasificar').trim()||'Sin clasificar',key=`${attempt.subject||''}|||${attempt.system||''}|||${topic}`;
+      if(!groups.has(key))groups.set(key,{key,topic,subject:attempt.subject||'Sin materia',system:attempt.system||'Sin sistema',items:[],weak:0,correct:0,doubt:0,reasons:{},last:attempt.createdAt});
+      const group=groups.get(key);group.items.push(attempt);if(attempt.result==='incorrect'||attempt.result==='omitted')group.weak++;if(attempt.result==='correct')group.correct++;if(attempt.confidence==='doubt')group.doubt++;if(attempt.createdAt&&(!group.last||Date.parse(attempt.createdAt)>Date.parse(group.last)))group.last=attempt.createdAt;for(const reason of attempt.errorReasons||[])group.reasons[reason]=(group.reasons[reason]||0)+1;
+    }
+    const ordered=[...groups.values()].map(group=>({...group,signal:group.weak+group.doubt,firstId:(group.items.find(a=>a.result!=='correct'||a.confidence==='doubt')||group.items[0])?.id})).sort((a,b)=>b.signal-a.signal||b.items.length-a.items.length||Date.parse(b.last||0)-Date.parse(a.last||0));
+    const recent=attempts.slice().sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));
+    return {attempts,weak,groups:ordered,recent};
+  }
+  function coachDate(value){if(!value)return '—';const date=new Date(value);if(Number.isNaN(date.getTime()))return '—';return date.toLocaleDateString('es-PA',{day:'numeric',month:'short'}).replace('.','');}
+  function coachReason(group){const top=Object.entries(group.reasons).sort((a,b)=>b[1]-a[1])[0];return top?`Pista recurrente: ${top[0]}.`:group.signal?`${group.signal} señal${group.signal===1?'':'es'} para volver a explicar.`:'Base sólida; conviene comprobarla con recuperación activa.';}
+  function renderCoach(review){
+    const snap=coachSnapshot(review),weak=snap.weak,groups=snap.groups,recent=snap.recent;
+    const set=(id,value)=>{const node=$(id);if(node)node.textContent=value};
+    set('coachWeakCount',weak.length);set('coachTopicCount',groups.length);set('coachLastPractice',recent.length?coachDate(recent[0].createdAt):'—');set('coachLastPracticeMeta',recent.length?`${recent[0].subject||'Pregunta'} · ${recent[0].result==='correct'?'correcta':'para revisar'}`:'Aún no hay preguntas registradas');
+    set('coachNextLabel',weak.length?'Entrenar':'Empezar');set('coachNextMeta',weak.length?`${weak.length} señal${weak.length===1?'':'es'} pendiente${weak.length===1?'':'s'}`:'Responde preguntas para activar tu dossier');
+    set('coachHeadline',weak.length?'Ya encontré por dónde empezar.':'Tu aprendizaje no se queda en una pregunta.');set('coachSubheadline',weak.length?`Dr.Coach detectó ${weak.length} señal${weak.length===1?'':'es'} de conocimiento frágil y las está convirtiendo en práctica recuperable.`:'Cada respuesta, duda y explicación alimenta un dossier personal para decidir qué consolidar después.');
+    set('coachDossierStatus',groups.length?`${groups.length} ruta${groups.length===1?'':'s'} formándose · ${weak.length} señal${weak.length===1?'':'es'} requieren una segunda mirada.`:'Todavía no hay suficiente práctica para formar un patrón.');
+    const dossier=$('coachDossierList');
+    if(dossier)dossier.innerHTML=groups.length?groups.slice(0,6).map(group=>{const ratio=Math.min(100,Math.round(group.signal/Math.max(1,group.items.length)*100));return `<article class="coach-dossier-item ${group.signal?'needs-attention':''}"><div class="coach-dossier-item-head"><div><span class="coach-topic-kicker">${escape(group.subject)} · ${escape(group.system)}</span><h3>${escape(group.topic)}</h3></div><span class="coach-signal-count">${group.signal?`${group.signal} señal${group.signal===1?'':'es'}`:'En construcción'}</span></div><div class="coach-dossier-meter"><span style="width:${ratio}%"></span></div><p>${escape(coachReason(group))} · ${group.items.length} pregunta${group.items.length===1?'':'s'} conectada${group.items.length===1?'':'s'}.</p><button type="button" class="text-btn" data-coach-open="${escape(group.firstId||'')}">Abrir evidencia →</button></article>`}).join(''):'<div class="coach-empty"><span class="learning-empty-icon">✦</span><strong>Tu dossier empieza con la primera pregunta</strong><p>Cuando registres una respuesta, Dr.Coach separará lo visto, lo frágil y lo que merece una sesión larga.</p></div>';
+    const next=$('coachNextList');
+    if(next)next.innerHTML=weak.length?weak.slice(0,3).map(attempt=>`<div class="coach-next-item"><div><strong>${escape(attempt.topic||attempt.focus||attempt.system||'Pregunta para revisar')}</strong><small>${escape(attempt.subject||'')} · ${attempt.result==='incorrect'?'Incorrecta':attempt.result==='omitted'?'Omitida':'Correcta con duda'}</small></div><button type="button" class="text-btn" data-coach-open="${escape(attempt.id)}">Ver →</button></div>`).join(''):'<div class="coach-next-empty"><strong>El Coach está listo.</strong><p>Haz una pregunta, registra por qué te costó y aquí aparecerá el siguiente paso.</p></div>';
+    syncCoachUnits(weak);
+  }
+  function coachUnitFields(attempt){
+    const label=(attempt.topic||attempt.focus||attempt.system||attempt.subject||'esta pregunta').trim(),material=[attempt.concept,attempt.whyFailed,attempt.rule,attempt.notes].filter(Boolean).map(String).map(x=>x.trim()).filter(Boolean).join('\n\n');
+    return {id:`coach-${attempt.id}`,title:`Recuperar: ${label.slice(0,130)}`,topic:label.slice(0,160),prompt:`Antes de volver a mirar la respuesta: ¿qué pista te debía orientar en ${label} y cuál era el siguiente paso?`,answer:(material||`Vuelve a abrir la pregunta ${attempt.questionId||''} en Preguntas y escribe aquí la explicación correcta con tus propias palabras.`).slice(0,5000),hint:attempt.errorReasons?.length?`Revisa: ${attempt.errorReasons.join(', ')}.`:'Comienza por la pista clínica principal.',source:`Dr.Coach · pregunta ${attempt.questionId||'registrada'} · ${attempt.subject||''}`,subject:attempt.subject||'',system:attempt.system||'',originId:attempt.id,coachGenerated:true};
+  }
+  function syncCoachUnits(weak){
+    if(!profile||coachSyncBusy)return;
+    const candidates=weak.slice().sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0)).slice(0,250),key=candidates.map(a=>`${a.id}:${a.updatedAt||a.createdAt||''}`).join('|');
+    if(key===coachSyncKey)return;coachSyncKey=key;
+    const existing=new Set(profile.units.filter(unit=>unit.originId).map(unit=>unit.originId)),missing=candidates.filter(attempt=>attempt.id&&!existing.has(attempt.id));
+    if(!missing.length)return;
+    coachSyncBusy=true;
+    mutate(data=>{for(const attempt of missing){if(data.units.some(unit=>unit.originId===attempt.id))continue;data.units.push(E.makeUnit(coachUnitFields(attempt)))}return data;}).then(()=>{coachSyncBusy=false;render()}).catch(()=>{coachSyncBusy=false});
   }
   function pathText(path,due,difficulties,routes){
     if(path==='difficulties')return difficulties?`Tienes ${difficulties} pregunta${difficulties===1?'':'s'} que merece una segunda mirada. Abre una y pulsa «Entrenar dificultad» para convertirla en una práctica tuya.`:'Todavía no hay dificultades registradas. Cuando dudes en una pregunta, aparecerá aquí.';
@@ -53,11 +93,12 @@
   function renderUnitCards(units,mode){
     if(!units.length)return '<div class="learning-empty"><span class="learning-empty-icon">✦</span><strong>'+escape(mode==='routes'?'Todavía no tienes temas propios':'No hay ideas para este momento')+'</strong><p>'+escape(mode==='routes'?'Escribe un tema que quieras poder explicar y conviértelo en una ruta de recuerdo.':'Cuando tengas una dificultad o un tema pendiente, aparecerá aquí.')+'</p></div>';
     const groups=new Map();units.forEach(unit=>{const key=unit.topic||'Sin tema';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(unit);});
-    return [...groups.entries()].map(([topic,items])=>`<section class="learning-route"><div class="learning-route-head"><div><span class="learning-route-dot"></span><strong>${escape(topic)}</strong></div><span class="muted compact">${items.length} idea${items.length===1?'':'s'}</span></div><div class="learning-route-items">${items.map(unit=>{const memory=E.memory(profile,unit.id),status=labels[memory.status]||'Por descubrir';return `<article class="learning-unit"><div><h3>${escape(unit.title)}</h3><p class="muted compact">${escape(status)}${memory.due?` · ${escape(new Date(memory.due).toLocaleDateString('es-PA',{day:'numeric',month:'short'}))}`:''}</p></div><button type="button" class="btn btn-secondary btn-small" data-learning-edit="${escape(unit.id)}">Editar</button></article>`}).join('')}</div></section>`).join('');
+    return [...groups.entries()].map(([topic,items])=>`<section class="learning-route"><div class="learning-route-head"><div><span class="learning-route-dot"></span><strong>${escape(topic)}</strong></div><span class="muted compact">${items.length} idea${items.length===1?'':'s'}</span></div><div class="learning-route-items">${items.map(unit=>{const memory=E.memory(profile,unit.id),status=labels[memory.status]||'Por descubrir';return `<article class="learning-unit"><div><h3>${escape(unit.title)}${unit.coachGenerated?'<span class="coach-generated-tag">Coach</span>':''}</h3><p class="muted compact">${escape(status)}${memory.due?` · ${escape(new Date(memory.due).toLocaleDateString('es-PA',{day:'numeric',month:'short'}))}`:''}</p></div><button type="button" class="btn btn-secondary btn-small" data-learning-edit="${escape(unit.id)}">Editar</button></article>`}).join('')}</div></section>`).join('');
   }
   function render(){
     if(!profile)return;
     const {due,recalls,practice}=stats(),name=profile.preferences.name.trim(),review=reviewSummary(),routes=new Set(profile.units.map(u=>u.topic).filter(Boolean)).size;
+    renderCoach(review);
     $('learningGreeting').textContent=name?`${name}, ¿qué quieres recordar hoy?`:'¿Qué quieres recordar hoy?';
     $('learningHomeStatus').textContent=profile.active?'Tienes un repaso guardado. Puedes continuar cuando quieras.':!profile.units.length?'Elige un tema propio y conviértelo en una ruta de recuerdo.':due?`${due} idea${due===1?'':'s'} lista${due===1?'':'s'} para practicar hoy.`:'Por hoy estás al día. Puedes explorar tus temas o volver a tus dificultades.';
     $('learningHomeStart').textContent=profile.active?'Continuar repaso':'Empezar repaso';
@@ -169,7 +210,7 @@
     await mutate(data=>{
       const previous=data.units.find(u=>u.id===editorContext.id);
       if(previous&&data.active?.items.some(item=>item.unitId===previous.id))throw new Error('Termina la sesión que incluye esta tarjeta antes de editarla.');
-      const unit=E.makeUnit({...previous,...fields,id:previous?.id,example:false,contentVersion:previous?previous.contentVersion+1:1});
+      const unit=E.makeUnit({...previous,...fields,id:previous?.id,example:false,coachGenerated:false,contentVersion:previous?previous.contentVersion+1:1});
       if(previous){unit.createdAt=previous.createdAt;data.units[data.units.findIndex(u=>u.id===previous.id)]=unit;}else data.units.push(unit);
       return data;
     });
@@ -179,6 +220,8 @@
     const on=(id,event,handler)=>$(id)?.addEventListener(event,handler);
     on('learningHomeStart','click',()=>action(()=>openSession(true)));
     on('learningHomeSetup','click',()=>{document.querySelector('[data-view="review"]')?.click();$('learningPanel')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});});
+    on('coachStartBtn','click',()=>action(()=>openSession()));
+    on('coachDeepBtn','click',()=>action(async()=>{await mutate(data=>{data.preferences={...data.preferences,minutes:20};return data});await openSession();}));
     on('learningStart','click',()=>action(()=>openSession()));
     on('learningCreate','click',()=>openEditor());
     $$('[data-learning-path]').forEach(button=>button.addEventListener('click',()=>{selectedPath=button.dataset.learningPath;render();}));

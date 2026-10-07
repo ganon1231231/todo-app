@@ -354,36 +354,36 @@
         </section>
 
         <section id="view-review" class="view">
-          <div class="page-title-row"><div><p class="eyebrow">TU BIBLIOTECA DE ESTUDIO</p><h1>Repaso</h1><p class="muted">Un espacio para volver a lo que te cuesta, convertirlo en una ruta clara y recordarlo sin aburrirte.</p></div></div>
-          <article id="learningPanel" class="card learning-panel learning-hub">
-            <div class="learning-hub-head"><div><p class="eyebrow">REPASO INTELIGENTE</p><h2>¿Qué quieres dominar hoy?</h2><p class="muted compact">Tú eliges el tema. Dr.Coach adapta el ritmo y la dificultad según lo que recuerdes.</p></div><span id="learningPersonalizedStatus" class="learning-status-chip">A tu ritmo</span></div>
-            <div class="learning-path-grid" role="tablist" aria-label="Forma de elegir el repaso">
-              <button type="button" class="learning-path active" data-learning-path="today" role="tab"><strong>Hoy</strong><span id="learningDueCount">0 ideas</span><small>Lo que ya toca recordar</small></button>
-              <button type="button" class="learning-path" data-learning-path="difficulties" role="tab"><strong>Mis dificultades</strong><span id="learningDifficultyCount">0 preguntas</span><small>Lo que te hizo dudar</small></button>
-              <button type="button" class="learning-path" data-learning-path="routes" role="tab"><strong>Mis temas</strong><span id="learningRouteCount">0 temas</span><small>Tus rutas y tarjetas</small></button>
-            </div>
-            <p id="learningPathHint" class="learning-path-hint">Empieza por una idea pendiente y comprueba si todavía puedes explicarla.</p>
-            <div class="learning-preferences learning-controls">
-              <label class="learning-name-field">Cómo te llamamos<input id="learningName" class="input" maxlength="60" placeholder="Tu nombre (opcional)" autocomplete="given-name" /></label>
-              <label>Tiempo<select id="learningMinutes" class="select"><option value="5">5 minutos</option><option value="10" selected>10 minutos</option><option value="20">20 minutos</option></select></label>
-              <label>Formato<select id="learningMode" class="select"><option value="mixed">Variar ejercicios</option><option value="recall">Solo recuerdo libre</option></select></label>
-              <label>Quiero practicar<select id="learningTopic" class="select"><option value="">Todos mis temas</option></select></label>
-            </div>
-            <div class="learning-hub-actions"><button type="button" id="learningStart" class="btn btn-primary" disabled>Empezar repaso</button><button type="button" id="learningCreate" class="btn btn-secondary">Crear un tema</button></div>
-            <p id="learningStorageNote" class="muted compact"></p>
-            <div id="learningUnits" class="learning-units"></div>
-          </article>
-          <div class="section-head"><div><h2>Tus preguntas y notas</h2><p class="muted compact">Vuelve a tus errores, dudas, aciertos y material guardado.</p></div></div>
-          <div class="card review-filter-card">
-            <div class="review-filters">
-              <select id="reviewSubjectFilter" class="select"><option value="">Todas las materias</option></select>
-              <select id="reviewSystemFilter" class="select"><option value="">Todos los Systems</option></select>
-              <select id="reviewKindFilter" class="select"><option value="">Todo el material</option><option value="pending">Pendientes de reforzar</option><option value="correct">Correctas</option><option value="sure">Correctas seguras</option><option value="doubt">Correctas con duda</option><option value="incorrect">Incorrectas</option><option value="omitted">Omitidas</option><option value="mastered">Dominadas</option></select>
-              <input id="reviewSearch" class="input" placeholder="Buscar ID, concepto o nota..." />
-            </div>
-            <div id="reviewStats" class="review-stats"></div>
+          <div class="page-title-row"><div><p class="eyebrow">TU BIBLIOTECA DE ESTUDIO</p><h1>Repaso</h1><p class="muted">Pregunta, observa tu patrón y deja que Dr.Coach construya una ruta de consolidación contigo.</p></div></div>
+          <div class="review-mode-switch" role="tablist" aria-label="Modo de Repaso">
+            <button type="button" class="review-mode-tab active" data-review-mode="coach" role="tab" aria-selected="true"><span class="review-mode-icon">✦</span><span><b>Coach</b><small>Dossier vivo y entrenamiento adaptativo</small></span></button>
+            <button type="button" class="review-mode-tab" data-review-mode="questions" role="tab" aria-selected="false"><span class="review-mode-icon">▤</span><span><b>Preguntas</b><small>Filtros, notas y revisión individual</small></span></button>
+            <span id="reviewLiveStatus" class="review-live-status">Se actualiza con cada pregunta</span>
           </div>
-          <div id="reviewList" class="review-list"></div>
+
+          <section id="reviewCoachView" class="review-surface">
+            <article class="coach-live-card">
+              <div class="coach-live-copy"><p class="eyebrow">DR.COACH · COACH EN VIVO</p><h2 id="coachHeadline">Tu aprendizaje no se queda en una pregunta.</h2><p id="coachSubheadline" class="muted">Cada respuesta, duda y explicación alimenta un dossier personal para decidir qué consolidar después.</p><div class="coach-inline-actions"><button type="button" id="coachStartBtn" class="btn btn-primary">Entrenar lo que me cuesta</button><button type="button" id="coachDeepBtn" class="btn btn-secondary">Estudio profundo · 20 min</button></div></div>
+              <div class="coach-live-mark" aria-hidden="true"><span>✦</span><small>LIVE</small></div>
+            </article>
+            <div class="coach-snapshot-grid" aria-label="Resumen de tu aprendizaje">
+              <article class="coach-snapshot"><span class="coach-snapshot-label">Señales débiles</span><strong id="coachWeakCount">0</strong><small>errores, omisiones o dudas</small></article>
+              <article class="coach-snapshot"><span class="coach-snapshot-label">Temas activos</span><strong id="coachTopicCount">0</strong><small>rutas que tu práctica está formando</small></article>
+              <article class="coach-snapshot"><span class="coach-snapshot-label">Última práctica</span><strong id="coachLastPractice">—</strong><small id="coachLastPracticeMeta">Aún no hay preguntas registradas</small></article>
+              <article class="coach-snapshot coach-snapshot-accent"><span class="coach-snapshot-label">Siguiente movimiento</span><strong id="coachNextLabel">Empezar</strong><small id="coachNextMeta">Responde preguntas para activar tu dossier</small></article>
+            </div>
+            <div class="coach-content-grid">
+              <article class="card coach-dossier-card"><div class="section-head"><div><p class="eyebrow">DOSSIER VIVO</p><h2>Lo que Dr.Coach está entendiendo</h2><p id="coachDossierStatus" class="muted compact">Todavía no hay suficiente práctica para formar un patrón.</p></div><span class="coach-live-pill"><i></i>Actualizándose</span></div><div id="coachDossierList" class="coach-dossier-list"></div></article>
+              <article class="card coach-next-card"><div class="section-head"><div><p class="eyebrow">SIGUIENTE MOVIMIENTO</p><h2>Una acción pequeña</h2><p class="muted compact">Elige el siguiente paso sin abrir diez menús.</p></div></div><div id="coachNextList" class="coach-next-list"></div><button type="button" id="coachOpenQuestions" class="btn btn-secondary btn-block">Ver mis preguntas</button></article>
+            </div>
+            <article id="learningPanel" class="card learning-panel learning-hub"><div class="learning-hub-head"><div><p class="eyebrow">ENTRENAMIENTO ADAPTATIVO</p><h2>Consolidar lo que ya viste</h2><p class="muted compact">El Coach toma tus tarjetas propias y las dificultades detectadas para crear sesiones breves, progresivas y recuperables.</p></div><span id="learningPersonalizedStatus" class="learning-status-chip">A tu ritmo</span></div><div class="learning-path-grid" role="tablist" aria-label="Forma de elegir el entrenamiento"><button type="button" class="learning-path active" data-learning-path="today" role="tab"><strong>Hoy</strong><span id="learningDueCount">0 ideas</span><small>Lo que ya toca recordar</small></button><button type="button" class="learning-path" data-learning-path="difficulties" role="tab"><strong>Mis dificultades</strong><span id="learningDifficultyCount">0 preguntas</span><small>Lo que te hizo dudar</small></button><button type="button" class="learning-path" data-learning-path="routes" role="tab"><strong>Mis temas</strong><span id="learningRouteCount">0 temas</span><small>Tus rutas y tarjetas</small></button></div><p id="learningPathHint" class="learning-path-hint">Empieza por una idea pendiente y comprueba si todavía puedes explicarla.</p><div class="learning-preferences learning-controls"><label class="learning-name-field">Cómo te llamamos<input id="learningName" class="input" maxlength="60" placeholder="Tu nombre (opcional)" autocomplete="given-name" /></label><label>Tiempo<select id="learningMinutes" class="select"><option value="5">5 minutos</option><option value="10" selected>10 minutos</option><option value="20">20 minutos</option></select></label><label>Formato<select id="learningMode" class="select"><option value="mixed">Variar ejercicios</option><option value="recall">Solo recuerdo libre</option></select></label><label>Quiero practicar<select id="learningTopic" class="select"><option value="">Todos mis temas</option></select></label></div><div class="learning-hub-actions"><button type="button" id="learningStart" class="btn btn-primary" disabled>Empezar repaso</button><button type="button" id="learningCreate" class="btn btn-secondary">Crear un tema</button></div><p id="learningStorageNote" class="muted compact"></p><div id="learningUnits" class="learning-units"></div></article>
+          </section>
+
+          <section id="reviewQuestionsView" class="review-surface" hidden>
+            <div class="section-head"><div><p class="eyebrow">PREGUNTAS Y EVIDENCIA</p><h2>Tus preguntas y notas</h2><p class="muted compact">Filtra, abre una pregunta y vuelve a estudiar exactamente lo que escribiste.</p></div></div>
+            <div class="card review-filter-card"><div class="review-filters"><select id="reviewSubjectFilter" class="select"><option value="">Todas las materias</option></select><select id="reviewSystemFilter" class="select"><option value="">Todos los Systems</option></select><select id="reviewKindFilter" class="select"><option value="">Todo el material</option><option value="pending">Pendientes de reforzar</option><option value="correct">Correctas</option><option value="sure">Correctas seguras</option><option value="doubt">Correctas con duda</option><option value="incorrect">Incorrectas</option><option value="omitted">Omitidas</option><option value="mastered">Dominadas</option></select><input id="reviewSearch" class="input" placeholder="Buscar ID, concepto o nota..." /></div><div id="reviewStats" class="review-stats"></div></div>
+            <div id="reviewList" class="review-list"></div>
+          </section>
         </section>
 
         <section id="view-analytics" class="view">
@@ -692,7 +692,7 @@
       <div class="section-head"><div><p class="eyebrow">NUEVO TEMA DE REPASO</p><h2 id="learningEditorTitle">Crear una tarjeta de estudio</h2></div><button type="button" id="learningCloseEditor" class="icon-btn" aria-label="Cerrar editor">×</button></div>
       <p class="muted compact">Escribe lo que quieres poder explicar. Dr.Coach lo convertirá en una práctica breve de recuerdo activo.</p>
       <div class="learning-editor-fields">
-        <label>Tema<input id="learningUnitTopic" class="input" maxlength="160" required placeholder="Ej.: Esclerosis múltiple" /></label>
+        <label>Tema<input id="learningUnitTopic" class="input" maxlength="160" required placeholder="Ej.: Síndrome nefrótico" /></label>
         <label>Qué quieres poder explicar<input id="learningUnitTitle" class="input" maxlength="160" required placeholder="Ej.: Explicar dónde ocurre" /></label>
         <label>Pregunta de recuerdo<textarea id="learningUnitPrompt" class="textarea" maxlength="5000" rows="2" required></textarea></label>
         <label>Respuesta de referencia<textarea id="learningUnitAnswer" class="textarea" maxlength="5000" rows="3" required></textarea></label>

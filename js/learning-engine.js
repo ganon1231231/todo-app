@@ -22,14 +22,14 @@
     return unit;
   }
   function makeUnit(fields,time=Date.now()){
-    const clean={id:fields.id||id(),contentVersion:fields.contentVersion||1,title:String(fields.title||'').trim(),topic:String(fields.topic||'').trim(),prompt:String(fields.prompt||'').trim(),answer:String(fields.answer||'').trim(),hint:String(fields.hint||'').trim(),contrast:String(fields.contrast||'').trim(),source:String(fields.source||'').trim(),subject:String(fields.subject||''),system:String(fields.system||''),originId:String(fields.originId||''),sequence:fields.sequence||[],example:fields.example===true,createdAt:iso(time),updatedAt:iso(time)};
+    const clean={id:fields.id||id(),contentVersion:fields.contentVersion||1,title:String(fields.title||'').trim(),topic:String(fields.topic||'').trim(),prompt:String(fields.prompt||'').trim(),answer:String(fields.answer||'').trim(),hint:String(fields.hint||'').trim(),contrast:String(fields.contrast||'').trim(),source:String(fields.source||'').trim(),subject:String(fields.subject||''),system:String(fields.system||''),originId:String(fields.originId||''),sequence:fields.sequence||[],example:fields.example===true,coachGenerated:fields.coachGenerated===true,createdAt:iso(time),updatedAt:iso(time)};
     return validateUnit(clean);
   }
   function validate(data){
     if(!data||data.version!==VERSION||!Array.isArray(data.units)||!Array.isArray(data.events)||!Array.isArray(data.sessions))throw new Error('Backup de entrenamiento incompatible.');
     if(data.units.length>5000||data.events.length>20000||data.sessions.length>5000||JSON.stringify(data).length>8*1024*1024)throw new Error('El backup de entrenamiento supera los límites de esta versión.');
     const unitIds=new Set();
-    data.units.forEach(unit=>{validateUnit(unit);if(unitIds.has(unit.id))throw new Error('Objetivo duplicado.');unitIds.add(unit.id);});
+    data.units.forEach(unit=>{validateUnit(unit);if(unitIds.has(unit.id))throw new Error('Tarjeta duplicada.');unitIds.add(unit.id);});
     const eventIds=new Set();
     data.events.forEach(event=>{
       if(!event||!text(event.id,120)||!event.id||eventIds.has(event.id)||!unitIds.has(event.unitId)||!Number.isInteger(event.unitVersion)||event.unitVersion<1||!date(event.at)||!['again','hard','good'].includes(event.rating)||!['recall','contrast','sequence'].includes(event.mode)||typeof event.hint!=='boolean'||!text(event.response)||!text(event.sessionId,120))throw new Error('Evento de aprendizaje inválido.');
