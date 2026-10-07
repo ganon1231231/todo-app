@@ -2,7 +2,7 @@
  * Vive en la raíz para conservar el scope './'. Las rutas cacheadas
  * apuntan a la estructura nueva: css/, js/, assets/img/, assets/icons/.
  * Al cambiar CACHE se fuerza la renovación en todos los dispositivos. */
-const CACHE='drcoach-3.4.4-release';
+const CACHE='drcoach-3.4.5-repaso-hub';
 const ASSETS=['./index.html','./css/styles.css','./js/db.js','./js/zip.js','./js/learning-engine.js','./js/learning-store.js','./js/learning.js','./js/app.js','./cloud/supabase-client.js','./cloud/auth.js','./cloud/storage.js','./cloud/sync.js','./cloud/sync-indicator.js','./manifest.webmanifest','./assets/img/drcoach-logo.webp','./assets/img/drcoach-emblem.webp','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
