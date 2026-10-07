@@ -14,11 +14,11 @@
   const date=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
   function empty(){return {version:VERSION,units:[],events:[],sessions:[],active:null,preferences:{name:'',minutes:10,mode:'mixed'}};}
   function validateUnit(unit){
-    if(!unit||!text(unit.id,120)||!unit.id||!text(unit.title,160)||!unit.title.trim()||!text(unit.topic,160)||!unit.topic.trim()||!text(unit.prompt)||!unit.prompt.trim()||!text(unit.answer)||!unit.answer.trim())throw new Error('Cada objetivo necesita ID, tema, título, pregunta y respuesta válidos.');
-    for(const key of ['hint','contrast','source','subject','system','originId'])if(unit[key]!==undefined&&!text(unit[key]))throw new Error('Campo de objetivo inválido: '+key);
-    if(!Number.isInteger(unit.contentVersion)||unit.contentVersion<1)throw new Error('Versión de objetivo inválida.');
+    if(!unit||!text(unit.id,120)||!unit.id||!text(unit.title,160)||!unit.title.trim()||!text(unit.topic,160)||!unit.topic.trim()||!text(unit.prompt)||!unit.prompt.trim()||!text(unit.answer)||!unit.answer.trim())throw new Error('Cada tarjeta necesita ID, tema, título, pregunta y respuesta válidos.');
+    for(const key of ['hint','contrast','source','subject','system','originId'])if(unit[key]!==undefined&&!text(unit[key]))throw new Error('Campo de tarjeta inválido: '+key);
+    if(!Number.isInteger(unit.contentVersion)||unit.contentVersion<1)throw new Error('Versión de tarjeta inválida.');
     if(!Array.isArray(unit.sequence)||unit.sequence.length>8||unit.sequence.some(x=>!text(x,300)||!x.trim())||new Set(unit.sequence).size!==unit.sequence.length||unit.sequence.length===1)throw new Error('La secuencia necesita entre 2 y 8 pasos diferentes.');
-    if(!date(unit.createdAt)||!date(unit.updatedAt))throw new Error('Fecha de objetivo inválida.');
+    if(!date(unit.createdAt)||!date(unit.updatedAt))throw new Error('Fecha de tarjeta inválida.');
     return unit;
   }
   function makeUnit(fields,time=Date.now()){
@@ -44,7 +44,7 @@
     if(data.active){
       const session=data.active;
       if(!text(session.id,120)||!session.id||!date(session.startedAt)||![5,10,20].includes(session.minutes)||!Array.isArray(session.items)||!session.items.length||session.items.length>10||!Number.isInteger(session.index)||session.index<0||session.index>=session.items.length||!['answer','revealed','rated'].includes(session.phase)||!text(session.response)||typeof session.hint!=='boolean'||typeof session.skipped!=='boolean'||!Array.isArray(session.order)||!Array.isArray(session.eventIds))throw new Error('Sesión pendiente inválida.');
-      session.items.forEach(item=>{if(!unitIds.has(item.unitId)||!Number.isInteger(item.unitVersion)||item.unitVersion<1||!['recall','contrast','sequence'].includes(item.mode))throw new Error('Objetivo de sesión inválido.');const unit=data.units.find(x=>x.id===item.unitId);if(item.mode==='sequence'&&unit.sequence.length<2||item.mode==='contrast'&&!unit.contrast)throw new Error('Formato no disponible para ese objetivo.');});
+      session.items.forEach(item=>{if(!unitIds.has(item.unitId)||!Number.isInteger(item.unitVersion)||item.unitVersion<1||!['recall','contrast','sequence'].includes(item.mode))throw new Error('Tarjeta de sesión inválida.');const unit=data.units.find(x=>x.id===item.unitId);if(item.mode==='sequence'&&unit.sequence.length<2||item.mode==='contrast'&&!unit.contrast)throw new Error('Formato no disponible para esa tarjeta.');});
       const unit=data.units.find(x=>x.id===session.items[session.index].unitId);
       if(session.order.some(n=>!Number.isInteger(n)||n<0||n>=unit.sequence.length)||new Set(session.order).size!==session.order.length||session.eventIds.some(x=>!eventIds.has(x)))throw new Error('Progreso de sesión inválido.');
       if(session.lastEventId!==undefined&&!eventIds.has(session.lastEventId))throw new Error('Última evaluación inválida.');
@@ -87,7 +87,7 @@
     if(profile.active)return profile;
     if(![5,10,20].includes(minutes)||!['mixed','recall'].includes(mode))throw new Error('Configuración de sesión inválida.');
     const selected=queue(profile,{time,topic}).slice(0,Math.floor(minutes/2));
-    if(!selected.length)throw new Error('No hay objetivos pendientes en este tema. Puedes añadir uno o explorar tu biblioteca.');
+    if(!selected.length)throw new Error('No hay tarjetas pendientes en este tema. Puedes crear una o explorar tus preguntas.');
     const next=clone(profile);
     const items=selected.map(({unit,memory:state})=>({unitId:unit.id,unitVersion:unit.contentVersion,mode:mode==='recall'||state.recognitions&&!state.recalls?'recall':unit.sequence.length>=2&&!state.recognitions?'sequence':unit.contrast?'contrast':'recall'}));
     next.preferences={...next.preferences,minutes,mode};
@@ -100,7 +100,7 @@
     if(!session||session.phase!=='revealed')throw new Error('Primero intenta responder y compara con la referencia.');
     const item=session.items[session.index];
     const next=clone(profile);
-    if(profile.units.find(u=>u.id===item.unitId)?.contentVersion!==item.unitVersion)throw new Error('El objetivo cambió. Termina esta sesión y comienza una nueva.');
+    if(profile.units.find(u=>u.id===item.unitId)?.contentVersion!==item.unitVersion)throw new Error('La tarjeta cambió. Termina esta sesión y comienza una nueva.');
     const unit=profile.units.find(u=>u.id===item.unitId);
     const wrongSequence=item.mode==='sequence'&&(session.order.length!==unit.sequence.length||session.order.some((n,i)=>n!==i));
     const event={id:id(),sessionId:session.id,unitId:item.unitId,unitVersion:item.unitVersion,mode:item.mode,rating:session.hint||session.skipped||wrongSequence?'again':rating,hint:session.hint,at:iso(time),response:session.response};
