@@ -100,6 +100,8 @@ const state = {
   deferredInstallPrompt:null,
   cloudUser:null, cloudMode:'local',   // v3.0.0 — set by auth gate
 };
+let reviewMode='coach';
+try{reviewMode=localStorage.getItem('drcoach-review-mode')==='questions'?'questions':'coach'}catch(_){ }
 
 const board = {tool:'pen', strokes:[], redo:[], active:null, drawing:false, recentPenAt:0};
 
@@ -534,7 +536,7 @@ async function init(){
   updateDayGreeting();
   await restoreActiveSession();
   renderAll();
-  await window.DrCoachLearning?.init({userId:state.cloudUser?.id,toast,reviewProvider:()=>({pending:reviewQueue().length,total:reviewMaterial().length})});
+  await window.DrCoachLearning?.init({userId:state.cloudUser?.id,toast,reviewProvider:()=>({pending:reviewQueue().length,total:reviewMaterial().length,attempts:reviewMaterial()})});
   setupBoard();
   setupStudyBoard();
   registerServiceWorker();
@@ -655,6 +657,9 @@ function bindEvents(){
   $('#reviewSystemFilter')?.addEventListener('change',renderReview);
   $('#reviewKindFilter')?.addEventListener('change',renderReview);
   $('#reviewSearch')?.addEventListener('input',renderReview);
+  $$('[data-review-mode]').forEach(btn=>btn.addEventListener('click',()=>setReviewMode(btn.dataset.reviewMode)));
+  $('#coachOpenQuestions')?.addEventListener('click',()=>setReviewMode('questions'));
+  document.addEventListener('click',event=>{const button=event.target.closest('[data-coach-open]');if(!button)return;const id=button.dataset.coachOpen;if(!id)return;setReviewMode('questions');openReviewDetail(id)});
   $('#homeCurveSubject').addEventListener('change',()=>drawProgressChart($('#homeProgressChart'),$('#homeCurveSubject').value));
   $('#analyticsCurveSubject').addEventListener('change',()=>drawProgressChart($('#analyticsProgressChart'),$('#analyticsCurveSubject').value));
   $('#saveEditAttemptBtn').addEventListener('click',saveAttemptEdit);
@@ -1305,7 +1310,21 @@ function filteredReviewItems(){
 }
 function shortText(s,max=190){const t=String(s||'').replace(/\s+/g,' ').trim();return t.length>max?t.slice(0,max-1).trimEnd()+'…':t}
 function hasAttemptVisual(a){return !!(attemptAttachmentIds(a).length||(Array.isArray(a?.strokes)&&a.strokes.length)||studyBoardHasVisual(a?.studyBoard))}
+function syncReviewMode(){
+  $$('[data-review-mode]').forEach(btn=>{const active=btn.dataset.reviewMode===reviewMode;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',String(active))});
+  const coach=$('#reviewCoachView'),questions=$('#reviewQuestionsView');
+  if(coach)coach.hidden=reviewMode!=='coach';
+  if(questions)questions.hidden=reviewMode!=='questions';
+  const status=$('#reviewLiveStatus');if(status)status.textContent=reviewMode==='coach'?'Se actualiza con cada pregunta':'Vista de preguntas · filtros y evidencia';
+}
+function setReviewMode(mode){
+  reviewMode=mode==='questions'?'questions':'coach';
+  try{localStorage.setItem('drcoach-review-mode',reviewMode)}catch(_){ }
+  syncReviewMode();
+  renderReview();
+}
 function renderReview(){
+  syncReviewMode();
   window.DrCoachLearning?.render();
   const list=$('#reviewList');if(!list)return;const all=reviewMaterial(),items=filteredReviewItems(),pending=reviewQueue();state.reviewVisibleIds=items.map(a=>a.id);
   const stats=$('#reviewStats');if(stats){const correct=all.filter(a=>a.result==='correct').length,wrong=all.filter(a=>a.result==='incorrect').length,doubt=all.filter(a=>a.result==='correct'&&a.confidence==='doubt').length,visual=all.filter(hasAttemptVisual).length,mastered=all.filter(a=>a.mastered).length;stats.innerHTML=`<span class="review-stat-pill"><b>${all.length}</b> registradas</span><span class="review-stat-pill"><b>${correct}</b> correctas</span><span class="review-stat-pill"><b>${wrong}</b> incorrectas</span><span class="review-stat-pill"><b>${doubt}</b> con duda</span><span class="review-stat-pill"><b>${pending.length}</b> por reforzar</span>${mastered?`<span class="review-stat-pill"><b>${mastered}</b> dominadas</span>`:''}<span class="review-stat-pill">📷 <b>${visual}</b> con material visual</span>${items.length!==all.length?`<span class="review-stat-pill"><b>${items.length}</b> visibles con filtros</span>`:''}`}
