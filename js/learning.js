@@ -176,31 +176,32 @@
     $('learningUnitDialog').close();selectedPath='routes';options.toast?.('Tema guardado. Ya puedes practicarlo.');
   }
   function bind(){
-    $('learningHomeStart').addEventListener('click',()=>action(()=>openSession(true)));
-    $('learningHomeSetup').addEventListener('click',()=>{document.querySelector('[data-view="review"]')?.click();$('learningPanel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});});
-    $('learningStart').addEventListener('click',()=>action(()=>openSession()));
-    $('learningCreate').addEventListener('click',()=>openEditor());
+    const on=(id,event,handler)=>$(id)?.addEventListener(event,handler);
+    on('learningHomeStart','click',()=>action(()=>openSession(true)));
+    on('learningHomeSetup','click',()=>{document.querySelector('[data-view="review"]')?.click();$('learningPanel')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});});
+    on('learningStart','click',()=>action(()=>openSession()));
+    on('learningCreate','click',()=>openEditor());
     $$('[data-learning-path]').forEach(button=>button.addEventListener('click',()=>{selectedPath=button.dataset.learningPath;render();}));
-    $('learningTopic').addEventListener('change',render);
-    ['learningName','learningMinutes','learningMode'].forEach(key=>$(key).addEventListener('change',()=>action(()=>mutate(data=>{data.preferences={name:$('learningName').value.trim(),minutes:Number($('learningMinutes').value),mode:$('learningMode').value};return data;}))));
-    $('learningResponse').addEventListener('input',pendingInput);
-    $('learningResponse').addEventListener('blur',()=>flush().catch(message));
-    $('learningCompare').addEventListener('click',()=>action(()=>reveal()));
-    $('learningSkip').addEventListener('click',()=>action(()=>reveal(true)));
-    $('learningShowHint').addEventListener('click',()=>action(async()=>{const {id,index}=profile.active;await flush();await mutate(data=>{const s=sameSession(data,id,index);if(s.phase==='answer')s.hint=true;return data;});}));
-    [['learningAgain','again'],['learningHard','hard'],['learningGood','good']].forEach(([key,rating])=>$(key).addEventListener('click',()=>action(()=>{const {id,index}=profile.active;return mutate(data=>{sameSession(data,id,index);return E.grade(data,rating);});})));
-    $('learningNext').addEventListener('click',()=>action(()=>{const {id,index}=profile.active;return mutate(data=>{sameSession(data,id,index);return E.advance(data);});}));
-    $('learningResetSequence').addEventListener('click',()=>action(()=>{const {id,index}=profile.active;return mutate(data=>{const s=sameSession(data,id,index);if(s.phase==='answer')s.order=[];return data;});}));
-    $('learningSequencePool').addEventListener('click',event=>{const button=event.target.closest('[data-learning-step]');if(!button||button.disabled)return;action(()=>{const {id,index}=profile.active;return mutate(data=>{const s=sameSession(data,id,index),step=Number(button.dataset.learningStep);if(s.phase==='answer'&&!s.order.includes(step))s.order.push(step);return data;});});});
-    $('learningUnits').addEventListener('click',event=>{const button=event.target.closest('[data-learning-edit]');if(button)openEditor({},profile.units.find(u=>u.id===button.dataset.learningEdit));});
+    on('learningTopic','change',render);
+    ['learningName','learningMinutes','learningMode'].forEach(key=>on(key,'change',()=>action(()=>mutate(data=>{data.preferences={name:$('learningName').value.trim(),minutes:Number($('learningMinutes').value),mode:$('learningMode').value};return data;}))));
+    on('learningResponse','input',pendingInput);
+    on('learningResponse','blur',()=>flush().catch(message));
+    on('learningCompare','click',()=>action(()=>reveal()));
+    on('learningSkip','click',()=>action(()=>reveal(true)));
+    on('learningShowHint','click',()=>action(async()=>{const {id,index}=profile.active;await flush();await mutate(data=>{const s=sameSession(data,id,index);if(s.phase==='answer')s.hint=true;return data;});}));
+    [['learningAgain','again'],['learningHard','hard'],['learningGood','good']].forEach(([key,rating])=>on(key,'click',()=>action(()=>{const {id,index}=profile.active;return mutate(data=>{sameSession(data,id,index);return E.grade(data,rating);});})));
+    on('learningNext','click',()=>action(()=>{const {id,index}=profile.active;return mutate(data=>{sameSession(data,id,index);return E.advance(data);});}));
+    on('learningResetSequence','click',()=>action(()=>{const {id,index}=profile.active;return mutate(data=>{const s=sameSession(data,id,index);if(s.phase==='answer')s.order=[];return data;});}));
+    on('learningSequencePool','click',event=>{const button=event.target.closest('[data-learning-step]');if(!button||button.disabled)return;action(()=>{const {id,index}=profile.active;return mutate(data=>{const s=sameSession(data,id,index),step=Number(button.dataset.learningStep);if(s.phase==='answer'&&!s.order.includes(step))s.order.push(step);return data;});});});
+    on('learningUnits','click',event=>{const button=event.target.closest('[data-learning-edit]');if(button)openEditor({},profile.units.find(u=>u.id===button.dataset.learningEdit));});
     const pause=()=>action(async()=>{draft={id:profile.active?.id,index:profile.active?.index,response:$('learningResponse')?.value||draft?.response||''};await flush();$('learningDialog').close();});
-    $('learningPause').addEventListener('click',pause);$('learningSummaryClose').addEventListener('click',pause);
-    $('learningDialog').addEventListener('cancel',event=>{event.preventDefault();pause();});
-    $('learningFinishEarly').addEventListener('click',()=>action(async()=>{
+    on('learningPause','click',pause);on('learningSummaryClose','click',pause);
+    on('learningDialog','cancel',event=>{event.preventDefault();pause();});
+    on('learningFinishEarly','click',()=>action(async()=>{
       await flush();await mutate(data=>{if(data.active){data.sessions.push({id:data.active.id,startedAt:data.active.startedAt,endedAt:new Date().toISOString(),eventIds:[...data.active.eventIds]});data.active=null;}return data;});
     }));
-    $('learningCloseEditor').addEventListener('click',()=>$('learningUnitDialog').close());
-    $('learningUnitForm').addEventListener('submit',event=>{event.preventDefault();action(async()=>{try{await saveUnit();}catch(error){$('learningEditorError').hidden=false;$('learningEditorError').textContent=error.message;throw error;}});});
+    on('learningCloseEditor','click',()=>$('learningUnitDialog')?.close());
+    on('learningUnitForm','submit',event=>{event.preventDefault();action(async()=>{try{await saveUnit();}catch(error){$('learningEditorError').hidden=false;$('learningEditorError').textContent=error.message;throw error;}});});
     document.addEventListener('visibilitychange',()=>{if(document.hidden)flush().catch(message);});
   }
   async function init(settings){
