@@ -775,3 +775,51 @@ html[data-theme="night"] .dc-tr-card-text{color:#edf3f9}
 @media(max-width:900px){.coach-snapshot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.coach-content-grid{grid-template-columns:1fr}.review-live-status{display:none}}
 @media(max-width:620px){.review-mode-switch{flex-wrap:wrap}.review-mode-tab{flex:1 1 calc(50% - 8px);padding:9px}.review-mode-tab small{font-size:.68rem}.coach-live-card{align-items:flex-start;padding:19px;gap:14px}.coach-live-mark{width:58px;height:58px}.coach-live-mark span{font-size:1.45rem}.coach-live-mark small{font-size:.48rem}.coach-snapshot-grid{grid-template-columns:1fr 1fr}.coach-snapshot{min-height:83px;padding:12px}.coach-snapshot strong{font-size:1.18rem}.coach-inline-actions .btn{flex:1;min-width:0}.coach-dossier-item-head{flex-direction:column;gap:5px}}
 @media(max-width:400px){.review-mode-tab{flex-basis:100%}.coach-snapshot-grid{grid-template-columns:1fr}.coach-live-card{display:block}.coach-live-mark{display:none}}
+
+/* ===== v3.4.6 — Coach compacto (sin filas interminables) + camino de repaso premium ===== */
+
+/* — Hoy: «TU CAMINO DE REPASO» como franja compacta con acento — */
+.learning-home{position:relative;gap:16px;padding:15px 18px;margin-bottom:16px;border:1px solid color-mix(in srgb,var(--primary) 22%,var(--line));border-radius:16px;background:linear-gradient(115deg,color-mix(in srgb,var(--primary) 9%,var(--surface)),var(--surface) 58%);overflow:hidden}
+.learning-home::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:999px;background:var(--primary);opacity:.9}
+.learning-home-copy{min-width:0}
+.learning-home .eyebrow{margin-bottom:2px}
+.learning-home h2{margin:0 0 4px;font-size:1.06rem;letter-spacing:-.02em}
+.learning-home p{margin:0}
+.learning-home .learning-home-actions{gap:8px;flex-shrink:0}
+.learning-home .btn{min-height:38px;padding:8px 14px}
+
+/* — Coach en vivo: hero + resumen en UNA sola tarjeta (adiós a la banda extra) — */
+.coach-live-card{display:block;margin-bottom:12px;padding:18px 20px}
+.coach-live-top{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.coach-live-copy h2{max-width:700px;margin:0 0 6px;font-size:clamp(1.18rem,1.9vw,1.5rem)}
+.coach-live-copy p{margin:0;max-width:720px}
+.coach-inline-actions{margin-top:12px}
+.coach-live-mark{width:64px;height:64px;box-shadow:0 0 0 7px color-mix(in srgb,var(--primary) 5%,transparent)}
+.coach-live-mark span{font-size:1.5rem}
+.coach-snapshot-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:14px 0 0;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--primary) 16%,var(--line))}
+.coach-snapshot{min-height:auto;padding:2px 14px;border:0;border-left:1px solid var(--line);border-radius:0;background:transparent}
+.coach-snapshot:first-child{border-left:0;padding-left:2px}
+.coach-snapshot strong{margin:3px 0 1px;font-size:1.16rem}
+.coach-snapshot small{font-size:.68rem}
+.coach-snapshot-accent{background:transparent;border-color:var(--line)}
+
+/* — Dossier vivo / siguiente movimiento: desplegables compactos — */
+.coach-dossier-card,.coach-next-card{padding:13px 16px}
+.coach-dossier-card>summary,.coach-next-card>summary{cursor:pointer;list-style:none;user-select:none;position:relative;padding-right:26px}
+.coach-dossier-card>summary::-webkit-details-marker,.coach-next-card>summary::-webkit-details-marker{display:none}
+.coach-dossier-card>summary::after,.coach-next-card>summary::after{content:'▸';position:absolute;right:2px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;transition:transform .18s ease}
+.coach-dossier-card[open]>summary::after,.coach-next-card[open]>summary::after{transform:translateY(-50%) rotate(90deg)}
+.coach-dossier-card[open]>summary,.coach-next-card[open]>summary{margin-bottom:12px}
+.coach-dossier-card .section-head,.coach-next-card .section-head{margin:0}
+.coach-dossier-card h2,.coach-next-card h2{font-size:1.02rem;margin:2px 0 3px}
+.coach-dossier-card .eyebrow,.coach-next-card .eyebrow{font-size:.62rem}
+
+/* — Hub de entrenamiento: mismo poder, menos aire — */
+.learning-hub{padding:18px;margin-bottom:14px}
+.learning-hub-head h2{font-size:1.18rem}
+.learning-path-grid{margin:14px 0 10px}
+
+/* — Móvil — */
+@media(max-width:900px){.coach-snapshot-grid{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:12px}.coach-snapshot{padding:2px 12px}.coach-snapshot:nth-child(3){border-left:0;padding-left:2px}}
+@media(max-width:620px){.coach-live-card{padding:16px}.coach-live-top{align-items:flex-start;gap:12px}.coach-live-mark{width:52px;height:52px}.coach-live-mark span{font-size:1.3rem}.coach-snapshot-grid{grid-template-columns:1fr 1fr}.coach-snapshot{padding:2px 10px}.coach-inline-actions .btn{flex:1;min-width:0}.learning-home{flex-direction:column;align-items:flex-start}.learning-home .learning-home-actions{width:100%}.learning-home .learning-home-actions .btn{flex:1;min-width:0}}
+.coach-content-grid{align-items:start}

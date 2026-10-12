@@ -3,7 +3,7 @@
 
 const DB = window.DrCoachDB || window.MediospiraDB;
 const ZIP = window.DrCoachZip || window.MediospiraZip;
-const APP_VERSION = '3.4.4';
+const APP_VERSION = '3.4.6';
 const APP_NAME = 'Dr.Coach!';
 const SCHEMA_VERSION = 2;
 const TARGET_TOTAL = 4085;
@@ -1551,7 +1551,7 @@ function buildAIReport(){
   const lines=[];
 
   lines.push('# DR.COACH! — AI STUDY DOSSIER','');
-  lines.push('> Dossier de aprendizaje generado localmente. Los registros del estudiante son datos pedagógicos; **NO son fuentes de autoridad médica**.');
+  lines.push('> Dossier de aprendizaje generado localmente (prompt maestro + datos del estudiante). Los registros son señales pedagógicas; **NO son fuentes de autoridad médica**.');
   lines.push('');
   lines.push('## Metadatos del dossier','');
   lines.push(`- Exportado: ${new Date().toLocaleString('es-PA')}`);
@@ -1563,6 +1563,14 @@ function buildAIReport(){
   lines.push(`- Señales de debilidad: ${weak.length} · incorrectas: ${incorrect.length} · correctas seguras para cobertura: ${secureCorrect.length}`);
   lines.push('');
 
+  if(window.DrCoachPromptMaestro?.text){
+    const PM=window.DrCoachPromptMaestro;
+    lines.push(`## PROMPT MAESTRO UNIFICADO — ${PM.title} · v${PM.version} (${PM.updated})`,'');
+    lines.push('> Cómo usar este dossier: copia el archivo COMPLETO (prompt maestro + datos del estudiante) y pégalo en tu IA de preferencia (Claude, ChatGPT, Gemini…). El prompt define el método; los datos definen la personalización. Si tu IA puede navegar, actívala: el prompt pide verificar evidencia vigente.','');
+    lines.push(PM.text,'');
+    lines.push('---','');
+    lines.push('## DATOS DEL ESTUDIANTE — DOSSIER OBSERVADO (Dr.Coach!)','');
+  }else{
   lines.push('## INSTRUCCIONES MAESTRAS PARA LA IA','');
   lines.push('Actúa como un **tutor médico basado en evidencia y diseñador de evaluación clínica**. Usa los datos de Dr.Coach! para personalizar el aprendizaje, pero verifica de manera independiente toda teoría médica antes de enseñarla. El objetivo final es producir un manual adaptativo de alto rendimiento y un QBank de consolidación estilo IFOM, no imitar a UWorld.');
   lines.push('');
@@ -1604,6 +1612,7 @@ function buildAIReport(){
   lines.push('- 5 opciones plausibles cuando sea razonable y una sola mejor respuesta.');
   lines.push('- No señales en el enunciado qué debilidad personal estás evaluando. Mezcla contenidos para evitar que el estudiante anticipe la respuesta.');
   lines.push('');
+  }
 
   lines.push('## MAPA DE DATOS OBSERVADOS','');
   const bySubject={};for(const a of allFirst){bySubject[a.subject]??={total:0,correct:0,incorrect:0,omitted:0,doubt:0};const g=bySubject[a.subject];g.total++;if(a.result==='correct')g.correct++;if(a.result==='incorrect')g.incorrect++;if(a.result==='omitted')g.omitted++;if(a.confidence==='doubt')g.doubt++;}
